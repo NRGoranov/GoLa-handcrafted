@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Manrope, Playfair_Display } from "next/font/google";
-import TranslatePrompt from "@/components/TranslatePrompt";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -47,12 +46,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/images/logo.png", sizes: "512x512", type: "image/png" },
-      { url: "/images/logo.png", sizes: "192x192", type: "image/png" },
+      { url: "/images/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/images/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/images/favicon.ico", type: "image/x-icon" }
     ],
     apple: [{ url: "/images/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
-    shortcut: ["/images/logo.png", "/images/favicon.ico"]
+    shortcut: ["/images/favicon.ico"]
   },
   manifest: "/images/site.webmanifest",
   metadataBase: new URL(siteUrl)
@@ -89,7 +88,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <TranslatePrompt />
+        {/* <TranslatePrompt /> */}
         {children}
       </body>
     </html>
