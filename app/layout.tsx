@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope, Playfair_Display } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -83,9 +84,55 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${playfair.variable} ${manrope.variable}`}>
       <body className="bg-ink text-ivory antialiased">
+        <div id="google_translate_element" className="hidden" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <Script id="google-translate-init" strategy="afterInteractive">
+          {`
+            (function () {
+              var defaultLanguage = "en";
+              var preferredLanguage = ((navigator.language || defaultLanguage).split("-")[0] || defaultLanguage).toLowerCase();
+
+              window.googleTranslateElementInit = function () {
+                new google.translate.TranslateElement(
+                  {
+                    pageLanguage: defaultLanguage,
+                    autoDisplay: true
+                  },
+                  "google_translate_element"
+                );
+
+                if (preferredLanguage === defaultLanguage) {
+                  return;
+                }
+
+                var applyPreferredLanguage = function () {
+                  var languageSelector = document.querySelector(".goog-te-combo");
+
+                  if (!languageSelector) {
+                    window.setTimeout(applyPreferredLanguage, 300);
+                    return;
+                  }
+
+                  if (languageSelector.value === preferredLanguage) {
+                    return;
+                  }
+
+                  languageSelector.value = preferredLanguage;
+                  languageSelector.dispatchEvent(new Event("change"));
+                };
+
+                window.setTimeout(applyPreferredLanguage, 500);
+              };
+            })();
+          `}
+        </Script>
+        <Script
+          id="google-translate-loader"
+          src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+          strategy="afterInteractive"
         />
         {children}
       </body>
