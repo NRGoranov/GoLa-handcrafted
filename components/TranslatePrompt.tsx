@@ -139,7 +139,7 @@ export default function TranslatePrompt() {
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
-            onClick={dismissPrompt}
+            onClick={() => dismissPrompt("dismissed")}
             className="focus-ring rounded-full border border-ivory/30 px-4 py-2 text-sm text-ivory/85 transition hover:border-ivory/50"
           >
             Dismiss
