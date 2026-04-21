@@ -35,7 +35,7 @@ export default function Hero() {
         >
           <Image
             src={heroRotationImages[activeIndex]}
-            alt="Handcrafted wooden and leather handbag by RSG Handcrafted"
+            alt="Handcrafted wooden and leather handbag by GoLa Handcrafted"
             fill
             priority={activeIndex === 0}
             className="object-cover"

@@ -1,4 +1,4 @@
-# RSG Handcrafted - Luxury Inquiry Website
+# GoLa Handcrafted - Luxury Inquiry Website
 
 Mobile-first, high-performance Next.js single-page website for a handcrafted wooden and leather handbag atelier.
 

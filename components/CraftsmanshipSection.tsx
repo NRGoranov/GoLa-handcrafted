@@ -20,7 +20,7 @@ export default function CraftsmanshipSection() {
           <SectionHeading
             eyebrow="Process"
             title="Crafted with Intention"
-            description="Every RSG piece is worked by hand: selected materials, measured shaping, and detailed finishing that honors character over volume."
+            description="Every GoLa piece is worked by hand: selected materials, measured shaping, and detailed finishing that honors character over volume."
           />
           <ul className="space-y-4 text-sm text-mist sm:text-base">
             <li>No mass production - each handbag is created in small, attentive runs.</li>

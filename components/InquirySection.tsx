@@ -85,6 +85,15 @@ export default function InquirySection() {
               >
                 +359887509906
               </a>
+              {" "}or{" "}
+              <a
+                href="https://wa.me/359887297480"
+                target="_blank"
+                rel="noreferrer"
+                className="focus-ring underline decoration-caramel/70 underline-offset-4 hover:text-caramel"
+              >
+                +359887297480
+              </a>
               .
             </p>
           </div>

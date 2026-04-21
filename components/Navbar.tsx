@@ -36,17 +36,17 @@ export default function Navbar() {
       }`}
       aria-label="Primary"
     >
-      <div className="mx-auto flex h-16 w-[94%] items-center justify-between sm:w-[93%] lg:w-[92%]">
-        <a href="#top" className="focus-ring inline-flex items-center gap-2.5 text-ivory">
+      <div className="mx-auto flex h-20 w-[96%] items-center justify-between sm:w-[95%] lg:w-[94%] xl:w-[92%]">
+        <a href="#top" className="focus-ring inline-flex h-full items-center text-ivory">
           <Image
             src="/images/logo.png"
-            alt="RSG logo"
-            width={44}
-            height={44}
-            className="h-16 w-16 object-contain brightness-0 invert opacity-95 drop-shadow-[0_0_8px_rgba(243,236,223,0.35)]"
+            alt="GoLa handcrafted logo"
+            width={999}
+            height={333}
+            className="h-[300%] w-auto max-w-[500px] object-contain sm:max-w-[580px]"
             priority
+            unoptimized
           />
-          <span className="text-sm font-medium tracking-[0.2em]">Handcrafted</span>
         </a>
 
         <ul className="hidden items-center gap-[clamp(1rem,2.2vw,2.5rem)] md:flex">
@@ -78,7 +78,7 @@ export default function Navbar() {
         id="mobile-menu"
         className={`md:hidden ${menuOpen ? "block" : "hidden"} border-t border-ivory/10 bg-ink/95`}
       >
-        <ul className="mx-auto flex w-[94%] flex-col py-4 sm:w-[93%]">
+        <ul className="mx-auto flex w-[96%] flex-col py-4 sm:w-[95%]">
           {links.map((link) => (
             <li key={link.href}>
               <a

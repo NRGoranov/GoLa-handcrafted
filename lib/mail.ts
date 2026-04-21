@@ -33,7 +33,7 @@ export async function sendInquiryMail(data: InquiryPayload): Promise<void> {
   });
 
   const text = [
-    "New inquiry from RSG Handcrafted website",
+    "New inquiry from GoLa Handcrafted website",
     "",
     `Name: ${data.name}`,
     `Email: ${data.email}`,
@@ -47,7 +47,7 @@ export async function sendInquiryMail(data: InquiryPayload): Promise<void> {
   ].join("\n");
 
   const html = `
-    <h2>New Inquiry - RSG Handcrafted</h2>
+    <h2>New Inquiry - GoLa Handcrafted</h2>
     <p><strong>Name:</strong> ${escapeHtml(data.name)}</p>
     <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
     <p><strong>Contact Method:</strong> ${escapeHtml(data.contactMethod)}</p>
@@ -59,7 +59,7 @@ export async function sendInquiryMail(data: InquiryPayload): Promise<void> {
   `;
 
   await transporter.sendMail({
-    from: `"RSG Handcrafted Inquiry" <${user}>`,
+    from: `"GoLa Handcrafted Inquiry" <${user}>`,
     to: toEmail,
     subject: `New ${data.inquiryType} inquiry from ${data.name}`,
     text,
