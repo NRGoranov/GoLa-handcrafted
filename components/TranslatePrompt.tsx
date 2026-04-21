@@ -3,8 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 
 const DEFAULT_LANGUAGE = "en";
-const SESSION_KEY = "gola_translate_prompt_seen";
+const DECISION_KEY = "gola_translate_prompt_decision_v1";
 const GOOGLE_SCRIPT_ID = "google-translate-loader";
+const LANGUAGE_OPTIONS = [
+  { value: "en", label: "English" },
+  { value: "bg", label: "Bulgarian" },
+  { value: "de", label: "German" },
+  { value: "es", label: "Spanish" },
+  { value: "fr", label: "French" },
+  { value: "it", label: "Italian" },
+  { value: "nl", label: "Dutch" },
+  { value: "pt", label: "Portuguese" },
+  { value: "ro", label: "Romanian" },
+  { value: "tr", label: "Turkish" }
+];
 
 declare global {
   interface Window {
@@ -31,20 +43,26 @@ function getPreferredLanguage() {
 export default function TranslatePrompt() {
   const [open, setOpen] = useState(false);
   const preferredLanguage = useMemo(getPreferredLanguage, []);
+  const [selectedLanguage, setSelectedLanguage] = useState(DEFAULT_LANGUAGE);
 
   useEffect(() => {
-    if (preferredLanguage === DEFAULT_LANGUAGE) {
-      return;
-    }
-
-    const alreadyAsked = window.sessionStorage.getItem(SESSION_KEY) === "true";
-    if (!alreadyAsked) {
-      setOpen(true);
+    const isSupportedLanguage = LANGUAGE_OPTIONS.some((option) => option.value === preferredLanguage);
+    if (isSupportedLanguage) {
+      setSelectedLanguage(preferredLanguage);
     }
   }, [preferredLanguage]);
 
-  const dismissPrompt = () => {
-    window.sessionStorage.setItem(SESSION_KEY, "true");
+  useEffect(() => {
+    const decision = window.localStorage.getItem(DECISION_KEY);
+    if (decision) {
+      return;
+    }
+
+    window.setTimeout(() => setOpen(true), 250);
+  }, []);
+
+  const dismissPrompt = (decision: "dismissed" | "accepted" = "dismissed") => {
+    window.localStorage.setItem(DECISION_KEY, decision);
     setOpen(false);
   };
 
@@ -66,7 +84,7 @@ export default function TranslatePrompt() {
             return;
           }
 
-          selector.value = preferredLanguage;
+          selector.value = selectedLanguage;
           selector.dispatchEvent(new Event("change"));
         };
 
@@ -78,8 +96,8 @@ export default function TranslatePrompt() {
       }
     };
 
-    document.cookie = `googtrans=/${DEFAULT_LANGUAGE}/${preferredLanguage};path=/`;
-    document.cookie = `googtrans=/${DEFAULT_LANGUAGE}/${preferredLanguage};domain=${window.location.hostname};path=/`;
+    document.cookie = `googtrans=/${DEFAULT_LANGUAGE}/${selectedLanguage};path=/`;
+    document.cookie = `googtrans=/${DEFAULT_LANGUAGE}/${selectedLanguage};domain=${window.location.hostname};path=/`;
 
     if (!document.getElementById(GOOGLE_SCRIPT_ID)) {
       const script = document.createElement("script");
@@ -92,7 +110,7 @@ export default function TranslatePrompt() {
       initAndTranslate();
     }
 
-    dismissPrompt();
+    dismissPrompt("accepted");
   };
 
   if (!open) {
@@ -103,9 +121,21 @@ export default function TranslatePrompt() {
     <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/60 p-4 sm:items-center">
       <div className="w-full max-w-md rounded-2xl border border-ivory/20 bg-ink p-5 shadow-luxury">
         <h2 className="text-base font-semibold text-ivory sm:text-lg">Translate this page?</h2>
-        <p className="mt-2 text-sm text-ivory/80">
-          We detected your browser language and can translate this site for easier reading.
-        </p>
+        <p className="mt-2 text-sm text-ivory/80">Choose a language for this site.</p>
+        <label className="mt-4 block text-xs uppercase tracking-[0.14em] text-ivory/70">
+          Language
+          <select
+            value={selectedLanguage}
+            onChange={(event) => setSelectedLanguage(event.target.value)}
+            className="mt-2 w-full rounded-xl border border-ivory/20 bg-ink px-3 py-2 text-sm text-ivory outline-none transition focus:border-caramel"
+          >
+            {LANGUAGE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
