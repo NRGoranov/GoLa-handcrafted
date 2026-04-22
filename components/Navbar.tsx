@@ -39,11 +39,11 @@ export default function Navbar() {
       <div className="mx-auto flex h-20 w-[96%] items-center justify-between sm:w-[95%] lg:w-[94%] xl:w-[92%]">
         <a href="#top" className="focus-ring inline-flex h-full items-center text-ivory">
           <Image
-            src="/images/logo.png"
+            src="/images/logoPref.jpeg"
             alt="GoLa handcrafted logo"
             width={999}
             height={333}
-            className="h-[300%] w-auto max-w-[500px] object-contain sm:max-w-[580px]"
+            className="h-[80%] w-auto max-w-[500px] object-contain sm:max-w-[580px]"
             priority
             unoptimized
           />
