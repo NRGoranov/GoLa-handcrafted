@@ -30,8 +30,8 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`fixed inset-x-0 top-0 z-50 transition-all ${
-        scrolled ? "wood-navbar shadow-luxury" : "wood-navbar"
+      className={`fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow] duration-500 ease-out ${
+        scrolled ? "wood-navbar shadow-luxury" : "bg-transparent shadow-none"
       }`}
       aria-label="Primary"
     >
@@ -40,7 +40,13 @@ export default function Navbar() {
           Go to top
         </a>
 
-        <a href="#top" className="focus-ring inline-flex items-center" aria-label="GoLa handcrafted home">
+        <a
+          href="#top"
+          className={`focus-ring inline-flex items-center transition-opacity duration-500 ease-out ${
+            scrolled ? "opacity-100" : "opacity-0"
+          }`}
+          aria-label="GoLa handcrafted home"
+        >
           <Image
             src="/images/backgroundsLogo-removebg.png"
             alt="GoLa handcrafted"
