@@ -23,7 +23,7 @@ export const products: Product[] = [
     widthCm: "23",
     heightCm: "15,6",
     thicknessCm: "7,4",
-    priceEur: 100,
+    priceEur: 120,
     images: [
       "/images/model1/model1-1.jpeg",
       "/images/model1/model1-2.jpeg",
@@ -44,7 +44,7 @@ export const products: Product[] = [
     widthCm: "22",
     heightCm: "14",
     thicknessCm: "6,5",
-    priceEur: 80,
+    priceEur: 100,
     images: [
       "/images/model2/model2-1.jpeg",
       "/images/model2/model2-2.jpeg",
@@ -63,7 +63,7 @@ export const products: Product[] = [
     widthCm: "22",
     heightCm: "11,5",
     thicknessCm: "6",
-    priceEur: 70,
+    priceEur: 90,
     images: [
       "/images/model3/model3-1.jpeg",
       "/images/model3/model3-2.jpeg",
@@ -83,7 +83,7 @@ export const products: Product[] = [
     widthCm: "17",
     heightCm: "11,5",
     thicknessCm: "6",
-    priceEur: 50,
+    priceEur: 70,
     images: ["/images/model4/model4-1.jpeg","/images/model4/model4-2.jpeg"],
     customizable: true
   }
