@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope, Playfair_Display } from "next/font/google";
+import { Cormorant_Garamond, Manrope, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -12,6 +12,13 @@ const manrope = Manrope({
   subsets: ["latin"],
   variable: "--font-manrope",
   display: "swap"
+});
+
+const cormorantGaramond = Cormorant_Garamond({
+  subsets: ["latin"],
+  variable: "--font-cormorant",
+  display: "swap",
+  weight: ["400", "500"]
 });
 
 const siteUrl = "https://gola-handcrafted.vercel.app";
@@ -81,7 +88,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${playfair.variable} ${manrope.variable}`}>
+    <html
+      lang="en"
+      className={`${playfair.variable} ${manrope.variable} ${cormorantGaramond.variable}`}
+    >
       <body className="bg-ink text-ivory antialiased">
         <div id="google_translate_element" className="hidden" />
         <script

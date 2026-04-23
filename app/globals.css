@@ -81,6 +81,188 @@ a {
   background: linear-gradient(180deg, #d0a674 0%, #aa8055 100%);
 }
 
+/* Warm wood strip used for top navigation */
+.wood-navbar {
+  background-color: rgba(59, 36, 24, 0.88);
+  background-image: url("/images/backgroundNoLogo1.jpeg");
+  background-position: right center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  box-shadow: inset 0 1px 0 rgba(255, 223, 180, 0.06), inset 0 -1px 0 rgba(8, 4, 2, 0.30);
+  filter: brightness(1.12);
+  /* Mirror the background image horizontally */
+  transform: scaleX(-1);
+  /* Flip inner contents back to normal */
+}
+.wood-navbar > * {
+  transform: scaleX(-1);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Brand logo recreation (GoLa + handcrafted + divider lines)                  */
+/* Typeface note: serif stack is an approximation of the source logo style.   */
+/* Swap --logo-font-family for a closer match if needed.                        */
+/* -------------------------------------------------------------------------- */
+.brand-logo {
+  --logo-font-family: var(--font-cormorant), var(--font-playfair), "Times New Roman", serif;
+  --logo-wordmark-color: #1b120d;
+  --logo-subtitle-color: #2a1b13;
+  --logo-line-color: color-mix(in srgb, var(--logo-subtitle-color) 70%, transparent);
+  --logo-wordmark-size: clamp(1.65rem, 2.6vw, 2.55rem);
+  --logo-subtitle-size: clamp(0.9rem, 1.05vw, 1rem);
+  --logo-gap: 0.08em;
+  --logo-line-width: clamp(1.2rem, 2.8vw, 2.75rem);
+  --logo-line-thickness: 1px;
+  --logo-wordmark-tracking: 0.012em;
+  --logo-subtitle-tracking: 0.24em;
+  --logo-emboss-light: transparent;
+  --logo-emboss-dark: transparent;
+  --logo-bg: transparent;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--logo-gap);
+  min-width: clamp(8.5rem, 26vw, 17rem);
+  padding: 0.15rem 0.25rem;
+  text-align: center;
+  background: var(--logo-bg);
+  line-height: 1;
+}
+
+.brand-logo__wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--logo-font-family);
+  font-size: var(--logo-wordmark-size);
+  font-weight: 500;
+  letter-spacing: var(--logo-wordmark-tracking);
+  color: var(--logo-wordmark-color);
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  text-shadow: var(--logo-emboss-light), var(--logo-emboss-dark);
+}
+
+.brand-logo__glyph {
+  display: inline-block;
+  transform: translateY(0);
+}
+
+.brand-logo__glyph--g {
+  margin-right: -0.03em;
+}
+
+.brand-logo__glyph--o {
+  margin-right: 0.015em;
+}
+
+.brand-logo__glyph--l {
+  margin-right: 0.01em;
+}
+
+.brand-logo__subtitle-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.45rem, 1vw, 0.75rem);
+}
+
+.brand-logo__subtitle {
+  font-family: var(--logo-font-family);
+  font-size: var(--logo-subtitle-size);
+  letter-spacing: var(--logo-subtitle-tracking);
+  text-transform: lowercase;
+  color: var(--logo-subtitle-color);
+  white-space: nowrap;
+  text-shadow: var(--logo-emboss-light), var(--logo-emboss-dark);
+}
+
+.brand-logo__line {
+  width: var(--logo-line-width);
+  height: var(--logo-line-thickness);
+  background-color: var(--logo-line-color);
+  opacity: 0.9;
+}
+
+.brand-logo--compact .brand-logo__subtitle-row {
+  display: none;
+}
+
+.brand-logo--compact-mobile .brand-logo__subtitle-row {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .brand-logo--compact-mobile .brand-logo__subtitle-row {
+    display: inline-flex;
+  }
+}
+
+/* Color/effect variants for different navbar moods */
+.brand-logo--flat-dark {
+  --logo-wordmark-color: #1b130f;
+  --logo-subtitle-color: #2b1e16;
+  --logo-line-color: rgba(37, 25, 18, 0.7);
+}
+
+.brand-logo--embossed {
+  --logo-wordmark-color: #1f130d;
+  --logo-subtitle-color: #291a12;
+  --logo-line-color: rgba(32, 20, 13, 0.72);
+  --logo-emboss-light: 0 1px 0 rgba(238, 203, 154, 0.14), 0 2px 6px rgba(18, 9, 5, 0.08);
+  --logo-emboss-dark: 0 -1px 0 rgba(15, 8, 4, 0.45), 0 -2px 6px rgba(11, 6, 3, 0.2);
+}
+
+.brand-logo--gold {
+  --logo-wordmark-color: #cfa86a;
+  --logo-subtitle-color: #bb935d;
+  --logo-line-color: rgba(191, 153, 99, 0.7);
+  --logo-emboss-light: 0 1px 0 rgba(255, 234, 201, 0.25);
+  --logo-emboss-dark: 0 -1px 0 rgba(88, 58, 29, 0.28);
+}
+
+.brand-logo--espresso {
+  --logo-wordmark-color: #25150f;
+  --logo-subtitle-color: #3a261d;
+  --logo-line-color: rgba(58, 38, 29, 0.66);
+}
+
+/* Background wrappers to reuse logo mark across themes */
+.brand-logo-bg--transparent {
+  --logo-bg: transparent;
+}
+
+.brand-logo-bg--wood {
+  --logo-bg: transparent;
+}
+
+.brand-logo-bg--lux-dark {
+  --logo-bg: linear-gradient(180deg, rgba(30, 23, 19, 0.82), rgba(14, 12, 11, 0.82));
+}
+
+.brand-logo-bg--light {
+  --logo-bg: rgba(244, 237, 227, 0.7);
+}
+
+/* Responsive presets for navbar usage */
+.brand-logo-size--desktop {
+  --logo-wordmark-size: clamp(1.9rem, 2.7vw, 2.7rem);
+  --logo-subtitle-size: clamp(0.92rem, 1.05vw, 1rem);
+  --logo-line-width: clamp(1.25rem, 3.1vw, 3rem);
+}
+
+.brand-logo-size--tablet {
+  --logo-wordmark-size: clamp(1.55rem, 2.35vw, 2.1rem);
+  --logo-subtitle-size: clamp(0.86rem, 1vw, 0.94rem);
+  --logo-line-width: clamp(1.05rem, 2.5vw, 2.2rem);
+}
+
+.brand-logo-size--mobile {
+  --logo-wordmark-size: clamp(1.25rem, 7.2vw, 1.55rem);
+  --logo-subtitle-size: clamp(0.8rem, 3.2vw, 0.88rem);
+  --logo-line-width: clamp(0.75rem, 6vw, 1.45rem);
+}
+
 /* Hide page scrollbar during hero; reveal after hero */
 html[data-hero-passed="false"] {
   scrollbar-width: none;

@@ -1,5 +1,4 @@
 "use client";
-
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
@@ -32,20 +31,23 @@ export default function Navbar() {
   return (
     <nav
       className={`fixed inset-x-0 top-0 z-50 transition-all ${
-        scrolled ? "bg-ink/95 shadow-luxury backdrop-blur-md" : "bg-transparent"
+        scrolled ? "wood-navbar shadow-luxury" : "wood-navbar"
       }`}
       aria-label="Primary"
     >
       <div className="mx-auto flex h-20 w-[96%] items-center justify-between sm:w-[95%] lg:w-[94%] xl:w-[92%]">
-        <a href="#top" className="focus-ring inline-flex h-full items-center text-ivory">
+        <a href="#top" className="focus-ring sr-only text-ivory">
+          Go to top
+        </a>
+
+        <a href="#top" className="focus-ring inline-flex items-center" aria-label="GoLa handcrafted home">
           <Image
-            src="/images/logoPref.jpeg"
-            alt="GoLa handcrafted logo"
-            width={999}
-            height={333}
-            className="h-[80%] w-auto max-w-[500px] object-contain sm:max-w-[580px]"
+            src="/images/backgroundsLogo-removebg.png"
+            alt="GoLa handcrafted"
+            width={300}
+            height={95}
+            className="h-12 w-auto object-contain sm:h-14"
             priority
-            unoptimized
           />
         </a>
 
@@ -76,7 +78,7 @@ export default function Navbar() {
 
       <div
         id="mobile-menu"
-        className={`md:hidden ${menuOpen ? "block" : "hidden"} border-t border-ivory/10 bg-ink/95`}
+        className={`md:hidden ${menuOpen ? "block" : "hidden"} wood-navbar border-t border-ivory/10`}
       >
         <ul className="mx-auto flex w-[96%] flex-col py-4 sm:w-[95%]">
           {links.map((link) => (
