@@ -41,9 +41,9 @@ export default function CollectionSection({
       insideLeather: string;
     };
     options: {
-      colors: [string, string, string, string];
-      woodCoatingColors: [string, string, string, string];
-      chainColors: [string, string, string, string];
+      colors: string[];
+      woodCoatingColors: string[];
+      chainColors: string[];
       pocketsAdds: string; // "{amount}" placeholder
       engravingAdds: string; // "{amount}" placeholder
     };

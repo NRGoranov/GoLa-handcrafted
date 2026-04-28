@@ -108,9 +108,9 @@ type SiteCopy = {
       insideLeather: string;
     };
     options: {
-      colors: [string, string, string, string];
-      woodCoatingColors: [string, string, string, string];
-      chainColors: [string, string, string, string];
+      colors: string[];
+      woodCoatingColors: string[];
+      chainColors: string[];
       pocketsAdds: string; // "{amount}" placeholder
       engravingAdds: string; // "{amount}" placeholder
     };
@@ -262,7 +262,17 @@ const dictionary: Record<Locale, SiteCopy> = {
         insideLeather: "естествена кожа (natural leather)"
       },
       options: {
-        colors: ["Black", "Ivory", "Burgundy", "Caramel"],
+        colors: [
+          "Light Beige",
+          "Olive Green",
+          "Burgundy",
+          "Teal",
+          "Dusty Pink",
+          "Black",
+          "Charcoal Grey",
+          "Coral",
+          "Cognac Brown"
+        ],
         woodCoatingColors: ["Natural", "Walnut", "Mahogany", "Ebony"],
         chainColors: ["Gold", "Silver", "Bronze", "Black"],
         pocketsAdds: "adds +EUR {amount}",
@@ -424,7 +434,7 @@ const dictionary: Record<Locale, SiteCopy> = {
         insidePockets: "Вътрешни джобове",
         engraving: "Персонално гравиране",
         woodCoatingColor: "Цвят на покритието",
-        chainColor: "Цвят на синджира"
+        chainColor: "Цвят на верижката"
       },
       values: {
         availabilityByInquiry: "Само със запитване",
@@ -433,7 +443,17 @@ const dictionary: Record<Locale, SiteCopy> = {
         insideLeather: "естествена кожа"
       },
       options: {
-        colors: ["Черно", "Айвъри", "Бордо", "Карамел"],
+        colors: [
+          "Светъл бежов",
+          "Маслинено зелено",
+          "Бордо",
+          "Петрол",
+          "Пудра розово",
+          "Черно",
+          "Графит",
+          "Корал",
+          "Коняк"
+        ],
         woodCoatingColors: ["Естествен", "Орех", "Махагон", "Абанос"],
         chainColors: ["Златен", "Сребърен", "Бронзов", "Черен"],
         pocketsAdds: "+EUR {amount}",

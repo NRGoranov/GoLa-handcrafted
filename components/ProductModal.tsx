@@ -6,9 +6,9 @@ import type { Product } from "@/lib/products";
 import ProductViewer from "./ProductViewer";
 
 type ProductCustomizationState = {
-  liningColor: 0 | 1 | 2 | 3;
-  woodCoatingColor: 0 | 1 | 2 | 3;
-  chainColor: 0 | 1 | 2 | 3;
+  liningColor: number;
+  woodCoatingColor: number;
+  chainColor: number;
   insidePockets: boolean;
   customEngraving: boolean;
 };
@@ -48,9 +48,9 @@ type ProductModalProps = {
       insideLeather: string;
     };
     options: {
-      colors: [string, string, string, string];
-      woodCoatingColors: [string, string, string, string];
-      chainColors: [string, string, string, string];
+      colors: string[];
+      woodCoatingColors: string[];
+      chainColors: string[];
       pocketsAdds: string; // "{amount}" placeholder
       engravingAdds: string; // "{amount}" placeholder
     };
@@ -66,13 +66,23 @@ type ProductModalProps = {
 export default function ProductModal({ product, onClose, copy }: ProductModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const optionsGroupId = useId();
-  const [liningColor, setLiningColor] = useState<0 | 1 | 2 | 3>(0);
-  const [woodCoatingColor, setWoodCoatingColor] = useState<0 | 1 | 2 | 3>(0);
-  const [chainColor, setChainColor] = useState<0 | 1 | 2 | 3>(0);
+  const [liningColor, setLiningColor] = useState(0);
+  const [woodCoatingColor, setWoodCoatingColor] = useState(0);
+  const [chainColor, setChainColor] = useState(0);
   const [insidePockets, setInsidePockets] = useState(false);
   const [customEngraving, setCustomEngraving] = useState(false);
 
-  const liningSwatches = ["#0b0b0b", "#f3ecdf", "#6b1f2b", "#b78b5a"] as const;
+  const liningSwatches = [
+    "#d8c3a5",
+    "#556b2f",
+    "#6b1f2b",
+    "#0f766e",
+    "#d8a7b1",
+    "#0b0b0b",
+    "#36454f",
+    "#ff7f50",
+    "#8b5a2b"
+  ] as const;
   const woodCoatingSwatches = ["#d6b88f", "#6b4a2f", "#5a2a27", "#111111"] as const;
   const chainSwatches = ["#d4af37", "#c0c0c0", "#cd7f32", "#0b0b0b"] as const;
 
@@ -235,15 +245,14 @@ export default function ProductModal({ product, onClose, copy }: ProductModalPro
                     </legend>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {copy.options.colors.map((label, index) => {
-                        const typedIndex = index as 0 | 1 | 2 | 3;
-                        const isActive = liningColor === typedIndex;
+                        const isActive = liningColor === index;
                         return (
                           <button
                             key={`${optionsGroupId}-color-${label}`}
                             type="button"
                             role="radio"
                             aria-checked={isActive}
-                            onClick={() => setLiningColor(typedIndex)}
+                            onClick={() => setLiningColor(index)}
                             className={`focus-ring grid min-h-11 grid-cols-[1fr_auto_auto] items-center gap-3 rounded-xl border px-4 py-2 text-sm ${
                               isActive
                                 ? "border-caramel bg-caramel/10 text-ivory"
@@ -254,7 +263,7 @@ export default function ProductModal({ product, onClose, copy }: ProductModalPro
                             <span
                               aria-hidden="true"
                               className="h-4 w-4 rounded-full border border-ivory/25"
-                              style={{ backgroundColor: liningSwatches[typedIndex] }}
+                              style={{ backgroundColor: liningSwatches[index] ?? "#808080" }}
                             />
                             <span
                               aria-hidden="true"
@@ -276,15 +285,14 @@ export default function ProductModal({ product, onClose, copy }: ProductModalPro
                     </legend>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {copy.options.woodCoatingColors.map((label, index) => {
-                        const typedIndex = index as 0 | 1 | 2 | 3;
-                        const isActive = woodCoatingColor === typedIndex;
+                        const isActive = woodCoatingColor === index;
                         return (
                           <button
                             key={`${optionsGroupId}-wood-${label}`}
                             type="button"
                             role="radio"
                             aria-checked={isActive}
-                            onClick={() => setWoodCoatingColor(typedIndex)}
+                            onClick={() => setWoodCoatingColor(index)}
                             className={`focus-ring grid min-h-11 grid-cols-[1fr_auto_auto] items-center gap-3 rounded-xl border px-4 py-2 text-sm ${
                               isActive
                                 ? "border-caramel bg-caramel/10 text-ivory"
@@ -295,7 +303,7 @@ export default function ProductModal({ product, onClose, copy }: ProductModalPro
                             <span
                               aria-hidden="true"
                               className="h-4 w-4 rounded-full border border-ivory/25"
-                              style={{ backgroundColor: woodCoatingSwatches[typedIndex] }}
+                              style={{ backgroundColor: woodCoatingSwatches[index] ?? "#808080" }}
                             />
                             <span
                               aria-hidden="true"
@@ -317,15 +325,14 @@ export default function ProductModal({ product, onClose, copy }: ProductModalPro
                     </legend>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {copy.options.chainColors.map((label, index) => {
-                        const typedIndex = index as 0 | 1 | 2 | 3;
-                        const isActive = chainColor === typedIndex;
+                        const isActive = chainColor === index;
                         return (
                           <button
                             key={`${optionsGroupId}-chain-${label}`}
                             type="button"
                             role="radio"
                             aria-checked={isActive}
-                            onClick={() => setChainColor(typedIndex)}
+                            onClick={() => setChainColor(index)}
                             className={`focus-ring grid min-h-11 grid-cols-[1fr_auto_auto] items-center gap-3 rounded-xl border px-4 py-2 text-sm ${
                               isActive
                                 ? "border-caramel bg-caramel/10 text-ivory"
@@ -336,7 +343,7 @@ export default function ProductModal({ product, onClose, copy }: ProductModalPro
                             <span
                               aria-hidden="true"
                               className="h-4 w-4 rounded-full border border-ivory/25"
-                              style={{ backgroundColor: chainSwatches[typedIndex] }}
+                              style={{ backgroundColor: chainSwatches[index] ?? "#808080" }}
                             />
                             <span
                               aria-hidden="true"
