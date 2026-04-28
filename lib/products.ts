@@ -9,6 +9,7 @@ export type Product = {
   thicknessCm: string;
   priceEur: number;
   pocketsAddOnEur: number;
+  engravingAddOnEur: number;
   images: string[];
   customizable: true;
 };
@@ -25,7 +26,8 @@ export const products: Product[] = [
     heightCm: "15,6",
     thicknessCm: "7,4",
     priceEur: 120,
-    pocketsAddOnEur: 10,
+    pocketsAddOnEur: 20,
+    engravingAddOnEur: 20,
     images: [
       "/images/model1/model1-1.jpeg",
       "/images/model1/model1-2.jpeg",
@@ -47,7 +49,8 @@ export const products: Product[] = [
     heightCm: "14",
     thicknessCm: "6,5",
     priceEur: 100,
-    pocketsAddOnEur: 10,
+    pocketsAddOnEur: 20,
+    engravingAddOnEur: 20,
     images: [
       "/images/model2/model2-1.jpeg",
       "/images/model2/model2-2.jpeg",
@@ -67,7 +70,8 @@ export const products: Product[] = [
     heightCm: "11,5",
     thicknessCm: "6",
     priceEur: 90,
-    pocketsAddOnEur: 10,
+    pocketsAddOnEur: 20,
+    engravingAddOnEur: 20,
     images: [
       "/images/model3/model3-1.jpeg",
       "/images/model3/model3-2.jpeg",
@@ -88,7 +92,8 @@ export const products: Product[] = [
     heightCm: "11,5",
     thicknessCm: "6",
     priceEur: 70,
-    pocketsAddOnEur: 10,
+    pocketsAddOnEur: 20,
+    engravingAddOnEur: 20,
     images: ["/images/model4/model4-1.jpeg", "/images/model4/model4-2.jpeg"],
     customizable: true
   }

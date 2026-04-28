@@ -97,6 +97,7 @@ type SiteCopy = {
       inside: string;
       liningColor: string;
       insidePockets: string;
+      engraving: string;
       woodCoatingColor: string;
       chainColor: string;
     };
@@ -111,6 +112,7 @@ type SiteCopy = {
       woodCoatingColors: [string, string, string, string];
       chainColors: [string, string, string, string];
       pocketsAdds: string; // "{amount}" placeholder
+      engravingAdds: string; // "{amount}" placeholder
     };
     aria: {
       viewDetailsFor: string; // "{name}" placeholder
@@ -249,6 +251,7 @@ const dictionary: Record<Locale, SiteCopy> = {
         inside: "Inside",
         liningColor: "Inside color",
         insidePockets: "Inside pockets",
+        engraving: "Custom engraving",
         woodCoatingColor: "Wood coating color",
         chainColor: "Chain color"
       },
@@ -262,7 +265,8 @@ const dictionary: Record<Locale, SiteCopy> = {
         colors: ["Black", "Ivory", "Burgundy", "Caramel"],
         woodCoatingColors: ["Natural", "Walnut", "Mahogany", "Ebony"],
         chainColors: ["Gold", "Silver", "Bronze", "Black"],
-        pocketsAdds: "adds +EUR {amount}"
+        pocketsAdds: "adds +EUR {amount}",
+        engravingAdds: "adds +EUR {amount}"
       },
       aria: {
         viewDetailsFor: "View details for {name}",
@@ -418,6 +422,7 @@ const dictionary: Record<Locale, SiteCopy> = {
         inside: "Отвътре",
         liningColor: "Цвят отвътре",
         insidePockets: "Вътрешни джобове",
+        engraving: "Персонално гравиране",
         woodCoatingColor: "Цвят на покритието",
         chainColor: "Цвят на синджира"
       },
@@ -431,7 +436,8 @@ const dictionary: Record<Locale, SiteCopy> = {
         colors: ["Черно", "Айвъри", "Бордо", "Карамел"],
         woodCoatingColors: ["Естествен", "Орех", "Махагон", "Абанос"],
         chainColors: ["Златен", "Сребърен", "Бронзов", "Черен"],
-        pocketsAdds: "+EUR {amount}"
+        pocketsAdds: "+EUR {amount}",
+        engravingAdds: "+EUR {amount}"
       },
       aria: {
         viewDetailsFor: "Виж детайли за {name}",

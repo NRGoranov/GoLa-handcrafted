@@ -21,6 +21,7 @@ type ProductModalProps = {
       inside: string;
       liningColor: string;
       insidePockets: string;
+      engraving: string;
       woodCoatingColor: string;
       chainColor: string;
     };
@@ -35,6 +36,7 @@ type ProductModalProps = {
       woodCoatingColors: [string, string, string, string];
       chainColors: [string, string, string, string];
       pocketsAdds: string; // "{amount}" placeholder
+      engravingAdds: string; // "{amount}" placeholder
     };
     aria: {
       modalLabel: string;
@@ -52,6 +54,7 @@ export default function ProductModal({ product, onClose, copy }: ProductModalPro
   const [woodCoatingColor, setWoodCoatingColor] = useState<0 | 1 | 2 | 3>(0);
   const [chainColor, setChainColor] = useState<0 | 1 | 2 | 3>(0);
   const [insidePockets, setInsidePockets] = useState(false);
+  const [customEngraving, setCustomEngraving] = useState(false);
 
   const liningSwatches = ["#0b0b0b", "#f3ecdf", "#6b1f2b", "#b78b5a"] as const;
   const woodCoatingSwatches = ["#d6b88f", "#6b4a2f", "#5a2a27", "#111111"] as const;
@@ -63,6 +66,7 @@ export default function ProductModal({ product, onClose, copy }: ProductModalPro
     setWoodCoatingColor(0);
     setChainColor(0);
     setInsidePockets(false);
+    setCustomEngraving(false);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -152,7 +156,10 @@ export default function ProductModal({ product, onClose, copy }: ProductModalPro
                   <div>
                     <dt className="font-medium text-caramel">{copy.labels.price}</dt>
                     <dd>
-                      EUR {product.priceEur + (insidePockets ? product.pocketsAddOnEur : 0)}
+                      EUR{" "}
+                      {product.priceEur +
+                        (insidePockets ? product.pocketsAddOnEur : 0) +
+                        (customEngraving ? product.engravingAddOnEur : 0)}
                     </dd>
                   </div>
                   <div>
@@ -304,6 +311,21 @@ export default function ProductModal({ product, onClose, copy }: ProductModalPro
                       <span className="font-medium text-caramel">{copy.labels.insidePockets}</span>{" "}
                       <span className="text-mist">
                         ({copy.options.pocketsAdds.replace("{amount}", String(product.pocketsAddOnEur))})
+                      </span>
+                    </span>
+                  </label>
+
+                  <label className="mt-3 flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 accent-[#b78b5a]"
+                      checked={customEngraving}
+                      onChange={(event) => setCustomEngraving(event.target.checked)}
+                    />
+                    <span className="text-sm text-ivory/90">
+                      <span className="font-medium text-caramel">{copy.labels.engraving}</span>{" "}
+                      <span className="text-mist">
+                        ({copy.options.engravingAdds.replace("{amount}", String(product.engravingAddOnEur))})
                       </span>
                     </span>
                   </label>

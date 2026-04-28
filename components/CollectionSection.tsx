@@ -30,6 +30,7 @@ export default function CollectionSection({
       inside: string;
       liningColor: string;
       insidePockets: string;
+      engraving: string;
       woodCoatingColor: string;
       chainColor: string;
     };
@@ -44,6 +45,7 @@ export default function CollectionSection({
       woodCoatingColors: [string, string, string, string];
       chainColors: [string, string, string, string];
       pocketsAdds: string; // "{amount}" placeholder
+      engravingAdds: string; // "{amount}" placeholder
     };
     aria: {
       viewDetailsFor: string;
