@@ -11,7 +11,15 @@ const heroRotationImages = [
   "/images/heroRotation/hero-4.jpeg"
 ];
 
-export default function Hero() {
+type HeroCopy = {
+  imageAlt: string;
+  title: string;
+  subtitle: string;
+  ctaPrimary: string;
+  ctaSecondary: string;
+};
+
+export default function Hero({ copy }: { copy: HeroCopy }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
@@ -35,7 +43,7 @@ export default function Hero() {
         >
           <Image
             src={heroRotationImages[activeIndex]}
-            alt="Handcrafted wooden and leather handbag by GoLa Handcrafted"
+            alt={copy.imageAlt}
             fill
             priority={activeIndex === 0}
             className="object-cover"
@@ -55,23 +63,23 @@ export default function Hero() {
           className="max-w-2xl space-y-6"
         >
           <h1 className="font-serif text-4xl leading-tight text-ivory sm:text-5xl md:text-6xl">
-            Handcrafted Elegance, Shaped in Wood and Leather.
+            {copy.title}
           </h1>
           <p className="max-w-xl text-sm text-ivory/85 sm:text-base">
-            Each piece formed with precision, patience, and character.
+            {copy.subtitle}
           </p>
           <div className="flex flex-wrap gap-3">
             <a
               href="#inquiry"
               className="focus-ring inline-flex min-h-11 items-center rounded-full bg-caramel px-6 py-3 text-sm font-medium text-ink transition hover:bg-[#c99d6b]"
             >
-              Request a Piece
+              {copy.ctaPrimary}
             </a>
             <a
               href="#collection"
               className="focus-ring inline-flex min-h-11 items-center rounded-full border border-ivory/50 px-6 py-3 text-sm text-ivory transition hover:border-caramel hover:text-caramel"
             >
-              Explore Collection
+              {copy.ctaSecondary}
             </a>
           </div>
         </motion.div>

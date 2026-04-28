@@ -84,7 +84,7 @@ export const products: Product[] = [
     heightCm: "11,5",
     thicknessCm: "6",
     priceEur: 70,
-    images: ["/images/model4/model4-1.jpeg","/images/model4/model4-2.jpeg"],
+    images: ["/images/model4/model4-1.jpeg", "/images/model4/model4-2.jpeg"],
     customizable: true
   }
 ];

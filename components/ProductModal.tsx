@@ -8,9 +8,32 @@ import ProductViewer from "./ProductViewer";
 type ProductModalProps = {
   product: Product | null;
   onClose: () => void;
+  copy: {
+    close: string;
+    requestThisPiece: string;
+    labels: {
+      model: string;
+      dimensions: string;
+      dimensionsHint: string;
+      price: string;
+      availability: string;
+      customization: string;
+    };
+    values: {
+      availabilityByInquiry: string;
+      customizationYes: string;
+      customizationNo: string;
+    };
+    aria: {
+      modalLabel: string;
+      viewImage: string;
+      viewNamedImage: string;
+      thumbnail: string;
+    };
+  };
 };
 
-export default function ProductModal({ product, onClose }: ProductModalProps) {
+export default function ProductModal({ product, onClose, copy }: ProductModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,7 +80,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
           onClick={onClose}
           aria-modal="true"
           role="dialog"
-          aria-label={`${product.name} details`}
+          aria-label={copy.aria.modalLabel.replace("{name}", product.name)}
         >
           <motion.div
             ref={modalRef}
@@ -75,39 +98,43 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                 onClick={onClose}
                 className="focus-ring rounded-full border border-ivory/20 px-3 py-1.5 text-sm text-ivory"
               >
-                Close
+                {copy.close}
               </button>
             </div>
 
             <div className="grid gap-7 md:grid-cols-2">
-              <ProductViewer name={product.name} images={product.images} />
+              <ProductViewer
+                name={product.name}
+                images={product.images}
+                copy={{ aria: copy.aria }}
+              />
               <div className="space-y-5">
                 <p className="text-mist">{product.description}</p>
                 <dl className="space-y-2 text-sm text-ivory/90">
                   <div>
-                    <dt className="font-medium text-caramel">Model</dt>
+                    <dt className="font-medium text-caramel">{copy.labels.model}</dt>
                     <dd>{product.model}</dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-caramel">Dimensions</dt>
+                    <dt className="font-medium text-caramel">{copy.labels.dimensions}</dt>
                     <dd>
                       <span className="block text-xs uppercase tracking-[0.14em] text-mist">
-                        W x H x T (cm)
+                        {copy.labels.dimensionsHint}
                       </span>
                       {product.dimensions}
                     </dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-caramel">Price</dt>
+                    <dt className="font-medium text-caramel">{copy.labels.price}</dt>
                     <dd>EUR {product.priceEur}</dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-caramel">Availability</dt>
-                    <dd>Available by inquiry</dd>
+                    <dt className="font-medium text-caramel">{copy.labels.availability}</dt>
+                    <dd>{copy.values.availabilityByInquiry}</dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-caramel">Customization</dt>
-                    <dd>{product.customizable ? "Yes - made to request" : "No"}</dd>
+                    <dt className="font-medium text-caramel">{copy.labels.customization}</dt>
+                    <dd>{product.customizable ? copy.values.customizationYes : copy.values.customizationNo}</dd>
                   </div>
                 </dl>
                 <a
@@ -115,7 +142,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                   onClick={onClose}
                   className="focus-ring inline-flex min-h-11 items-center rounded-full bg-caramel px-5 py-2.5 text-sm font-medium text-ink"
                 >
-                  Request this piece
+                  {copy.requestThisPiece}
                 </a>
               </div>
             </div>

@@ -5,25 +5,49 @@ import SectionHeading from "./SectionHeading";
 
 type InquiryState = "idle" | "loading" | "success" | "error";
 
-const inquiryTypes = [
-  "Availability",
-  "Custom Request",
-  "Delivery Question",
-  "Personalization",
-  "General"
-] as const;
+type InquiryCopy = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  note: string;
+  statusAria: string;
+  importantTitle: string;
+  formNotActive: string;
+  or: string;
+  fields: {
+    name: string;
+    email: string;
+    contactMethod: string;
+    contactPlaceholder: string;
+    inquiryType: string;
+    locationOptional: string;
+    preferredSizeOptional: string;
+    message: string;
+    requiredMark: string;
+  };
+  inquiryTypes: {
+    availability: string;
+    customRequest: string;
+    deliveryQuestion: string;
+    personalization: string;
+    general: string;
+  };
+  submitDisabled: string;
+  errors: { submitFailed: string; generic: string };
+  success: string;
+};
 
 const defaultForm = {
   name: "",
   email: "",
   contactMethod: "",
-  inquiryType: "Availability",
+  inquiryType: "availability",
   message: "",
   location: "",
   preferredSize: ""
 };
 
-export default function InquirySection() {
+export default function InquirySection({ copy }: { copy: InquiryCopy }) {
   const [form, setForm] = useState(defaultForm);
   const [status, setStatus] = useState<InquiryState>("idle");
   const [feedback, setFeedback] = useState("");
@@ -37,20 +61,23 @@ export default function InquirySection() {
       const response = await fetch("/api/inquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
+        body: JSON.stringify({
+          ...form,
+          inquiryType: copy.inquiryTypes[form.inquiryType as keyof InquiryCopy["inquiryTypes"]] ?? form.inquiryType
+        })
       });
 
       const result = (await response.json()) as { ok: boolean; message: string };
       if (!response.ok || !result.ok) {
-        throw new Error(result.message || "Unable to submit inquiry.");
+        throw new Error(result.message || copy.errors.submitFailed);
       }
 
       setStatus("success");
-      setFeedback("Thank you. Your inquiry has been received.");
+      setFeedback(copy.success);
       setForm(defaultForm);
     } catch (error) {
       setStatus("error");
-      setFeedback(error instanceof Error ? error.message : "Something went wrong.");
+      setFeedback(error instanceof Error ? error.message : copy.errors.generic);
     }
   };
 
@@ -59,12 +86,12 @@ export default function InquirySection() {
       <div className="container-luxury grid gap-10 md:grid-cols-2">
         <div>
           <SectionHeading
-            eyebrow="Inquiry"
-            title="Begin Your Request"
-            description="Share your preferences and we will respond with availability, lead time, and bespoke possibilities."
+            eyebrow={copy.eyebrow}
+            title={copy.title}
+            description={copy.description}
           />
           <p className="text-sm text-mist">
-            This studio works by inquiry only. Each response is tailored to your request.
+            {copy.note}
           </p>
         </div>
 
@@ -72,11 +99,11 @@ export default function InquirySection() {
           <div
             className="rounded-xl border border-caramel/50 bg-caramel/10 px-4 py-3 text-sm text-ivory"
             role="note"
-            aria-label="Inquiry form status notice"
+            aria-label={copy.statusAria}
           >
-            <p className="font-medium text-caramel">Important</p>
+            <p className="font-medium text-caramel">{copy.importantTitle}</p>
             <p className="mt-1 text-ivory/90">
-              The website form is not active yet. Please contact us on WhatsApp at{" "}
+              {copy.formNotActive}{" "}
               <a
                 href="https://wa.me/359887509906"
                 target="_blank"
@@ -85,7 +112,8 @@ export default function InquirySection() {
               >
                 +359887509906
               </a>
-              {" "}or{" "}
+              {" "}
+              {copy.or}{" "}
               <a
                 href="https://wa.me/359887297480"
                 target="_blank"
@@ -98,7 +126,7 @@ export default function InquirySection() {
             </p>
           </div>
 
-          <Field label="Name" required>
+          <Field label={copy.fields.name} required requiredMark={copy.fields.requiredMark}>
             <input
               className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
               name="name"
@@ -109,7 +137,7 @@ export default function InquirySection() {
             />
           </Field>
 
-          <Field label="Email" required>
+          <Field label={copy.fields.email} required requiredMark={copy.fields.requiredMark}>
             <input
               className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
               name="email"
@@ -121,11 +149,11 @@ export default function InquirySection() {
             />
           </Field>
 
-          <Field label="Contact method" required>
+          <Field label={copy.fields.contactMethod} required requiredMark={copy.fields.requiredMark}>
             <input
               className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
               name="contactMethod"
-              placeholder="Email, WhatsApp, Phone..."
+              placeholder={copy.fields.contactPlaceholder}
               required
               value={form.contactMethod}
               onChange={(event) =>
@@ -134,7 +162,7 @@ export default function InquirySection() {
             />
           </Field>
 
-          <Field label="Inquiry type" required>
+          <Field label={copy.fields.inquiryType} required requiredMark={copy.fields.requiredMark}>
             <select
               className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
               name="inquiryType"
@@ -142,16 +170,26 @@ export default function InquirySection() {
               value={form.inquiryType}
               onChange={(event) => setForm((prev) => ({ ...prev, inquiryType: event.target.value }))}
             >
-              {inquiryTypes.map((item) => (
-                <option key={item} value={item} className="bg-ink text-ivory">
-                  {item}
-                </option>
-              ))}
+              <option value="availability" className="bg-ink text-ivory">
+                {copy.inquiryTypes.availability}
+              </option>
+              <option value="customRequest" className="bg-ink text-ivory">
+                {copy.inquiryTypes.customRequest}
+              </option>
+              <option value="deliveryQuestion" className="bg-ink text-ivory">
+                {copy.inquiryTypes.deliveryQuestion}
+              </option>
+              <option value="personalization" className="bg-ink text-ivory">
+                {copy.inquiryTypes.personalization}
+              </option>
+              <option value="general" className="bg-ink text-ivory">
+                {copy.inquiryTypes.general}
+              </option>
             </select>
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Location (optional)">
+            <Field label={copy.fields.locationOptional} requiredMark={copy.fields.requiredMark}>
               <input
                 className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
                 name="location"
@@ -159,7 +197,7 @@ export default function InquirySection() {
                 onChange={(event) => setForm((prev) => ({ ...prev, location: event.target.value }))}
               />
             </Field>
-            <Field label="Preferred size (optional)">
+            <Field label={copy.fields.preferredSizeOptional} requiredMark={copy.fields.requiredMark}>
               <input
                 className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
                 name="preferredSize"
@@ -171,7 +209,7 @@ export default function InquirySection() {
             </Field>
           </div>
 
-          <Field label="Message" required>
+          <Field label={copy.fields.message} required requiredMark={copy.fields.requiredMark}>
             <textarea
               className="focus-ring min-h-28 w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
               name="message"
@@ -187,7 +225,7 @@ export default function InquirySection() {
             aria-disabled="true"
             className="focus-ring inline-flex min-h-11 items-center rounded-full bg-caramel/55 px-6 py-3 text-sm font-medium text-ink/80 disabled:cursor-not-allowed disabled:opacity-90"
           >
-            Form Temporarily Unavailable
+            {copy.submitDisabled}
           </button>
 
           {feedback ? (
@@ -208,17 +246,19 @@ export default function InquirySection() {
 function Field({
   label,
   required,
+  requiredMark,
   children
 }: {
   label: string;
   required?: boolean;
+  requiredMark: string;
   children: React.ReactNode;
 }) {
   return (
     <label className="block space-y-1.5">
       <span className="text-xs uppercase tracking-[0.16em] text-mist">
         {label}
-        {required ? " *" : ""}
+        {required ? ` ${requiredMark}` : ""}
       </span>
       {children}
     </label>

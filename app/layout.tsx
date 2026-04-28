@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import { cookies } from "next/headers";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -21,27 +22,44 @@ const cormorantGaramond = Cormorant_Garamond({
   weight: ["400", "500"]
 });
 
-const siteUrl = "https://gola-handcrafted.vercel.app";
-const shareTitle = "GoLa Handcrafted | Wooden & Leather Handbags";
+const siteUrl = "https://www.gola-handcrafted.eu";
+const shareTitle = "Gola Handcrafted | Premium Wood & Leather Handbags";
 const shareDescription =
-  "Handcrafted wooden and leather handbags with timeless character. Explore limited pieces or request a custom creation.";
-const shareImage = "/images/heroRotation/hero-1.jpg";
+  "Gola Handcrafted creates premium handcrafted handbags combining natural wood, leather, and refined artisan design for distinctive, elegant everyday accessories.";
+const shareImage = "/images/logo.png";
 
 export const metadata: Metadata = {
-  title: shareTitle,
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: shareTitle,
+    template: "%s | Gola Handcrafted"
+  },
   description: shareDescription,
   keywords: [
-    "handcrafted luxury bags",
-    "wooden leather handbags",
-    "custom artisan bags",
-    "bespoke handbag"
+    "handcrafted handbags",
+    "wooden handbags",
+    "leather handbags",
+    "handcrafted leather bags",
+    "luxury handcrafted handbags",
+    "artisan handbags",
+    "premium handmade bags",
+    "wood and leather handbags",
+    "unique designer handbags",
+    "handmade luxury accessories"
   ],
+  authors: [{ name: "Gola Handcrafted" }],
+  creator: "Gola Handcrafted",
+  publisher: "Gola Handcrafted",
+  category: "fashion accessories",
+  alternates: {
+    canonical: "/"
+  },
   openGraph: {
     title: shareTitle,
     description: shareDescription,
-    url: siteUrl,
-    siteName: "GoLa Handcrafted",
-    images: [{ url: shareImage, width: 1200, height: 630, alt: "GoLa Handcrafted share preview" }],
+    url: "/",
+    siteName: "Gola Handcrafted",
+    images: [{ url: shareImage, width: 1200, height: 630, alt: "Gola Handcrafted share preview" }],
     locale: "en_US",
     type: "website"
   },
@@ -50,6 +68,17 @@ export const metadata: Metadata = {
     title: shareTitle,
     description: shareDescription,
     images: [shareImage]
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1
+    }
   },
   icons: {
     icon: [
@@ -60,26 +89,47 @@ export const metadata: Metadata = {
     apple: [{ url: "/images/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
     shortcut: ["/images/favicon.ico"]
   },
-  manifest: "/images/site.webmanifest",
-  metadataBase: new URL(siteUrl)
+  manifest: "/images/site.webmanifest"
 };
 
-const jsonLd = {
+// TODO: Add Google Search Console and Bing Webmaster verification tokens when available.
+// TODO: Add public business email, location, and social profile links when available.
+const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "GoLa Handcrafted",
+  "@id": `${siteUrl}/#organization`,
+  name: "Gola Handcrafted",
   url: siteUrl,
   logo: `${siteUrl}/images/logo.png`,
-  description:
-    "Artisan studio creating handcrafted wooden and leather handbags, including custom and personalized requests.",
-  makesOffer: {
-    "@type": "Offer",
-    itemOffered: {
-      "@type": "Product",
-      name: "Handcrafted Wooden and Leather Handbags",
-      category: "Luxury Accessories"
+  description: shareDescription,
+  contactPoint: [
+    {
+      "@type": "ContactPoint",
+      contactType: "customer service",
+      telephone: "+359887509906",
+      areaServed: "EU",
+      availableLanguage: "en"
+    },
+    {
+      "@type": "ContactPoint",
+      contactType: "customer service",
+      telephone: "+359887297480",
+      areaServed: "EU",
+      availableLanguage: "en"
     }
-  }
+  ]
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${siteUrl}/#website`,
+  url: siteUrl,
+  name: "Gola Handcrafted",
+  publisher: {
+    "@id": `${siteUrl}/#organization`
+  },
+  inLanguage: "en"
 };
 
 export default function RootLayout({
@@ -87,16 +137,22 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = cookies().get("site_locale")?.value === "bg" ? "bg" : "en";
+
   return (
     <html
-      lang="en"
+      lang={locale}
       className={`${playfair.variable} ${manrope.variable} ${cormorantGaramond.variable}`}
     >
       <body className="bg-ink text-ivory antialiased">
         <div id="google_translate_element" className="hidden" />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
         {/* <TranslatePrompt /> */}
         {children}

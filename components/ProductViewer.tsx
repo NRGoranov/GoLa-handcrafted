@@ -6,9 +6,16 @@ import Image from "next/image";
 type ProductViewerProps = {
   name: string;
   images: string[];
+  copy: {
+    aria: {
+      viewImage: string;
+      viewNamedImage: string;
+      thumbnail: string;
+    };
+  };
 };
 
-export default function ProductViewer({ name, images }: ProductViewerProps) {
+export default function ProductViewer({ name, images, copy }: ProductViewerProps) {
   const [activeImage, setActiveImage] = useState(images[0]);
 
   return (
@@ -17,7 +24,7 @@ export default function ProductViewer({ name, images }: ProductViewerProps) {
       <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-black/40">
         <Image
           src={activeImage}
-          alt={`${name} handbag view`}
+          alt={copy.aria.viewNamedImage.replace("{name}", name)}
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, 45vw"
@@ -32,9 +39,15 @@ export default function ProductViewer({ name, images }: ProductViewerProps) {
               activeImage === image ? "border-caramel" : "border-ivory/20"
             }`}
             onClick={() => setActiveImage(image)}
-            aria-label={`View ${name} image`}
+            aria-label={copy.aria.viewImage.replace("{name}", name)}
           >
-            <Image src={image} alt={`${name} thumbnail`} fill className="object-cover" sizes="120px" />
+            <Image
+              src={image}
+              alt={copy.aria.thumbnail.replace("{name}", name)}
+              fill
+              className="object-cover"
+              sizes="120px"
+            />
           </button>
         ))}
       </div>
