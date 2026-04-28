@@ -5,6 +5,22 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { Product } from "@/lib/products";
 import ProductViewer from "./ProductViewer";
 
+type ProductCustomizationState = {
+  liningColor: 0 | 1 | 2 | 3;
+  woodCoatingColor: 0 | 1 | 2 | 3;
+  chainColor: 0 | 1 | 2 | 3;
+  insidePockets: boolean;
+  customEngraving: boolean;
+};
+
+const defaultCustomizationState: ProductCustomizationState = {
+  liningColor: 0,
+  woodCoatingColor: 0,
+  chainColor: 0,
+  insidePockets: false,
+  customEngraving: false
+};
+
 type ProductModalProps = {
   product: Product | null;
   onClose: () => void;
@@ -61,12 +77,35 @@ export default function ProductModal({ product, onClose, copy }: ProductModalPro
   const chainSwatches = ["#d4af37", "#c0c0c0", "#cd7f32", "#0b0b0b"] as const;
 
   useEffect(() => {
-    if (!product) return;
-    setLiningColor(0);
-    setWoodCoatingColor(0);
-    setChainColor(0);
-    setInsidePockets(false);
-    setCustomEngraving(false);
+    if (!product) {
+      return;
+    }
+
+    const storageKey = `product-customization-${product.id}`;
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) {
+        setLiningColor(defaultCustomizationState.liningColor);
+        setWoodCoatingColor(defaultCustomizationState.woodCoatingColor);
+        setChainColor(defaultCustomizationState.chainColor);
+        setInsidePockets(defaultCustomizationState.insidePockets);
+        setCustomEngraving(defaultCustomizationState.customEngraving);
+      } else {
+        const parsed = JSON.parse(raw) as Partial<ProductCustomizationState>;
+        setLiningColor(parsed.liningColor ?? defaultCustomizationState.liningColor);
+        setWoodCoatingColor(parsed.woodCoatingColor ?? defaultCustomizationState.woodCoatingColor);
+        setChainColor(parsed.chainColor ?? defaultCustomizationState.chainColor);
+        setInsidePockets(parsed.insidePockets ?? defaultCustomizationState.insidePockets);
+        setCustomEngraving(parsed.customEngraving ?? defaultCustomizationState.customEngraving);
+      }
+    } catch {
+      setLiningColor(defaultCustomizationState.liningColor);
+      setWoodCoatingColor(defaultCustomizationState.woodCoatingColor);
+      setChainColor(defaultCustomizationState.chainColor);
+      setInsidePockets(defaultCustomizationState.insidePockets);
+      setCustomEngraving(defaultCustomizationState.customEngraving);
+    }
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -97,6 +136,19 @@ export default function ProductModal({ product, onClose, copy }: ProductModalPro
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [product, onClose]);
+
+  useEffect(() => {
+    if (!product) return;
+    const storageKey = `product-customization-${product.id}`;
+    const payload: ProductCustomizationState = {
+      liningColor,
+      woodCoatingColor,
+      chainColor,
+      insidePockets,
+      customEngraving
+    };
+    window.localStorage.setItem(storageKey, JSON.stringify(payload));
+  }, [product, liningColor, woodCoatingColor, chainColor, insidePockets, customEngraving]);
 
   return (
     <AnimatePresence>
