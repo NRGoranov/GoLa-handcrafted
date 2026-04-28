@@ -27,11 +27,23 @@ export default function CollectionSection({
       price: string;
       availability: string;
       customization: string;
+      inside: string;
+      liningColor: string;
+      insidePockets: string;
+      woodCoatingColor: string;
+      chainColor: string;
     };
     values: {
       availabilityByInquiry: string;
       customizationYes: string;
       customizationNo: string;
+      insideLeather: string;
+    };
+    options: {
+      colors: [string, string, string, string];
+      woodCoatingColors: [string, string, string, string];
+      chainColors: [string, string, string, string];
+      pocketsAdds: string; // "{amount}" placeholder
     };
     aria: {
       viewDetailsFor: string;

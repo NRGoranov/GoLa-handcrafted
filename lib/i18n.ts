@@ -34,6 +34,10 @@ type SiteCopy = {
     eyebrow: string;
     title: string;
     description: string;
+    highlight: {
+      title: string;
+      body: string;
+    };
     cards: {
       sizingTitle: string;
       sizingBody: string;
@@ -90,11 +94,23 @@ type SiteCopy = {
       price: string;
       availability: string;
       customization: string;
+      inside: string;
+      liningColor: string;
+      insidePockets: string;
+      woodCoatingColor: string;
+      chainColor: string;
     };
     values: {
       availabilityByInquiry: string;
       customizationYes: string;
       customizationNo: string;
+      insideLeather: string;
+    };
+    options: {
+      colors: [string, string, string, string];
+      woodCoatingColors: [string, string, string, string];
+      chainColors: [string, string, string, string];
+      pocketsAdds: string; // "{amount}" placeholder
     };
     aria: {
       viewDetailsFor: string; // "{name}" placeholder
@@ -166,12 +182,17 @@ const dictionary: Record<Locale, SiteCopy> = {
       eyebrow: "Atelier",
       title: "Made for you",
       description:
-        "A consultation-led approach that lets you shape a piece around your routine, style, and intent.",
+        "A consultation-led approach that lets you shape a piece around your routine, style, and intent — including bag customisation and personal engravings on request.",
+      highlight: {
+        title: "Customisation & engraving (on request)",
+        body: "You can customise the bag and request a personal engraving. Mention your idea in the inquiry and we’ll confirm what’s possible."
+      },
       cards: {
         sizingTitle: "Custom sizing",
         sizingBody: "Choose proportions and carry options that fit your daily essentials.",
         personalizationTitle: "Personalization",
-        personalizationBody: "Refine finishes, tones, and details for a distinctly personal feel.",
+        personalizationBody:
+          "Refine finishes, tones, and details for a distinctly personal feel. Personal engravings are available on request.",
         bespokeTitle: "Bespoke requests",
         bespokeBody: "Collaborate with the atelier on one-off concepts and special commissions."
       }
@@ -224,12 +245,24 @@ const dictionary: Record<Locale, SiteCopy> = {
         dimensionsHint: "W x H x T (cm)",
         price: "Price",
         availability: "Availability",
-        customization: "Customization"
+        customization: "Customization",
+        inside: "Inside",
+        liningColor: "Inside color",
+        insidePockets: "Inside pockets",
+        woodCoatingColor: "Wood coating color",
+        chainColor: "Chain color"
       },
       values: {
         availabilityByInquiry: "Available by inquiry",
         customizationYes: "Yes - made to request",
-        customizationNo: "No"
+        customizationNo: "No",
+        insideLeather: "естествена кожа (natural leather)"
+      },
+      options: {
+        colors: ["Black", "Ivory", "Burgundy", "Caramel"],
+        woodCoatingColors: ["Natural", "Walnut", "Mahogany", "Ebony"],
+        chainColors: ["Gold", "Silver", "Bronze", "Black"],
+        pocketsAdds: "adds +EUR {amount}"
       },
       aria: {
         viewDetailsFor: "View details for {name}",
@@ -315,12 +348,17 @@ const dictionary: Record<Locale, SiteCopy> = {
       eyebrow: "Ателие",
       title: "Създадено за теб",
       description:
-        "Работим чрез консултация — така оформяш чантата спрямо ежедневието и стила си.",
+        "Работим чрез консултация — така оформяш чантата спрямо ежедневието и стила си, с възможност за персонализация и лично гравиране при запитване.",
+      highlight: {
+        title: "Персонализация и гравиране (при запитване)",
+        body: "Можеш да персонализираш чантата и да заявиш лично гравиране. Опиши желанието си в запитването и ще потвърдим възможностите."
+      },
       cards: {
         sizingTitle: "Размер по мярка",
         sizingBody: "Избери пропорции и начин на носене, които пасват на вещите ти.",
         personalizationTitle: "Детайли",
-        personalizationBody: "Избери тонове, финиши и елементи, които да отразят твоя стил.",
+        personalizationBody:
+          "Избери тонове, финиши и елементи, които да отразят твоя стил. Лично гравиране е възможно при запитване.",
         bespokeTitle: "Индивидуални идеи",
         bespokeBody: "Работи директно с ателието по единични концепции и специални поръчки."
       }
@@ -376,12 +414,24 @@ const dictionary: Record<Locale, SiteCopy> = {
         dimensionsHint: "Ш x В x Д (см)",
         price: "Цена",
         availability: "Наличност",
-        customization: "Персонализация"
+        customization: "Персонализация",
+        inside: "Отвътре",
+        liningColor: "Цвят отвътре",
+        insidePockets: "Вътрешни джобове",
+        woodCoatingColor: "Цвят на покритието",
+        chainColor: "Цвят на синджира"
       },
       values: {
         availabilityByInquiry: "Само със запитване",
         customizationYes: "Да — изработка по заявка",
-        customizationNo: "Не"
+        customizationNo: "Не",
+        insideLeather: "естествена кожа"
+      },
+      options: {
+        colors: ["Черно", "Айвъри", "Бордо", "Карамел"],
+        woodCoatingColors: ["Естествен", "Орех", "Махагон", "Абанос"],
+        chainColors: ["Златен", "Сребърен", "Бронзов", "Черен"],
+        pocketsAdds: "+EUR {amount}"
       },
       aria: {
         viewDetailsFor: "Виж детайли за {name}",

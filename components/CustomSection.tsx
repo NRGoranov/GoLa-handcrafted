@@ -4,6 +4,10 @@ type CustomCopy = {
   eyebrow: string;
   title: string;
   description: string;
+  highlight: {
+    title: string;
+    body: string;
+  };
   cards: {
     sizingTitle: string;
     sizingBody: string;
@@ -22,6 +26,17 @@ export default function CustomSection({ copy }: { copy: CustomCopy }) {
         title={copy.title}
         description={copy.description}
       />
+
+      <div
+        className="mb-6 rounded-2xl border border-caramel/40 bg-caramel/10 p-5"
+        role="note"
+        aria-label={copy.highlight.title}
+      >
+        <p className="text-xs uppercase tracking-[0.16em] text-caramel">
+          {copy.highlight.title}
+        </p>
+        <p className="mt-2 text-sm text-ivory/90">{copy.highlight.body}</p>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <article className="rounded-2xl border border-ivory/10 bg-[#111] p-5">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Product } from "@/lib/products";
 import ProductViewer from "./ProductViewer";
@@ -18,11 +18,23 @@ type ProductModalProps = {
       price: string;
       availability: string;
       customization: string;
+      inside: string;
+      liningColor: string;
+      insidePockets: string;
+      woodCoatingColor: string;
+      chainColor: string;
     };
     values: {
       availabilityByInquiry: string;
       customizationYes: string;
       customizationNo: string;
+      insideLeather: string;
+    };
+    options: {
+      colors: [string, string, string, string];
+      woodCoatingColors: [string, string, string, string];
+      chainColors: [string, string, string, string];
+      pocketsAdds: string; // "{amount}" placeholder
     };
     aria: {
       modalLabel: string;
@@ -35,9 +47,22 @@ type ProductModalProps = {
 
 export default function ProductModal({ product, onClose, copy }: ProductModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const optionsGroupId = useId();
+  const [liningColor, setLiningColor] = useState<0 | 1 | 2 | 3>(0);
+  const [woodCoatingColor, setWoodCoatingColor] = useState<0 | 1 | 2 | 3>(0);
+  const [chainColor, setChainColor] = useState<0 | 1 | 2 | 3>(0);
+  const [insidePockets, setInsidePockets] = useState(false);
+
+  const liningSwatches = ["#0b0b0b", "#f3ecdf", "#6b1f2b", "#b78b5a"] as const;
+  const woodCoatingSwatches = ["#d6b88f", "#6b4a2f", "#5a2a27", "#111111"] as const;
+  const chainSwatches = ["#d4af37", "#c0c0c0", "#cd7f32", "#0b0b0b"] as const;
 
   useEffect(() => {
     if (!product) return;
+    setLiningColor(0);
+    setWoodCoatingColor(0);
+    setChainColor(0);
+    setInsidePockets(false);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -126,7 +151,9 @@ export default function ProductModal({ product, onClose, copy }: ProductModalPro
                   </div>
                   <div>
                     <dt className="font-medium text-caramel">{copy.labels.price}</dt>
-                    <dd>EUR {product.priceEur}</dd>
+                    <dd>
+                      EUR {product.priceEur + (insidePockets ? product.pocketsAddOnEur : 0)}
+                    </dd>
                   </div>
                   <div>
                     <dt className="font-medium text-caramel">{copy.labels.availability}</dt>
@@ -136,7 +163,152 @@ export default function ProductModal({ product, onClose, copy }: ProductModalPro
                     <dt className="font-medium text-caramel">{copy.labels.customization}</dt>
                     <dd>{product.customizable ? copy.values.customizationYes : copy.values.customizationNo}</dd>
                   </div>
+                  <div>
+                    <dt className="font-medium text-caramel">{copy.labels.inside}</dt>
+                    <dd>{copy.values.insideLeather}</dd>
+                  </div>
                 </dl>
+
+                <div className="rounded-2xl border border-ivory/10 bg-black/20 p-4">
+                  <fieldset className="space-y-3">
+                    <legend className="text-xs uppercase tracking-[0.16em] text-mist">
+                      {copy.labels.liningColor}
+                    </legend>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {copy.options.colors.map((label, index) => {
+                        const typedIndex = index as 0 | 1 | 2 | 3;
+                        const isActive = liningColor === typedIndex;
+                        return (
+                          <button
+                            key={`${optionsGroupId}-color-${label}`}
+                            type="button"
+                            role="radio"
+                            aria-checked={isActive}
+                            onClick={() => setLiningColor(typedIndex)}
+                            className={`focus-ring grid min-h-11 grid-cols-[1fr_auto_auto] items-center gap-3 rounded-xl border px-4 py-2 text-sm ${
+                              isActive
+                                ? "border-caramel bg-caramel/10 text-ivory"
+                                : "border-ivory/15 bg-transparent text-ivory/85 hover:border-ivory/30"
+                            }`}
+                          >
+                            <span className="min-w-0 truncate text-left">{label}</span>
+                            <span
+                              aria-hidden="true"
+                              className="h-4 w-4 rounded-full border border-ivory/25"
+                              style={{ backgroundColor: liningSwatches[typedIndex] }}
+                            />
+                            <span
+                              aria-hidden="true"
+                              className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${
+                                isActive ? "border-caramel bg-caramel text-ink" : "border-ivory/30"
+                              }`}
+                            >
+                              {isActive ? "✓" : ""}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+
+                  <fieldset className="mt-4 space-y-3">
+                    <legend className="text-xs uppercase tracking-[0.16em] text-mist">
+                      {copy.labels.woodCoatingColor}
+                    </legend>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {copy.options.woodCoatingColors.map((label, index) => {
+                        const typedIndex = index as 0 | 1 | 2 | 3;
+                        const isActive = woodCoatingColor === typedIndex;
+                        return (
+                          <button
+                            key={`${optionsGroupId}-wood-${label}`}
+                            type="button"
+                            role="radio"
+                            aria-checked={isActive}
+                            onClick={() => setWoodCoatingColor(typedIndex)}
+                            className={`focus-ring grid min-h-11 grid-cols-[1fr_auto_auto] items-center gap-3 rounded-xl border px-4 py-2 text-sm ${
+                              isActive
+                                ? "border-caramel bg-caramel/10 text-ivory"
+                                : "border-ivory/15 bg-transparent text-ivory/85 hover:border-ivory/30"
+                            }`}
+                          >
+                            <span className="min-w-0 truncate text-left">{label}</span>
+                            <span
+                              aria-hidden="true"
+                              className="h-4 w-4 rounded-full border border-ivory/25"
+                              style={{ backgroundColor: woodCoatingSwatches[typedIndex] }}
+                            />
+                            <span
+                              aria-hidden="true"
+                              className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${
+                                isActive ? "border-caramel bg-caramel text-ink" : "border-ivory/30"
+                              }`}
+                            >
+                              {isActive ? "✓" : ""}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+
+                  <fieldset className="mt-4 space-y-3">
+                    <legend className="text-xs uppercase tracking-[0.16em] text-mist">
+                      {copy.labels.chainColor}
+                    </legend>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {copy.options.chainColors.map((label, index) => {
+                        const typedIndex = index as 0 | 1 | 2 | 3;
+                        const isActive = chainColor === typedIndex;
+                        return (
+                          <button
+                            key={`${optionsGroupId}-chain-${label}`}
+                            type="button"
+                            role="radio"
+                            aria-checked={isActive}
+                            onClick={() => setChainColor(typedIndex)}
+                            className={`focus-ring grid min-h-11 grid-cols-[1fr_auto_auto] items-center gap-3 rounded-xl border px-4 py-2 text-sm ${
+                              isActive
+                                ? "border-caramel bg-caramel/10 text-ivory"
+                                : "border-ivory/15 bg-transparent text-ivory/85 hover:border-ivory/30"
+                            }`}
+                          >
+                            <span className="min-w-0 truncate text-left">{label}</span>
+                            <span
+                              aria-hidden="true"
+                              className="h-4 w-4 rounded-full border border-ivory/25"
+                              style={{ backgroundColor: chainSwatches[typedIndex] }}
+                            />
+                            <span
+                              aria-hidden="true"
+                              className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${
+                                isActive ? "border-caramel bg-caramel text-ink" : "border-ivory/30"
+                              }`}
+                            >
+                              {isActive ? "✓" : ""}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+
+                  <label className="mt-4 flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 accent-[#b78b5a]"
+                      checked={insidePockets}
+                      onChange={(event) => setInsidePockets(event.target.checked)}
+                    />
+                    <span className="text-sm text-ivory/90">
+                      <span className="font-medium text-caramel">{copy.labels.insidePockets}</span>{" "}
+                      <span className="text-mist">
+                        ({copy.options.pocketsAdds.replace("{amount}", String(product.pocketsAddOnEur))})
+                      </span>
+                    </span>
+                  </label>
+                </div>
+
                 <a
                   href="#inquiry"
                   onClick={onClose}
