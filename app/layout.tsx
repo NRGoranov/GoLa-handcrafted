@@ -4,19 +4,19 @@ import "./globals.css";
 import { cookies } from "next/headers";
 
 const playfair = Playfair_Display({
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext", "cyrillic"],
   variable: "--font-playfair",
   display: "swap"
 });
 
 const manrope = Manrope({
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext", "cyrillic"],
   variable: "--font-manrope",
   display: "swap"
 });
 
 const cormorantGaramond = Cormorant_Garamond({
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext", "cyrillic"],
   variable: "--font-cormorant",
   display: "swap",
   weight: ["400", "500"]

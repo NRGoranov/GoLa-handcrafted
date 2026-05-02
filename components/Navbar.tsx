@@ -4,7 +4,13 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type NavbarCopy = {
-  links: { collection: string; craftsmanship: string; custom: string; inquiry: string };
+  links: {
+    collection: string;
+    giftBox: string;
+    craftsmanship: string;
+    custom: string;
+    inquiry: string;
+  };
   menu: string;
   openMenuAria: string;
   closeMenuAria: string;
@@ -16,6 +22,7 @@ type NavbarCopy = {
 const sectionLinks = [
   { href: "#collection", key: "collection" as const },
   { href: "#craftsmanship", key: "craftsmanship" as const },
+  { href: "#gift-box", key: "giftBox" as const },
   { href: "#custom", key: "custom" as const },
   { href: "#inquiry", key: "inquiry" as const }
 ];

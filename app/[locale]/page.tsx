@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import CollectionSection from "@/components/CollectionSection";
+import HomeCatalog from "@/components/HomeCatalog";
+import GiftBoxSection from "@/components/GiftBoxSection";
 import CraftsmanshipSection from "@/components/CraftsmanshipSection";
 import CustomSection from "@/components/CustomSection";
 import InquirySection from "@/components/InquirySection";
 import Footer from "@/components/Footer";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
 import { getCopy, isLocale, type Locale } from "@/lib/i18n";
-import { products } from "@/lib/products";
+import { isGiftBox, products } from "@/lib/products";
 
 const siteUrl = "https://www.gola-handcrafted.eu";
 
@@ -109,7 +110,7 @@ export default async function HomePage({
           "@type": "Offer",
           price: product.priceEur.toString(),
           priceCurrency: "EUR",
-          url: `${siteUrl}/${locale}/#collection`
+          url: `${siteUrl}/${locale}/${isGiftBox(product) ? "#gift-box" : "#collection"}`
         }
       }
     }))
@@ -132,8 +133,15 @@ export default async function HomePage({
       <Navbar copy={copy.nav} locale={locale} />
       <main id="main-content">
         <Hero copy={copy.hero} />
-        <CollectionSection copy={copy.collection} locale={locale} productCopy={copy.product} />
+        <HomeCatalog locale={locale} copy={{ collection: copy.collection, product: copy.product }} />
         <CraftsmanshipSection copy={copy.craftsmanship} />
+        <GiftBoxSection
+          locale={locale}
+          sectionCopy={copy.giftBox}
+          productCopy={copy.product}
+          viewDetailsLabel={copy.product.viewDetails}
+          viewDetailsAriaTemplate={copy.product.aria.viewDetailsFor}
+        />
         <CustomSection copy={copy.custom} />
         <InquirySection copy={copy.inquiry} />
       </main>

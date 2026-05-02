@@ -7,7 +7,13 @@ export function isLocale(value: string): value is Locale {
 
 type SiteCopy = {
   nav: {
-    links: { collection: string; craftsmanship: string; custom: string; inquiry: string };
+    links: {
+      collection: string;
+      giftBox: string;
+      craftsmanship: string;
+      custom: string;
+      inquiry: string;
+    };
     menu: string;
     openMenuAria: string;
     closeMenuAria: string;
@@ -23,6 +29,13 @@ type SiteCopy = {
     ctaSecondary: string;
   };
   collection: { eyebrow: string; title: string; description: string };
+  giftBox: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    bullets: [string, string, string];
+    imageAlt: string;
+  };
   craftsmanship: {
     eyebrow: string;
     title: string;
@@ -100,6 +113,7 @@ type SiteCopy = {
       engraving: string;
       woodCoatingColor: string;
       chainColor: string;
+      paperColor: string;
     };
     values: {
       availabilityByInquiry: string;
@@ -111,8 +125,10 @@ type SiteCopy = {
       colors: string[];
       woodCoatingColors: string[];
       chainColors: string[];
+      paperColors: string[];
       pocketsAdds: string; // "{amount}" placeholder
       engravingAdds: string; // "{amount}" placeholder
+      engravingNoSurcharge: string;
     };
     aria: {
       viewDetailsFor: string; // "{name}" placeholder
@@ -127,6 +143,7 @@ type SiteCopy = {
       {
         name: string;
         description: string;
+        cardSummary?: string;
       }
     >;
   };
@@ -144,6 +161,7 @@ const dictionary: Record<Locale, SiteCopy> = {
     nav: {
       links: {
         collection: "Collection",
+        giftBox: "Gift box",
         craftsmanship: "Craftsmanship",
         custom: "Custom",
         inquiry: "Inquiry"
@@ -166,7 +184,19 @@ const dictionary: Record<Locale, SiteCopy> = {
       eyebrow: "Collection",
       title: "Signature models",
       description:
-        "Three distinct forms in hand-finished wood and leather—available through personal inquiry."
+        "Distinct handbag forms in hand-finished wood and leather—available through personal inquiry."
+    },
+    giftBox: {
+      eyebrow: "Packaging",
+      title: "Premium gift box",
+      description:
+        "Handmade wooden packaging for handbags, jewelry, and artisan pieces. Fixed price—€25—with paper color options and optional engraving.",
+      bullets: [
+        "High-quality plywood with precise finger joints and a refined walnut finish.",
+        "Choose the paper lining color—pricing stays at €25 regardless of options.",
+        "Optional custom engraving for branding or gifts, included at the same fixed price."
+      ],
+      imageAlt: "Premium handcrafted wooden gift box with walnut finish"
     },
     craftsmanship: {
       eyebrow: "Process",
@@ -253,7 +283,8 @@ const dictionary: Record<Locale, SiteCopy> = {
         insidePockets: "Inside pockets",
         engraving: "Custom engraving",
         woodCoatingColor: "Wood coating color",
-        chainColor: "Chain color"
+        chainColor: "Chain color",
+        paperColor: "Paper color"
       },
       values: {
         availabilityByInquiry: "Available by inquiry",
@@ -275,8 +306,10 @@ const dictionary: Record<Locale, SiteCopy> = {
         ],
         woodCoatingColors: ["Natural", "Walnut", "Mahogany", "Ebony"],
         chainColors: ["Gold", "Silver", "Bronze", "Black"],
+        paperColors: ["Ivory", "Cream", "Kraft", "Black", "Blush", "Navy"],
         pocketsAdds: "adds +EUR {amount}",
-        engravingAdds: "adds +EUR {amount}"
+        engravingAdds: "adds +EUR {amount}",
+        engravingNoSurcharge: "included at this fixed price"
       },
       aria: {
         viewDetailsFor: "View details for {name}",
@@ -289,22 +322,33 @@ const dictionary: Record<Locale, SiteCopy> = {
       models: {
         "model-1": {
           name: "Model 1",
+          cardSummary: "Compact elegance for everyday distinction.",
           description:
-            "Compact and poised, with a quiet presence—made for everyday moments that still feel considered."
+            "Defined by compact elegance and refined presence, crafted for everyday distinction.\n\nEvery panel is finished by hand so the wood and leather read as one quiet statement—compact proportions that still feel generous in use."
         },
         "model-2": {
           name: "Model 2",
+          cardSummary: "Balanced proportions, understated depth.",
           description:
-            "Balanced proportions with tactile depth, for those who prefer a statement that doesn’t need to announce itself."
+            "Balanced in proportion and rich in texture, made for those who favor understated statement pieces.\n\nMeasured lines and tactile surfaces meet hardware placed with intent—made to feel considered without shouting."
         },
         "model-3": {
           name: "Model 3",
+          cardSummary: "Bold character, generous space.",
           description:
-            "Bold in character and generous in space—an elevated companion for travel, evenings, and everything in between."
+            "Sculpted with bold character and spacious intent, elevating travel and occasion with artisan depth.\n\nRoom for essentials without losing structure—shaped for evenings away, events, and days that ask for a stronger silhouette."
         },
         "model-4": {
           name: "Model 4",
-          description: "Light in hand, effortless in line—an airy silhouette with refined proportion and ease."
+          cardSummary: "Light silhouette, refined everyday carry.",
+          description:
+            "A lighter silhouette with poised proportions, designed for refined everyday carry.\n\nEasy on the shoulder and balanced in the hand—paired finishes keep the piece feeling airy without losing substance."
+        },
+        "premium-gift-box": {
+          name: "Premium Gift Box for Handbags & Jewelry",
+          cardSummary: "Turn your product into a premium gift experience.",
+          description:
+            "Handmade wooden packaging box.\n\nTurn your product into a premium gift experience. This handcrafted wooden box is not just packaging—it is part of the product.\n\nPremium gift packaging designed to elevate how your piece is received: high-quality plywood, precise finger joints, and a refined walnut finish.\n\nCustom engraving is available—ideal for branding, gifts, and distinctive packaging. Perfect for handbags, jewelry, and artisan products—so every purchase feels like an experience."
         }
       }
     },
@@ -322,6 +366,7 @@ const dictionary: Record<Locale, SiteCopy> = {
     nav: {
       links: {
         collection: "Колекция",
+        giftBox: "Кутия",
         craftsmanship: "Изработка",
         custom: "По поръчка",
         inquiry: "Запитване"
@@ -344,7 +389,19 @@ const dictionary: Record<Locale, SiteCopy> = {
       eyebrow: "Колекция",
       title: "Емблематични модели",
       description:
-        "Три характерни форми от дърво и кожа — налични чрез лично запитване."
+        "Характерни форми чанти от дърво и кожа — налични чрез лично запитване."
+    },
+    giftBox: {
+      eyebrow: "Обвивка",
+      title: "Премиум подаръчна кутия",
+      description:
+        "Ръчно изработена дървена обвивка за чанти, бижута и артистични изделия. Фиксирана цена — 25 € — с избор на цвят на хартия и възможност за гравиране.",
+      bullets: [
+        "Висококачествен шперплат с прецизни пръстови фуги и фин орехов завършек.",
+        "Избор на цвят на хартията отвътре — цената остава 25 € независимо от опциите.",
+        "По желание персонално гравиране за бранд или подарък — без допълнително оскъпяване."
+      ],
+      imageAlt: "Премиум ръчно изработена дървена подаръчна кутия с орехов финиш"
     },
     craftsmanship: {
       eyebrow: "Процес",
@@ -434,7 +491,8 @@ const dictionary: Record<Locale, SiteCopy> = {
         insidePockets: "Вътрешни джобове",
         engraving: "Персонално гравиране",
         woodCoatingColor: "Цвят на покритието",
-        chainColor: "Цвят на верижката"
+        chainColor: "Цвят на верижката",
+        paperColor: "Цвят на хартията"
       },
       values: {
         availabilityByInquiry: "Само със запитване",
@@ -448,7 +506,7 @@ const dictionary: Record<Locale, SiteCopy> = {
           "Маслинено зелено",
           "Бордо",
           "Петрол",
-          "Пудра розово",
+          "Розово",
           "Черно",
           "Графит",
           "Корал",
@@ -456,8 +514,10 @@ const dictionary: Record<Locale, SiteCopy> = {
         ],
         woodCoatingColors: ["Естествен", "Орех", "Махагон", "Абанос"],
         chainColors: ["Златен", "Сребърен", "Бронзов", "Черен"],
+        paperColors: ["Айвори", "Крем", "Крафт", "Черно", "Розово", "Тъмносиньо"],
         pocketsAdds: "+EUR {amount}",
-        engravingAdds: "+EUR {amount}"
+        engravingAdds: "+EUR {amount}",
+        engravingNoSurcharge: "включено в тази фиксирана цена"
       },
       aria: {
         viewDetailsFor: "Виж детайли за {name}",
@@ -470,23 +530,33 @@ const dictionary: Record<Locale, SiteCopy> = {
       models: {
         "model-1": {
           name: "Модел 1",
+          cardSummary: "Компактна елегантност за всеки ден.",
           description:
-            "Компактен и изискан — с тихо присъствие, подходящ за ежедневието."
+            "Компактен и изискан, с уверено присъствие — подходящ за ежедневието.\n\nРъчно завършени повърхности и премерени пропорции, така че дървото и кожата да работят заедно спокойно и изчистено."
         },
         "model-2": {
           name: "Модел 2",
+          cardSummary: "Премерени пропорции, дълбочина без шум.",
           description:
-            "Премерени пропорции и богата текстура — за хора, които харесват акцент без показност."
+            "Премерени пропорции и богата текстура — за хора, които харесват акцент без показност.\n\nЛинии и материи са подредени с внимание — обковът е позициониран така, че да усещаш качеството без да го рекламираш."
         },
         "model-3": {
           name: "Модел 3",
+          cardSummary: "Силен характер, повече място.",
           description:
-            "Силен характер и повече пространство — за път, вечерни поводи и динамични дни."
+            "Силен характер и повече пространство — за път, вечерни поводи и динамични дни.\n\nДостатъчно обем за важното, без да губиш структурата на силуета — за поводи, които изискват по-силно присъствие."
         },
         "model-4": {
           name: "Модел 4",
+          cardSummary: "Лек силует за всеки ден.",
           description:
-            "По-лек силует и елегантни пропорции — за удобно носене всеки ден."
+            "По-лек силует и елегантни пропорции — за удобно носене всеки ден.\n\nУсеща се лека на рамото и уравновесена в ръка — финишите подчертават въздушността без да изглежда плоско."
+        },
+        "premium-gift-box": {
+          name: "Премиум подаръчна кутия за чанти и бижута",
+          cardSummary: "Превърни продукта си в премиум подарък.",
+          description:
+            "Ръчно изработена дървена подаръчна кутия.\n\nПревърни продукта си в премиум подарък. Тази дървена кутия е повече от опаковка — тя е част от преживяването.\n\nПремиум обвивка за представяне на високо ниво: висококачествен шперплат, прецизни пръстови фуги и фин орехов завършек.\n\nВъзможно е персонално гравиране — подходящо за брандиране, подаръци и отличителна визия. Идеална за чанти, бижута и артистични продукти — всяка покупка да се усеща като преживяване."
         }
       }
     },
@@ -513,6 +583,20 @@ export function getLocalizedProduct(
   const copy = dictionary[locale];
   const override = copy.product.models[product.id];
   return override ? { name: override.name, description: override.description } : product;
+}
+
+/** Short line for product cards; full `detailDescription` for modals. */
+export function getLocalizedProductPreview(
+  locale: Locale,
+  product: { id: string; name: string; description: string }
+): { name: string; cardSummary: string; detailDescription: string } {
+  const full = getLocalizedProduct(locale, product);
+  const override = dictionary[locale].product.models[product.id];
+  const cardSummary =
+    override?.cardSummary?.trim() ||
+    full.description.split(/\n+/)[0]?.trim().slice(0, 160) ||
+    full.description.slice(0, 160);
+  return { name: full.name, cardSummary, detailDescription: full.description };
 }
 
 export function getPreferredLocaleFromAcceptLanguage(value: string | null): Locale {

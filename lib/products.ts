@@ -1,6 +1,9 @@
-export type Product = {
+import { giftBoxGalleryImages } from "./giftBoxAssets";
+
+export type ProductKind = "handbag" | "giftBox";
+
+type ProductBase = {
   id: string;
-  model: number;
   name: string;
   description: string;
   dimensions: string;
@@ -8,14 +11,26 @@ export type Product = {
   heightCm: string;
   thicknessCm: string;
   priceEur: number;
-  pocketsAddOnEur: number;
-  engravingAddOnEur: number;
   images: string[];
   customizable: true;
 };
 
-export const products: Product[] = [
+export type HandbagProduct = ProductBase & {
+  productKind: "handbag";
+  model: number;
+  pocketsAddOnEur: number;
+  engravingAddOnEur: number;
+};
+
+export type GiftBoxProduct = ProductBase & {
+  productKind: "giftBox";
+};
+
+export type Product = HandbagProduct | GiftBoxProduct;
+
+export const handbagProducts: HandbagProduct[] = [
   {
+    productKind: "handbag",
     id: "model-1",
     model: 1,
     name: "Model 1",
@@ -39,6 +54,7 @@ export const products: Product[] = [
     customizable: true
   },
   {
+    productKind: "handbag",
     id: "model-2",
     model: 2,
     name: "Model 2",
@@ -60,6 +76,7 @@ export const products: Product[] = [
     customizable: true
   },
   {
+    productKind: "handbag",
     id: "model-3",
     model: 3,
     name: "Model 3",
@@ -82,6 +99,7 @@ export const products: Product[] = [
     customizable: true
   },
   {
+    productKind: "handbag",
     id: "model-4",
     model: 4,
     name: "Model 4",
@@ -98,3 +116,30 @@ export const products: Product[] = [
     customizable: true
   }
 ];
+
+export const giftBoxProducts: GiftBoxProduct[] = [
+  {
+    productKind: "giftBox",
+    id: "premium-gift-box",
+    name: "Premium Gift Box for Handbags & Jewelry",
+    description:
+      "Turn your product into a premium gift experience. Handmade wooden packaging — more than a box, part of the presentation.",
+    dimensions: "Dimensions on request — tailored to your product",
+    widthCm: "—",
+    heightCm: "—",
+    thicknessCm: "—",
+    priceEur: 25,
+    images: giftBoxGalleryImages(),
+    customizable: true
+  }
+];
+
+export const products: Product[] = [...handbagProducts, ...giftBoxProducts];
+
+export function isHandbag(product: Product): product is HandbagProduct {
+  return product.productKind === "handbag";
+}
+
+export function isGiftBox(product: Product): product is GiftBoxProduct {
+  return product.productKind === "giftBox";
+}

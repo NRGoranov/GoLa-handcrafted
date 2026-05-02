@@ -1,8 +1,10 @@
 import Image from "next/image";
-import type { Product } from "@/lib/products";
+import { intrinsicContainMaxStyle, intrinsicSizesProductCard } from "@/lib/intrinsicImages";
+import { type Product, isGiftBox } from "@/lib/products";
 
 type ProductCardProps = {
   product: Product;
+  summary: string;
   onView: (product: Product) => void;
   copy: {
     viewDetails: string;
@@ -10,21 +12,29 @@ type ProductCardProps = {
   };
 };
 
-export default function ProductCard({ product, onView, copy }: ProductCardProps) {
+export default function ProductCard({ product, summary, onView, copy }: ProductCardProps) {
+  const heroSrc = product.images[0];
+  const maxStyle = intrinsicContainMaxStyle(heroSrc);
+
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-ivory/15 bg-[#111]">
       <button
         type="button"
-        className="focus-ring relative aspect-[4/5] overflow-hidden text-left"
+        className="focus-ring relative mx-auto aspect-[4/5] w-full overflow-hidden text-left"
+        style={maxStyle}
         onClick={() => onView(product)}
         aria-label={copy.aria.viewDetailsFor.replace("{name}", product.name)}
       >
         <Image
-          src={product.images[0]}
-          alt={`${product.name} handcrafted bag`}
+          src={heroSrc}
+          alt={
+            isGiftBox(product)
+              ? `${product.name} — handmade wooden packaging`
+              : `${product.name} handcrafted bag`
+          }
           fill
           className="object-cover transition duration-300 hover:scale-[1.02]"
-          sizes="(max-width: 768px) 100vw, 33vw"
+          sizes={intrinsicSizesProductCard(heroSrc)}
         />
       </button>
       <div className="flex flex-1 flex-col p-5">
@@ -32,7 +42,7 @@ export default function ProductCard({ product, onView, copy }: ProductCardProps)
         <p className="mt-1 text-xs uppercase tracking-[0.18em] text-caramel/90">
           EUR {product.priceEur}
         </p>
-        <p className="mt-3 flex-1 text-sm text-mist">{product.description}</p>
+        <p className="mt-3 flex-1 text-sm text-mist">{summary}</p>
         <button
           type="button"
           className="focus-ring mt-5 inline-flex min-h-11 items-center justify-center rounded-full border border-caramel px-4 py-2 text-sm text-caramel transition hover:bg-caramel hover:text-ink"
