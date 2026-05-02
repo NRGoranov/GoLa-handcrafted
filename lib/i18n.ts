@@ -161,7 +161,7 @@ const dictionary: Record<Locale, SiteCopy> = {
     nav: {
       links: {
         collection: "Collection",
-        giftBox: "Gift box",
+        giftBox: "Premium Gift box",
         craftsmanship: "Craftsmanship",
         custom: "Custom",
         inquiry: "Inquiry"
@@ -274,7 +274,7 @@ const dictionary: Record<Locale, SiteCopy> = {
       labels: {
         model: "Model",
         dimensions: "Dimensions",
-        dimensionsHint: "L x W x H (cm)",
+        dimensionsHint: "L x H x W (cm)",
         price: "Price",
         availability: "Availability",
         customization: "Customization",
@@ -366,7 +366,7 @@ const dictionary: Record<Locale, SiteCopy> = {
     nav: {
       links: {
         collection: "Колекция",
-        giftBox: "Кутия",
+        giftBox: "Премиум Кутия",
         craftsmanship: "Изработка",
         custom: "По поръчка",
         inquiry: "Запитване"
@@ -482,7 +482,7 @@ const dictionary: Record<Locale, SiteCopy> = {
       labels: {
         model: "Модел",
         dimensions: "Размери",
-        dimensionsHint: "Д x Ш x В (см)",
+        dimensionsHint: "Д x В x Ш (см)",
         price: "Цена",
         availability: "Наличност",
         customization: "Персонализация",
