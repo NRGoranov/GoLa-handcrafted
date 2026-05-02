@@ -44,9 +44,10 @@ export default function Navbar({ copy, locale }: { copy: NavbarCopy; locale: "en
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY;
-      setScrolled(y > 12);
-      const passedHero = y > Math.max(window.innerHeight - 140, 220);
-      document.documentElement.setAttribute("data-hero-passed", String(passedHero));
+      // Navbar chrome + scrollbar stay hidden only at the utmost top; any scroll shows both.
+      const atTop = y < 1;
+      setScrolled(!atTop);
+      document.documentElement.setAttribute("data-hero-passed", String(!atTop));
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });

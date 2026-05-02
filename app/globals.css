@@ -257,7 +257,7 @@ a {
   --logo-line-width: clamp(0.75rem, 6vw, 1.45rem);
 }
 
-/* Hide page scrollbar during hero; reveal after hero */
+/* Hide page scrollbar only at the utmost top; in sync with navbar (see Navbar scroll handler) */
 html[data-hero-passed="false"] {
   scrollbar-width: none;
 }

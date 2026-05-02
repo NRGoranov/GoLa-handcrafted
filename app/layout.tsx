@@ -142,6 +142,7 @@ export default function RootLayout({
   return (
     <html
       lang={locale}
+      data-hero-passed="false"
       className={`${playfair.variable} ${manrope.variable} ${cormorantGaramond.variable}`}
     >
       <body className="bg-ink text-ivory antialiased">
