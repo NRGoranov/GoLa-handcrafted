@@ -244,7 +244,7 @@ const dictionary: Record<Locale, SiteCopy> = {
       labels: {
         model: "Model",
         dimensions: "Dimensions",
-        dimensionsHint: "W x H x T (cm)",
+        dimensionsHint: "L x W x H (cm)",
         price: "Price",
         availability: "Availability",
         customization: "Customization",
@@ -425,7 +425,7 @@ const dictionary: Record<Locale, SiteCopy> = {
       labels: {
         model: "Модел",
         dimensions: "Размери",
-        dimensionsHint: "Ш x В x Д (см)",
+        dimensionsHint: "Д x Ш x В (см)",
         price: "Цена",
         availability: "Наличност",
         customization: "Персонализация",
