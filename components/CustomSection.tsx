@@ -20,7 +20,8 @@ type CustomCopy = {
 
 export default function CustomSection({ copy }: { copy: CustomCopy }) {
   return (
-    <section id="custom" className="container-luxury py-20 sm:py-24">
+    <section id="custom" className="border-y border-ivory/10 bg-[#0f0f0f] py-20 sm:py-24">
+      <div className="container-luxury">
       <SectionHeading
         eyebrow={copy.eyebrow}
         title={copy.title}
@@ -57,6 +58,7 @@ export default function CustomSection({ copy }: { copy: CustomCopy }) {
             {copy.cards.bespokeBody}
           </p>
         </article>
+      </div>
       </div>
     </section>
   );

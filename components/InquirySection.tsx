@@ -82,7 +82,7 @@ export default function InquirySection({ copy }: { copy: InquiryCopy }) {
   };
 
   return (
-    <section id="inquiry" className="border-y border-ivory/10 bg-[#101010] py-20 sm:py-24">
+    <section id="inquiry" className="border-y border-ivory/10 bg-[#0f0f0f] py-20 sm:py-24">
       <div className="container-luxury grid gap-10 md:grid-cols-2">
         <div>
           <SectionHeading

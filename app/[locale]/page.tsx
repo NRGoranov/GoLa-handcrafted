@@ -4,10 +4,12 @@ import Hero from "@/components/Hero";
 import HomeCatalog from "@/components/HomeCatalog";
 import GiftBoxSection from "@/components/GiftBoxSection";
 import CraftsmanshipSection from "@/components/CraftsmanshipSection";
+import GallerySection from "@/components/GallerySection";
 import CustomSection from "@/components/CustomSection";
 import InquirySection from "@/components/InquirySection";
 import Footer from "@/components/Footer";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
+import { getGalleryImagePaths } from "@/lib/galleryImages.server";
 import { getCopy, isLocale, type Locale } from "@/lib/i18n";
 import { isGiftBox, products } from "@/lib/products";
 
@@ -65,6 +67,7 @@ export default async function HomePage({
   const { locale: rawLocale } = await params;
   const locale = resolveLocale(rawLocale);
   const copy = getCopy(locale);
+  const galleryImages = getGalleryImagePaths();
 
   const webPageJsonLd = {
     "@context": "https://schema.org",
@@ -134,7 +137,6 @@ export default async function HomePage({
       <main id="main-content">
         <Hero copy={copy.hero} />
         <HomeCatalog locale={locale} copy={{ collection: copy.collection, product: copy.product }} />
-        <CraftsmanshipSection copy={copy.craftsmanship} />
         <GiftBoxSection
           locale={locale}
           sectionCopy={copy.giftBox}
@@ -142,6 +144,8 @@ export default async function HomePage({
           viewDetailsLabel={copy.product.viewDetails}
           viewDetailsAriaTemplate={copy.product.aria.viewDetailsFor}
         />
+        <CraftsmanshipSection copy={copy.craftsmanship} />
+        <GallerySection copy={copy.gallery} images={galleryImages} />
         <CustomSection copy={copy.custom} />
         <InquirySection copy={copy.inquiry} />
       </main>

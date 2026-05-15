@@ -11,6 +11,7 @@ type SiteCopy = {
       collection: string;
       giftBox: string;
       craftsmanship: string;
+      gallery: string;
       custom: string;
       inquiry: string;
     };
@@ -42,6 +43,22 @@ type SiteCopy = {
     description: string;
     bullets: [string, string, string];
     imageAlt: string;
+  };
+  gallery: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    sectionAria: string;
+    imageAlt: string;
+    viewAll: string;
+    viewImage: string;
+    openGallery: string;
+    backToGallery: string;
+    zoomIn: string;
+    zoomOut: string;
+    closeGallery: string;
+    modalAria: string;
+    focusedViewAria: string;
   };
   custom: {
     eyebrow: string;
@@ -163,6 +180,7 @@ const dictionary: Record<Locale, SiteCopy> = {
         collection: "Collection",
         giftBox: "Premium Gift box",
         craftsmanship: "Craftsmanship",
+        gallery: "Gallery",
         custom: "Custom",
         inquiry: "Inquiry"
       },
@@ -209,6 +227,23 @@ const dictionary: Record<Locale, SiteCopy> = {
         "Natural variations are embraced, making each piece one of a kind."
       ],
       imageAlt: "Close-up of handcrafted woodworking and leather stitching"
+    },
+    gallery: {
+      eyebrow: "Gallery",
+      title: "From the atelier",
+      description:
+        "Handcrafted premium bags, gift boxes, and finishing details—open the gallery to browse every piece.",
+      sectionAria: "Photo gallery",
+      imageAlt: "Gola Handcrafted gallery image {n}",
+      viewAll: "View full gallery",
+      viewImage: "View gallery image {n}",
+      openGallery: "Open gallery",
+      backToGallery: "Back to gallery",
+      zoomIn: "Zoom in",
+      zoomOut: "Zoom out",
+      closeGallery: "Close gallery",
+      modalAria: "Full photo gallery",
+      focusedViewAria: "Enlarged gallery image"
     },
     custom: {
       eyebrow: "Atelier",
@@ -368,6 +403,7 @@ const dictionary: Record<Locale, SiteCopy> = {
         collection: "Колекция",
         giftBox: "Премиум Кутия",
         craftsmanship: "Изработка",
+        gallery: "Галерия",
         custom: "По поръчка",
         inquiry: "Запитване"
       },
@@ -414,6 +450,23 @@ const dictionary: Record<Locale, SiteCopy> = {
         "Естествените вариации се запазват — за да е всяка чанта истински уникална."
       ],
       imageAlt: "Детайл от дървообработка и кожени шевове на ръка"
+    },
+    gallery: {
+      eyebrow: "Галерия",
+      title: "От ателието",
+      description:
+        "Ръчно изработени премиум чанти, кутии и детайли — отвори галерията, за да разгледаш всяко изделие.",
+      sectionAria: "Фотогалерия",
+      imageAlt: "Снимка {n} от галерията на Gola Handcrafted",
+      viewAll: "Виж цялата галерия",
+      viewImage: "Виж снимка {n} от галерията",
+      openGallery: "Отвори галерията",
+      backToGallery: "Обратно към галерията",
+      zoomIn: "Увеличи",
+      zoomOut: "Намали",
+      closeGallery: "Излез от галерията",
+      modalAria: "Пълна фотогалерия",
+      focusedViewAria: "Увеличена снимка от галерията"
     },
     custom: {
       eyebrow: "Ателие",

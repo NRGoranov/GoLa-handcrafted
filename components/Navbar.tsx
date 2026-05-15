@@ -8,6 +8,7 @@ type NavbarCopy = {
     collection: string;
     giftBox: string;
     craftsmanship: string;
+    gallery: string;
     custom: string;
     inquiry: string;
   };
@@ -21,8 +22,9 @@ type NavbarCopy = {
 
 const sectionLinks = [
   { href: "#collection", key: "collection" as const },
-  { href: "#craftsmanship", key: "craftsmanship" as const },
   { href: "#gift-box", key: "giftBox" as const },
+  { href: "#craftsmanship", key: "craftsmanship" as const },
+  { href: "#gallery", key: "gallery" as const },
   { href: "#custom", key: "custom" as const },
   { href: "#inquiry", key: "inquiry" as const }
 ];

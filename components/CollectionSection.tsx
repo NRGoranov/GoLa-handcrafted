@@ -39,7 +39,8 @@ export default function CollectionSection({
   });
 
   return (
-    <section id={sectionId} className="container-luxury py-20 sm:py-24">
+    <section id={sectionId} className="border-y border-ivory/10 bg-[#0f0f0f] py-20 sm:py-24">
+      <div className="container-luxury">
       <SectionHeading
         eyebrow={copy.eyebrow}
         title={copy.title}
@@ -56,6 +57,7 @@ export default function CollectionSection({
             copy={productCardCopy}
           />
         ))}
+      </div>
       </div>
     </section>
   );
