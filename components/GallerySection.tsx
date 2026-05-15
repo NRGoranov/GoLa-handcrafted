@@ -4,6 +4,7 @@ import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GALLERY_PREVIEW_COUNT } from "@/lib/galleryConstants";
+import { flattenGalleryImages, type GalleryImageGroup } from "@/lib/galleryTypes";
 import SectionHeading from "./SectionHeading";
 import {
   intrinsicContainMaxStyle,
@@ -59,41 +60,115 @@ function galleryAlt(copy: GalleryCopy, index: number) {
   return copy.imageAlt.replace("{n}", String(index + 1));
 }
 
+function GalleryTile({
+  src,
+  alt,
+  ariaLabel,
+  onClick,
+  eager = false
+}: {
+  src: string;
+  alt: string;
+  ariaLabel: string;
+  onClick: () => void;
+  eager?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className="focus-ring relative block aspect-[4/5] w-full overflow-hidden rounded-xl border border-ivory/10 bg-[#141414] transition hover:border-caramel/50"
+    >
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        className="object-cover"
+        sizes={intrinsicSizesProductCard(src)}
+        loading={eager ? "eager" : "lazy"}
+      />
+    </button>
+  );
+}
+
 function GalleryGrid({
   images,
   copy,
   onSelectImage,
-  previewMode = false
+  previewMode = false,
+  indexOffset = 0
 }: {
   images: readonly string[];
   copy: GalleryCopy;
   onSelectImage: (index: number) => void;
   previewMode?: boolean;
+  indexOffset?: number;
 }) {
   return (
     <>
-      {images.map((src, index) => (
-        <li key={`${src}-${index}`}>
-          <button
-            type="button"
-            onClick={() => onSelectImage(index)}
-            aria-label={
-              previewMode ? copy.openGallery : copy.viewImage.replace("{n}", String(index + 1))
-            }
-            className="focus-ring relative block aspect-[4/5] w-full overflow-hidden rounded-xl border border-ivory/10 bg-[#141414] transition hover:border-caramel/50"
-          >
-            <Image
+      {images.map((src, index) => {
+        const globalIndex = indexOffset + index;
+        return (
+          <li key={`${src}-${globalIndex}`}>
+            <GalleryTile
               src={src}
-              alt={galleryAlt(copy, index)}
-              fill
-              className="object-cover"
-              sizes={intrinsicSizesProductCard(src)}
-              loading={index < 4 ? "eager" : "lazy"}
+              alt={galleryAlt(copy, globalIndex)}
+              ariaLabel={
+                previewMode
+                  ? copy.openGallery
+                  : copy.viewImage.replace("{n}", String(globalIndex + 1))
+              }
+              onClick={() => onSelectImage(globalIndex)}
+              eager={globalIndex < 4}
             />
-          </button>
-        </li>
-      ))}
+          </li>
+        );
+      })}
     </>
+  );
+}
+
+function GalleryGroupedGrid({
+  groups,
+  copy,
+  onSelectImage
+}: {
+  groups: GalleryImageGroup[];
+  copy: GalleryCopy;
+  onSelectImage: (index: number) => void;
+}) {
+  let indexOffset = 0;
+
+  return (
+    <div className="space-y-10 pb-2">
+      {groups.map((group, groupIndex) => {
+        const startIndex = indexOffset;
+        indexOffset += group.images.length;
+
+        return (
+          <section key={group.id} aria-labelledby={`gallery-group-${groupIndex}`}>
+            {groupIndex > 0 ? (
+              <div className="mb-8 border-t border-ivory/10" aria-hidden />
+            ) : null}
+            <p
+              id={`gallery-group-${groupIndex}`}
+              className="mb-4 text-xs uppercase tracking-[0.22em] text-caramel/85"
+            >
+              {group.label}
+            </p>
+            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 lg:gap-4">
+              <GalleryGrid
+                images={group.images}
+                copy={copy}
+                indexOffset={startIndex}
+                onSelectImage={onSelectImage}
+              />
+            </ul>
+          </section>
+        );
+      })}
+    </div>
   );
 }
 
@@ -310,11 +385,12 @@ function GalleryFocusedView({
 
 export default function GallerySection({
   copy,
-  images
+  groups
 }: {
   copy: GalleryCopy;
-  images: string[];
+  groups: GalleryImageGroup[];
 }) {
+  const images = flattenGalleryImages(groups);
   const [open, setOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -441,13 +517,11 @@ export default function GallerySection({
                     className="flex min-h-0 flex-1 flex-col"
                   >
                     <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7">
-                      <ul className="grid grid-cols-2 gap-2 pb-4 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 lg:gap-4">
-                        <GalleryGrid
-                          images={images}
-                          copy={copy}
-                          onSelectImage={focusImage}
-                        />
-                      </ul>
+                      <GalleryGroupedGrid
+                        groups={groups}
+                        copy={copy}
+                        onSelectImage={focusImage}
+                      />
                     </div>
                   </motion.div>
                 )}

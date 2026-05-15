@@ -57,6 +57,15 @@ type SiteCopy = {
     zoomIn: string;
     zoomOut: string;
     closeGallery: string;
+    groups: {
+      other: string;
+      whiteBagMm: string;
+      brownBagJana: string;
+      brownBagLp: string;
+      smallBrownClutch: string;
+      blackBagBlueLining: string;
+      boxes: string;
+    };
     modalAria: string;
     focusedViewAria: string;
   };
@@ -242,6 +251,15 @@ const dictionary: Record<Locale, SiteCopy> = {
       zoomIn: "Zoom in",
       zoomOut: "Zoom out",
       closeGallery: "Close gallery",
+      groups: {
+        other: "General",
+        whiteBagMm: "White bag",
+        brownBagJana: "Brown bag — Jana",
+        brownBagLp: "Brown bag — LP",
+        smallBrownClutch: "Small brown clutch",
+        blackBagBlueLining: "Black bag, blue lining",
+        boxes: "Gift boxes"
+      },
       modalAria: "Full photo gallery",
       focusedViewAria: "Enlarged gallery image"
     },
@@ -465,6 +483,15 @@ const dictionary: Record<Locale, SiteCopy> = {
       zoomIn: "Увеличи",
       zoomOut: "Намали",
       closeGallery: "Излез от галерията",
+      groups: {
+        other: "Общи",
+        whiteBagMm: "Бяла чанта",
+        brownBagJana: "Кафява чанта — Жана",
+        brownBagLp: "Кафява чанта — ЛП",
+        smallBrownClutch: "Малка кафява клъч",
+        blackBagBlueLining: "Черна чанта, син хастар",
+        boxes: "Кутии"
+      },
       modalAria: "Пълна фотогалерия",
       focusedViewAria: "Увеличена снимка от галерията"
     },

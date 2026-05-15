@@ -9,7 +9,7 @@ import CustomSection from "@/components/CustomSection";
 import InquirySection from "@/components/InquirySection";
 import Footer from "@/components/Footer";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
-import { getGalleryImagePaths } from "@/lib/galleryImages.server";
+import { getGalleryGroups } from "@/lib/galleryImages.server";
 import { getCopy, isLocale, type Locale } from "@/lib/i18n";
 import { isGiftBox, products } from "@/lib/products";
 
@@ -67,7 +67,7 @@ export default async function HomePage({
   const { locale: rawLocale } = await params;
   const locale = resolveLocale(rawLocale);
   const copy = getCopy(locale);
-  const galleryImages = getGalleryImagePaths();
+  const galleryGroups = getGalleryGroups(copy.gallery.groups);
 
   const webPageJsonLd = {
     "@context": "https://schema.org",
@@ -145,7 +145,7 @@ export default async function HomePage({
           viewDetailsAriaTemplate={copy.product.aria.viewDetailsFor}
         />
         <CraftsmanshipSection copy={copy.craftsmanship} />
-        <GallerySection copy={copy.gallery} images={galleryImages} />
+        <GallerySection copy={copy.gallery} groups={galleryGroups} />
         <CustomSection copy={copy.custom} />
         <InquirySection copy={copy.inquiry} />
       </main>
