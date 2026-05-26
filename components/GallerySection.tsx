@@ -14,6 +14,7 @@ import {
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 3;
 const ZOOM_STEP = 0.25;
+const SWIPE_THRESHOLD_PX = 50;
 
 type GalleryCopy = {
   eyebrow: string;
@@ -197,12 +198,16 @@ function GalleryFocusedView({
   const [isDragging, setIsDragging] = useState(false);
   const zoomAreaRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{
+  const pointersRef = useRef(new Map<number, { x: number; y: number }>());
+  const gestureRef = useRef<{
+    mode: "pan" | "pinch" | "swipe";
     pointerId: number;
     startX: number;
     startY: number;
     panX: number;
     panY: number;
+    startDistance?: number;
+    startZoom?: number;
   } | null>(null);
 
   const clampPan = useCallback((x: number, y: number, scale: number) => {
@@ -252,48 +257,118 @@ function GalleryFocusedView({
     setZoom((value) => Math.max(ZOOM_MIN, Number((value - ZOOM_STEP).toFixed(2))));
   }, []);
 
+  const distanceBetweenPointers = useCallback(() => {
+    const points = Array.from(pointersRef.current.values());
+    if (points.length < 2) return 0;
+
+    const [first, second] = points;
+    return Math.hypot(second.x - first.x, second.y - first.y);
+  }, []);
+
+  const endGesture = useCallback((target?: HTMLDivElement, pointerId?: number) => {
+    if (target && pointerId !== undefined && target.hasPointerCapture(pointerId)) {
+      target.releasePointerCapture(pointerId);
+    }
+    gestureRef.current = null;
+    pointersRef.current.clear();
+    setIsDragging(false);
+  }, []);
+
   const onPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (zoom <= 1) return;
-
       event.stopPropagation();
       event.currentTarget.setPointerCapture(event.pointerId);
-      setIsDragging(true);
-      dragRef.current = {
+      pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+      if (pointersRef.current.size >= 2) {
+        gestureRef.current = {
+          mode: "pinch",
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          panX: pan.x,
+          panY: pan.y,
+          startDistance: distanceBetweenPointers(),
+          startZoom: zoom
+        };
+        setIsDragging(false);
+        return;
+      }
+
+      gestureRef.current = {
+        mode: zoom > 1 ? "pan" : "swipe",
         pointerId: event.pointerId,
         startX: event.clientX,
         startY: event.clientY,
         panX: pan.x,
         panY: pan.y
       };
+      setIsDragging(zoom > 1);
     },
-    [pan.x, pan.y, zoom]
+    [distanceBetweenPointers, pan.x, pan.y, zoom]
   );
 
   const onPointerMove = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      const drag = dragRef.current;
-      if (!drag || drag.pointerId !== event.pointerId) return;
+      const gesture = gestureRef.current;
+      if (!gesture || !pointersRef.current.has(event.pointerId)) return;
 
       event.stopPropagation();
-      const dx = event.clientX - drag.startX;
-      const dy = event.clientY - drag.startY;
-      setPan(clampPan(drag.panX + dx, drag.panY + dy, zoom));
+      pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+      if (gesture.mode === "pinch") {
+        const startDistance = gesture.startDistance || 1;
+        const nextDistance = distanceBetweenPointers();
+        if (!nextDistance) return;
+
+        const nextZoom = Math.max(
+          ZOOM_MIN,
+          Math.min(
+            ZOOM_MAX,
+            Number(((gesture.startZoom || ZOOM_MIN) * (nextDistance / startDistance)).toFixed(2))
+          )
+        );
+        setZoom(nextZoom);
+        setPan(clampPan(gesture.panX, gesture.panY, nextZoom));
+        return;
+      }
+
+      if (gesture.mode === "pan") {
+        const dx = event.clientX - gesture.startX;
+        const dy = event.clientY - gesture.startY;
+        setPan(clampPan(gesture.panX + dx, gesture.panY + dy, zoom));
+      }
     },
-    [clampPan, zoom]
+    [clampPan, distanceBetweenPointers, zoom]
   );
 
   const endDrag = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
+    const gesture = gestureRef.current;
+    if (!gesture || !pointersRef.current.has(event.pointerId)) return;
 
     event.stopPropagation();
+
+    if (gesture.mode === "swipe" && gesture.pointerId === event.pointerId) {
+      const dx = event.clientX - gesture.startX;
+      const dy = event.clientY - gesture.startY;
+      const isHorizontalSwipe =
+        Math.abs(dx) >= SWIPE_THRESHOLD_PX && Math.abs(dx) > Math.abs(dy) * 1.4;
+
+      if (isHorizontalSwipe) {
+        if (dx < 0) onNext();
+        else onPrevious();
+      }
+    }
+
+    pointersRef.current.delete(event.pointerId);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
-    dragRef.current = null;
-    setIsDragging(false);
-  }, []);
+
+    if (pointersRef.current.size === 0 || gesture.mode === "pinch") {
+      endGesture();
+    }
+  }, [endGesture, onNext, onPrevious]);
 
   useEffect(() => {
     const el = zoomAreaRef.current;
