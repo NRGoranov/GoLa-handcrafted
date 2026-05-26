@@ -8,6 +8,7 @@ export const GALLERY_FIRST_GROUP_KEY = "whiteBagMm" as const;
 /** Maps `public/images/gallery` subfolder names (as on disk) to i18n group keys. */
 export const GALLERY_FOLDER_TO_GROUP_KEY: Record<string, keyof GalleryGroupLabels> = {
   "Бяла чанта ММ": "whiteBagMm",
+  Балове: "proms",
   "Кафява чанта Жана": "brownBagJana",
   "Кафява чатна ЛП": "brownBagLp",
   "Малка кафява клъч": "smallBrownClutch",
@@ -18,6 +19,7 @@ export const GALLERY_FOLDER_TO_GROUP_KEY: Record<string, keyof GalleryGroupLabel
 /** Display order for known groups; unknown folders follow at the end. */
 export const GALLERY_GROUP_SORT_ORDER: (keyof GalleryGroupLabels)[] = [
   "whiteBagMm",
+  "proms",
   "brownBagJana",
   "brownBagLp",
   "smallBrownClutch",

@@ -1,6 +1,7 @@
 export type GalleryGroupLabels = {
   other: string;
   whiteBagMm: string;
+  proms: string;
   brownBagJana: string;
   brownBagLp: string;
   smallBrownClutch: string;

@@ -62,6 +62,7 @@ type SiteCopy = {
     groups: {
       other: string;
       whiteBagMm: string;
+      proms: string;
       brownBagJana: string;
       brownBagLp: string;
       smallBrownClutch: string;
@@ -258,6 +259,7 @@ const dictionary: Record<Locale, SiteCopy> = {
       groups: {
         other: "General",
         whiteBagMm: "White bag",
+        proms: "Proms",
         brownBagJana: "Brown bag — Jana",
         brownBagLp: "Brown bag — LP",
         smallBrownClutch: "Small brown clutch",
@@ -492,6 +494,7 @@ const dictionary: Record<Locale, SiteCopy> = {
       groups: {
         other: "Общи",
         whiteBagMm: "Бяла чанта",
+        proms: "Балове",
         brownBagJana: "Кафява чанта — Жана",
         brownBagLp: "Кафява чанта — ЛП",
         smallBrownClutch: "Малка кафява клъч",
