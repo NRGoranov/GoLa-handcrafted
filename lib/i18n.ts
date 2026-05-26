@@ -54,6 +54,8 @@ type SiteCopy = {
     viewImage: string;
     openGallery: string;
     backToGallery: string;
+    previousImage: string;
+    nextImage: string;
     zoomIn: string;
     zoomOut: string;
     closeGallery: string;
@@ -248,6 +250,8 @@ const dictionary: Record<Locale, SiteCopy> = {
       viewImage: "View gallery image {n}",
       openGallery: "Open gallery",
       backToGallery: "Back to gallery",
+      previousImage: "Previous image",
+      nextImage: "Next image",
       zoomIn: "Zoom in",
       zoomOut: "Zoom out",
       closeGallery: "Close gallery",
@@ -480,6 +484,8 @@ const dictionary: Record<Locale, SiteCopy> = {
       viewImage: "Виж снимка {n} от галерията",
       openGallery: "Отвори галерията",
       backToGallery: "Обратно към галерията",
+      previousImage: "Предишна снимка",
+      nextImage: "Следваща снимка",
       zoomIn: "Увеличи",
       zoomOut: "Намали",
       closeGallery: "Излез от галерията",
