@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import SectionHeading from "./SectionHeading";
+import type { Locale } from "@/lib/i18n";
 
 type InquiryState = "idle" | "loading" | "success" | "error";
 
@@ -32,6 +33,7 @@ type InquiryCopy = {
     personalization: string;
     general: string;
   };
+  submit: string;
   submitDisabled: string;
   errors: { submitFailed: string; generic: string };
   success: string;
@@ -44,10 +46,17 @@ const defaultForm = {
   inquiryType: "availability",
   message: "",
   location: "",
-  preferredSize: ""
+  preferredSize: "",
+  website: ""
 };
 
-export default function InquirySection({ copy }: { copy: InquiryCopy }) {
+export default function InquirySection({
+  copy,
+  locale
+}: {
+  copy: InquiryCopy;
+  locale: Locale;
+}) {
   const [form, setForm] = useState(defaultForm);
   const [status, setStatus] = useState<InquiryState>("idle");
   const [feedback, setFeedback] = useState("");
@@ -62,8 +71,15 @@ export default function InquirySection({ copy }: { copy: InquiryCopy }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
-          inquiryType: copy.inquiryTypes[form.inquiryType as keyof InquiryCopy["inquiryTypes"]] ?? form.inquiryType
+          name: form.name,
+          email: form.email,
+          contactMethod: form.contactMethod,
+          inquiryType: form.inquiryType,
+          message: form.message,
+          location: form.location,
+          preferredSize: form.preferredSize,
+          locale,
+          website: form.website
         })
       });
 
@@ -90,41 +106,39 @@ export default function InquirySection({ copy }: { copy: InquiryCopy }) {
             title={copy.title}
             description={copy.description}
           />
-          <p className="text-sm text-mist">
-            {copy.note}
+          <p className="text-sm text-mist">{copy.note}</p>
+          <p className="mt-4 text-sm text-mist">
+            Prefer WhatsApp?{" "}
+            <a
+              href="https://wa.me/359887509906"
+              target="_blank"
+              rel="noreferrer"
+              className="focus-ring underline decoration-caramel/70 underline-offset-4 hover:text-caramel"
+            >
+              +359887509906
+            </a>{" "}
+            {copy.or}{" "}
+            <a
+              href="https://wa.me/359887297480"
+              target="_blank"
+              rel="noreferrer"
+              className="focus-ring underline decoration-caramel/70 underline-offset-4 hover:text-caramel"
+            >
+              +359887297480
+            </a>
+            .
           </p>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <div
-            className="rounded-xl border border-caramel/50 bg-caramel/10 px-4 py-3 text-sm text-ivory"
-            role="note"
-            aria-label={copy.statusAria}
-          >
-            <p className="font-medium text-caramel">{copy.importantTitle}</p>
-            <p className="mt-1 text-ivory/90">
-              {copy.formNotActive}{" "}
-              <a
-                href="https://wa.me/359887509906"
-                target="_blank"
-                rel="noreferrer"
-                className="focus-ring underline decoration-caramel/70 underline-offset-4 hover:text-caramel"
-              >
-                +359887509906
-              </a>
-              {" "}
-              {copy.or}{" "}
-              <a
-                href="https://wa.me/359887297480"
-                target="_blank"
-                rel="noreferrer"
-                className="focus-ring underline decoration-caramel/70 underline-offset-4 hover:text-caramel"
-              >
-                +359887297480
-              </a>
-              .
-            </p>
-          </div>
+          <input
+            tabIndex={-1}
+            autoComplete="off"
+            className="hidden"
+            name="website"
+            value={form.website}
+            onChange={(event) => setForm((prev) => ({ ...prev, website: event.target.value }))}
+          />
 
           <Field label={copy.fields.name} required requiredMark={copy.fields.requiredMark}>
             <input
@@ -221,11 +235,10 @@ export default function InquirySection({ copy }: { copy: InquiryCopy }) {
 
           <button
             type="submit"
-            disabled
-            aria-disabled="true"
-            className="focus-ring inline-flex min-h-11 items-center rounded-full bg-caramel/55 px-6 py-3 text-sm font-medium text-ink/80 disabled:cursor-not-allowed disabled:opacity-90"
+            disabled={status === "loading"}
+            className="focus-ring inline-flex min-h-11 items-center rounded-full bg-caramel px-6 py-3 text-sm font-medium text-ink transition hover:bg-caramel/90 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {copy.submitDisabled}
+            {status === "loading" ? `${copy.submit}…` : copy.submit}
           </button>
 
           {feedback ? (

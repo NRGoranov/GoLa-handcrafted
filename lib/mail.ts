@@ -10,27 +10,59 @@ export type InquiryPayload = {
   preferredSize?: string;
 };
 
-function requiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing environment variable: ${name}`);
+const SMTP_VARS = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "TO_EMAIL"] as const;
+
+function usesLegacyGmailEnv(): boolean {
+  return Boolean(process.env.EMAIL_USER?.trim() && process.env.EMAIL_PASSWORD?.trim());
+}
+
+export function isSmtpConfigured(): boolean {
+  if (usesLegacyGmailEnv()) return true;
+  return SMTP_VARS.every((name) => Boolean(process.env[name]?.trim()));
+}
+
+function getRecipientEmail(senderEmail: string): string {
+  return process.env.TO_EMAIL?.trim() || senderEmail;
+}
+
+function createTransporter() {
+  if (usesLegacyGmailEnv()) {
+    return nodemailer.createTransport({
+      service: "Gmail",
+      auth: {
+        user: process.env.EMAIL_USER!.trim(),
+        pass: process.env.EMAIL_PASSWORD!.trim()
+      }
+    });
   }
-  return value;
+
+  const port = Number(process.env.SMTP_PORT);
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST!.trim(),
+    port,
+    secure: port === 465,
+    auth: {
+      user: process.env.SMTP_USER!.trim(),
+      pass: process.env.SMTP_PASS!.trim()
+    }
+  });
+}
+
+function getSenderEmail(): string {
+  if (usesLegacyGmailEnv()) {
+    return process.env.EMAIL_USER!.trim();
+  }
+  return process.env.SMTP_USER!.trim();
 }
 
 export async function sendInquiryMail(data: InquiryPayload): Promise<void> {
-  const host = requiredEnv("SMTP_HOST");
-  const port = Number(requiredEnv("SMTP_PORT"));
-  const user = requiredEnv("SMTP_USER");
-  const pass = requiredEnv("SMTP_PASS");
-  const toEmail = requiredEnv("TO_EMAIL");
+  if (!isSmtpConfigured()) {
+    throw new Error("SMTP is not configured.");
+  }
 
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass }
-  });
+  const senderEmail = getSenderEmail();
+  const toEmail = getRecipientEmail(senderEmail);
+  const transporter = createTransporter();
 
   const text = [
     "New inquiry from GoLa Handcrafted website",
@@ -59,7 +91,7 @@ export async function sendInquiryMail(data: InquiryPayload): Promise<void> {
   `;
 
   await transporter.sendMail({
-    from: `"GoLa Handcrafted Inquiry" <${user}>`,
+    from: `"GoLa Handcrafted Inquiry" <${senderEmail}>`,
     to: toEmail,
     subject: `New ${data.inquiryType} inquiry from ${data.name}`,
     text,

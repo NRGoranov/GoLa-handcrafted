@@ -7,9 +7,11 @@ import CraftsmanshipSection from "@/components/CraftsmanshipSection";
 import GallerySection from "@/components/GallerySection";
 import CustomSection from "@/components/CustomSection";
 import InquirySection from "@/components/InquirySection";
+import DynamicContentSection from "@/components/DynamicContentSection";
 import Footer from "@/components/Footer";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
 import { getGalleryGroups } from "@/lib/galleryImages.server";
+import { listSections } from "@/lib/content/sections-store";
 import { getCopy, isLocale, type Locale } from "@/lib/i18n";
 import { isGiftBox, products } from "@/lib/products";
 
@@ -68,6 +70,7 @@ export default async function HomePage({
   const locale = resolveLocale(rawLocale);
   const copy = getCopy(locale);
   const galleryGroups = getGalleryGroups(copy.gallery.groups);
+  const dynamicSections = await listSections({ publishedOnly: true });
 
   const webPageJsonLd = {
     "@context": "https://schema.org",
@@ -147,7 +150,10 @@ export default async function HomePage({
         <CraftsmanshipSection copy={copy.craftsmanship} />
         <GallerySection copy={copy.gallery} groups={galleryGroups} />
         <CustomSection copy={copy.custom} />
-        <InquirySection copy={copy.inquiry} />
+        {dynamicSections.map((section) => (
+          <DynamicContentSection key={section.id} section={section} locale={locale} />
+        ))}
+        <InquirySection copy={copy.inquiry} locale={locale} />
       </main>
       <ScrollToTopButton label={copy.nav.goToTop} />
       <Footer copy={copy.footer} />

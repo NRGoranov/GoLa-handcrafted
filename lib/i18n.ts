@@ -116,6 +116,7 @@ type SiteCopy = {
       personalization: string;
       general: string;
     };
+    submit: string;
     submitDisabled: string;
     errors: { submitFailed: string; generic: string };
     success: string;
@@ -317,6 +318,7 @@ const dictionary: Record<Locale, SiteCopy> = {
         personalization: "Personalization",
         general: "General"
       },
+      submit: "Send inquiry",
       submitDisabled: "Form temporarily unavailable",
       errors: { submitFailed: "Unable to submit inquiry.", generic: "Something went wrong." },
       success: "Thank you—your inquiry has been received."
@@ -552,6 +554,7 @@ const dictionary: Record<Locale, SiteCopy> = {
         personalization: "Детайли",
         general: "Общо"
       },
+      submit: "Изпрати запитване",
       submitDisabled: "Формата е временно недостъпна",
       errors: {
         submitFailed: "Не успяхме да изпратим запитването.",
