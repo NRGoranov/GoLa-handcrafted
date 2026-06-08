@@ -33,8 +33,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, message: "Image must be 5MB or smaller." }, { status: 400 });
     }
 
+    const folderRaw = formData.get("folder");
+    const folder =
+      typeof folderRaw === "string" && /^[a-z0-9-]+$/i.test(folderRaw) ? folderRaw : "sections";
     const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `sections/${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
+    const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
     const { error } = await supabase.storage.from("section-images").upload(path, buffer, {

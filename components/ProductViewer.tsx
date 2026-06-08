@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import CmsImage from "@/components/CmsImage";
 import {
   intrinsicContainMaxStyle,
   intrinsicSizesProductViewerMain
@@ -41,7 +41,7 @@ export default function ProductViewer({ name, images, copy, syncActiveSrc }: Pro
         className="relative mx-auto aspect-[4/5] w-full overflow-hidden rounded-2xl bg-black/40"
         style={mainMax}
       >
-        <Image
+        <CmsImage
           src={activeImage}
           alt={copy.aria.viewNamedImage.replace("{name}", name)}
           fill
@@ -60,7 +60,7 @@ export default function ProductViewer({ name, images, copy, syncActiveSrc }: Pro
             onClick={() => setActiveImage(image)}
             aria-label={copy.aria.viewImage.replace("{name}", name)}
           >
-            <Image
+            <CmsImage
               src={image}
               alt={copy.aria.thumbnail.replace("{name}", name)}
               fill

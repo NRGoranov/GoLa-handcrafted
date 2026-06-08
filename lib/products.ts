@@ -6,6 +6,7 @@ type ProductBase = {
   id: string;
   name: string;
   description: string;
+  cardSummary?: string;
   dimensions: string;
   widthCm: string;
   heightCm: string;

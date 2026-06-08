@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { handbagProducts, type Product } from "@/lib/products";
+import { type Product } from "@/lib/products";
 import { getCopy, type Locale } from "@/lib/i18n";
 import CollectionSection from "./CollectionSection";
 import ProductModal from "./ProductModal";
@@ -10,10 +10,12 @@ type HomeCatalogCopy = Pick<ReturnType<typeof getCopy>, "collection" | "product"
 
 export default function HomeCatalog({
   locale,
-  copy
+  copy,
+  items
 }: {
   locale: Locale;
   copy: HomeCatalogCopy;
+  items: Product[];
 }) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
@@ -30,7 +32,7 @@ export default function HomeCatalog({
         copy={copy.collection}
         locale={locale}
         productCardCopy={productCardCopy}
-        items={handbagProducts}
+        items={items}
         sectionId="collection"
         onViewProduct={setSelectedProduct}
       />

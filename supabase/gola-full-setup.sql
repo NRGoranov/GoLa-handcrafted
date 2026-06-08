@@ -49,8 +49,37 @@ create table if not exists public.inquiries (
   created_at timestamptz not null default now()
 );
 
+-- Product catalog (handbags + gift box cards)
+create table if not exists public.products (
+  id text primary key,
+  product_kind text not null check (product_kind in ('handbag', 'giftBox')),
+  sort_order integer not null default 0,
+  published boolean not null default false,
+  model integer null,
+  name_en text not null default '',
+  name_bg text not null default '',
+  description_en text not null default '',
+  description_bg text not null default '',
+  card_summary_en text not null default '',
+  card_summary_bg text not null default '',
+  dimensions text not null default '',
+  width_cm text not null default '',
+  height_cm text not null default '',
+  thickness_cm text not null default '',
+  price_eur numeric not null default 0,
+  pockets_add_on_eur numeric null,
+  engraving_add_on_eur numeric null,
+  images text[] not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists content_sections_sort_idx on public.content_sections (sort_order);
 create index if not exists inquiries_created_idx on public.inquiries (created_at desc);
+create index if not exists products_sort_idx on public.products (sort_order);
+
+-- Products start empty. They are auto-seeded on first admin API call, or click
+-- "Load default products" in Content Studio (/admin/studio → Products tab).
 
 -- Site visit analytics
 create table if not exists public.site_visit_stats (
@@ -95,9 +124,21 @@ insert into storage.buckets (id, name, public)
 values ('section-images', 'section-images', true)
 on conflict (id) do nothing;
 
+-- Allow public read of uploaded images (required for URLs to work in the browser)
+drop policy if exists "section-images public read" on storage.objects;
+create policy "section-images public read"
+  on storage.objects for select
+  using (bucket_id = 'section-images');
+
+drop policy if exists "section-images service upload" on storage.objects;
+create policy "section-images service upload"
+  on storage.objects for insert
+  with check (bucket_id = 'section-images');
+
 -- Server-only access via SUPABASE_SECRET_KEY in Next.js API routes
 alter table public.content_sections disable row level security;
 alter table public.inquiries disable row level security;
+alter table public.products disable row level security;
 alter table public.site_visit_stats disable row level security;
 alter table public.site_visit_daily disable row level security;
 
@@ -105,6 +146,7 @@ grant usage on schema public to service_role;
 
 grant select, insert, update, delete on table public.content_sections to service_role;
 grant select, insert, update, delete on table public.inquiries to service_role;
+grant select, insert, update, delete on table public.products to service_role;
 grant select, insert, update, delete on table public.site_visit_stats to service_role;
 grant select, insert, update, delete on table public.site_visit_daily to service_role;
 

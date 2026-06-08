@@ -1,0 +1,360 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import AdminImage from "@/components/admin/AdminImage";
+import ImageUploadField from "@/components/admin/ImageUploadField";
+import type { ProductRecord, ProductRecordInput } from "@/types/product-record";
+
+type ProductEditorProps = {
+  initialProduct: ProductRecord;
+  onSaved?: (product: ProductRecord) => void;
+  onValuesChange?: (product: ProductRecordInput) => void;
+};
+
+function localizedField(
+  product: ProductRecordInput,
+  field: "name" | "description" | "cardSummary",
+  locale: "en" | "bg",
+  value: string
+): ProductRecordInput {
+  return {
+    ...product,
+    [field]: { ...product[field], [locale]: value }
+  };
+}
+
+export default function ProductEditor({
+  initialProduct,
+  onSaved,
+  onValuesChange
+}: ProductEditorProps) {
+  const [values, setValues] = useState<ProductRecordInput>(initialProduct);
+  const [status, setStatus] = useState<"idle" | "saving" | "error" | "success">("idle");
+  const [message, setMessage] = useState("");
+  const [imageUrlInput, setImageUrlInput] = useState("");
+  const lastSyncedAtRef = useRef(initialProduct.updatedAt);
+
+  useEffect(() => {
+    lastSyncedAtRef.current = initialProduct.updatedAt;
+    setValues(initialProduct);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when switching products
+  }, [initialProduct.id]);
+
+  useEffect(() => {
+    if (status === "saving") return;
+    if (Date.parse(initialProduct.updatedAt) <= Date.parse(lastSyncedAtRef.current)) return;
+    lastSyncedAtRef.current = initialProduct.updatedAt;
+    setValues(initialProduct);
+  }, [initialProduct, status]);
+
+  useEffect(() => {
+    onValuesChange?.(values);
+  }, [values, onValuesChange]);
+
+  const patch = (updater: (prev: ProductRecordInput) => ProductRecordInput) => {
+    setValues((prev) => updater(prev));
+  };
+
+  const onUpload = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "products");
+    const response = await fetch("/api/admin/upload", { method: "POST", body: formData });
+    const result = (await response.json()) as { ok: boolean; url?: string; message?: string };
+    if (!response.ok || !result.ok || !result.url) {
+      throw new Error(result.message || "Upload failed.");
+    }
+    patch((prev) => ({ ...prev, images: [...prev.images, result.url!] }));
+  };
+
+  const addImageUrl = () => {
+    const url = imageUrlInput.trim();
+    if (!url) return;
+    patch((prev) => ({ ...prev, images: [...prev.images, url] }));
+    setImageUrlInput("");
+  };
+
+  const setCoverImage = (index: number) => {
+    if (index <= 0) return;
+    patch((prev) => {
+      const images = [...prev.images];
+      const [cover] = images.splice(index, 1);
+      images.unshift(cover);
+      return { ...prev, images };
+    });
+  };
+
+  const moveImage = (index: number, direction: -1 | 1) => {
+    patch((prev) => {
+      const target = index + direction;
+      if (target < 0 || target >= prev.images.length) return prev;
+      const images = [...prev.images];
+      [images[index], images[target]] = [images[target], images[index]];
+      return { ...prev, images };
+    });
+  };
+
+  const onSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setStatus("saving");
+    setMessage("");
+    try {
+      const response = await fetch(`/api/admin/products/${initialProduct.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values)
+      });
+      const result = (await response.json()) as { ok: boolean; product?: ProductRecord; message?: string };
+      if (!response.ok || !result.ok || !result.product) {
+        throw new Error(result.message || "Unable to save product.");
+      }
+      setStatus("success");
+      setMessage("Product saved.");
+      lastSyncedAtRef.current = result.product.updatedAt;
+      onSaved?.(result.product);
+    } catch (error) {
+      setStatus("error");
+      setMessage(error instanceof Error ? error.message : "Unable to save product.");
+    }
+  };
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-6">
+      <section className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
+        <h2 className="font-serif text-xl text-ivory">Product settings</h2>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <label className="block space-y-2">
+            <span className="text-xs uppercase tracking-[0.16em] text-mist">ID / slug</span>
+            <input className="admin-input" value={values.id} readOnly />
+          </label>
+          <label className="block space-y-2">
+            <span className="text-xs uppercase tracking-[0.16em] text-mist">Sort order</span>
+            <input
+              className="admin-input"
+              type="number"
+              min={0}
+              value={values.sortOrder}
+              onChange={(e) => patch((prev) => ({ ...prev, sortOrder: Number(e.target.value) || 0 }))}
+            />
+          </label>
+          <label className="block space-y-2">
+            <span className="text-xs uppercase tracking-[0.16em] text-mist">Type</span>
+            <select
+              className="admin-input"
+              value={values.productKind}
+              onChange={(e) =>
+                patch((prev) => ({
+                  ...prev,
+                  productKind: e.target.value as ProductRecordInput["productKind"]
+                }))
+              }
+            >
+              <option value="handbag" className="bg-ink">Handbag</option>
+              <option value="giftBox" className="bg-ink">Gift box</option>
+            </select>
+          </label>
+          <label className="flex items-center gap-3 pt-7 text-sm text-mist">
+            <input
+              type="checkbox"
+              checked={values.published}
+              onChange={(e) => patch((prev) => ({ ...prev, published: e.target.checked }))}
+            />
+            Published on site
+          </label>
+        </div>
+      </section>
+
+      {(["en", "bg"] as const).map((locale) => (
+        <section key={locale} className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
+          <p className="text-xs uppercase tracking-[0.16em] text-caramel">
+            {locale === "en" ? "English" : "Bulgarian"}
+          </p>
+          <div className="mt-4 space-y-3">
+            <input
+              className="admin-input"
+              placeholder="Name"
+              value={values.name[locale]}
+              onChange={(e) => patch((prev) => localizedField(prev, "name", locale, e.target.value))}
+            />
+            <textarea
+              className="admin-input min-h-20"
+              placeholder="Card summary"
+              value={values.cardSummary[locale]}
+              onChange={(e) => patch((prev) => localizedField(prev, "cardSummary", locale, e.target.value))}
+            />
+            <textarea
+              className="admin-input min-h-28"
+              placeholder="Full description"
+              value={values.description[locale]}
+              onChange={(e) => patch((prev) => localizedField(prev, "description", locale, e.target.value))}
+            />
+          </div>
+        </section>
+      ))}
+
+      <section className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
+        <h2 className="font-serif text-xl text-ivory">Pricing & dimensions</h2>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <input
+            className="admin-input"
+            placeholder="Price (EUR)"
+            type="number"
+            min={0}
+            value={values.priceEur}
+            onChange={(e) => patch((prev) => ({ ...prev, priceEur: Number(e.target.value) || 0 }))}
+          />
+          <input
+            className="admin-input"
+            placeholder="Dimensions label"
+            value={values.dimensions}
+            onChange={(e) => patch((prev) => ({ ...prev, dimensions: e.target.value }))}
+          />
+          {values.productKind === "handbag" ? (
+            <>
+              <input
+                className="admin-input"
+                type="number"
+                placeholder="Pockets add-on EUR"
+                value={values.pocketsAddOnEur ?? 20}
+                onChange={(e) =>
+                  patch((prev) => ({ ...prev, pocketsAddOnEur: Number(e.target.value) || 0 }))
+                }
+              />
+              <input
+                className="admin-input"
+                type="number"
+                placeholder="Engraving add-on EUR"
+                value={values.engravingAddOnEur ?? 20}
+                onChange={(e) =>
+                  patch((prev) => ({ ...prev, engravingAddOnEur: Number(e.target.value) || 0 }))
+                }
+              />
+            </>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
+        <h2 className="font-serif text-xl text-ivory">Images</h2>
+        <p className="mt-2 text-xs text-mist">
+          The cover image is the homepage card thumbnail. Use Set cover, then Save product.
+        </p>
+
+        <div className="mt-4 space-y-3">
+          <ImageUploadField
+            label="Upload product photo"
+            hint="Choose a file — it appears in the gallery below without scrolling the editor."
+            onUpload={onUpload}
+          />
+          <div className="flex flex-wrap gap-2">
+            <input
+              className="admin-input min-w-[12rem] flex-1"
+              placeholder="Or paste image URL /site/path"
+              value={imageUrlInput}
+              onChange={(e) => setImageUrlInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addImageUrl();
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={addImageUrl}
+              className="rounded-full border border-ivory/15 px-4 py-2 text-sm text-ivory hover:border-caramel/40"
+            >
+              Add URL
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-hidden rounded-xl border border-ivory/10 bg-black/20">
+          <p className="border-b border-ivory/10 px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-mist">
+            Gallery · {values.images.length} image{values.images.length === 1 ? "" : "s"}
+          </p>
+          <div className="max-h-[min(52vh,520px)] overflow-y-auto overscroll-contain p-3">
+            {values.images.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-ivory/15 p-6 text-center text-sm text-mist">
+                No images yet.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {values.images.map((src, index) => (
+                  <div
+                    key={`${src}-${index}`}
+                    className={`relative overflow-hidden rounded-xl border bg-black/20 ${
+                      index === 0 ? "border-caramel ring-1 ring-caramel/50" : "border-ivory/10"
+                    }`}
+                  >
+                    <div className="relative aspect-[3/4]">
+                      <AdminImage src={src} alt="" fill className="object-cover" sizes="160px" />
+                    </div>
+                    <div className="flex flex-wrap gap-1 border-t border-ivory/10 bg-[#0a0a0a] p-2">
+                      {index === 0 ? (
+                        <span className="rounded-full bg-caramel px-2 py-0.5 text-[10px] font-medium text-ink">
+                          Cover
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setCoverImage(index)}
+                          className="rounded-full border border-caramel/40 px-2 py-0.5 text-[10px] text-caramel hover:bg-caramel/10"
+                        >
+                          Set cover
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        disabled={index === 0}
+                        onClick={() => moveImage(index, -1)}
+                        className="rounded-full border border-ivory/15 px-2 py-0.5 text-[10px] text-mist disabled:opacity-30"
+                        aria-label="Move earlier"
+                      >
+                        ←
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index === values.images.length - 1}
+                        onClick={() => moveImage(index, 1)}
+                        className="rounded-full border border-ivory/15 px-2 py-0.5 text-[10px] text-mist disabled:opacity-30"
+                        aria-label="Move later"
+                      >
+                        →
+                      </button>
+                      <button
+                        type="button"
+                        className="ml-auto rounded-full bg-red-950/80 px-2 py-0.5 text-[10px] text-red-200"
+                        onClick={() =>
+                          patch((prev) => ({
+                            ...prev,
+                            images: prev.images.filter((_, imageIndex) => imageIndex !== index)
+                          }))
+                        }
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="submit"
+          disabled={status === "saving"}
+          className="rounded-full bg-caramel px-6 py-3 text-sm font-medium text-ink disabled:opacity-60"
+        >
+          {status === "saving" ? "Saving…" : "Save product"}
+        </button>
+        {message ? (
+          <p className={`text-sm ${status === "error" ? "text-red-300" : "text-caramel"}`}>{message}</p>
+        ) : null}
+      </div>
+    </form>
+  );
+}

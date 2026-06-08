@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
+import CmsImage from "@/components/CmsImage";
 import { useState, type ComponentProps } from "react";
 import { GIFT_BOX_HERO_IMAGE } from "@/lib/giftBoxAssets";
 import { intrinsicContainMaxStyle, intrinsicSizesHalfWidthGrid } from "@/lib/intrinsicImages";
-import { giftBoxProducts, type Product } from "@/lib/products";
+import { type Product } from "@/lib/products";
 import { getLocalizedProductPreview, type Locale } from "@/lib/i18n";
 import SectionHeading from "./SectionHeading";
 import ProductModal from "./ProductModal";
@@ -15,10 +15,12 @@ export default function GiftBoxSection({
   locale,
   sectionCopy,
   productCopy,
+  product,
   viewDetailsLabel,
   viewDetailsAriaTemplate
 }: {
   locale: Locale;
+  product: Product;
   sectionCopy: {
     eyebrow: string;
     title: string;
@@ -31,13 +33,14 @@ export default function GiftBoxSection({
   viewDetailsAriaTemplate: string;
 }) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const base = giftBoxProducts[0];
-  const preview = getLocalizedProductPreview(locale, base);
+  const preview = getLocalizedProductPreview(locale, product);
   const productForModal: Product = {
-    ...base,
+    ...product,
     name: preview.name,
-    description: preview.detailDescription
+    description: preview.detailDescription,
+    cardSummary: product.cardSummary?.trim() || preview.cardSummary
   };
+  const heroImage = product.images[0] ?? GIFT_BOX_HERO_IMAGE;
 
   const openDetails = () => setSelectedProduct(productForModal);
 
@@ -52,15 +55,14 @@ export default function GiftBoxSection({
             onClick={openDetails}
             aria-label={viewDetailsAria}
             className="focus-ring relative mx-auto aspect-[4/5] w-full overflow-hidden rounded-2xl border border-ivory/10 md:order-2"
-            style={intrinsicContainMaxStyle(GIFT_BOX_HERO_IMAGE)}
+            style={intrinsicContainMaxStyle(heroImage)}
           >
-            <Image
-              src={GIFT_BOX_HERO_IMAGE}
+            <CmsImage
+              src={heroImage}
               alt={sectionCopy.imageAlt}
               fill
               className="object-cover transition duration-300 hover:scale-[1.02]"
-              sizes={intrinsicSizesHalfWidthGrid(GIFT_BOX_HERO_IMAGE)}
-              loading="lazy"
+              sizes={intrinsicSizesHalfWidthGrid(heroImage)}
             />
           </button>
 
@@ -75,7 +77,7 @@ export default function GiftBoxSection({
               <li>{sectionCopy.bullets[1]}</li>
               <li>{sectionCopy.bullets[2]}</li>
             </ul>
-            <p className="mt-6 text-xs uppercase tracking-[0.18em] text-caramel/90">EUR {base.priceEur}</p>
+            <p className="mt-6 text-xs uppercase tracking-[0.18em] text-caramel/90">EUR {product.priceEur}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <button
                 type="button"

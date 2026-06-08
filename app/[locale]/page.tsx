@@ -13,7 +13,9 @@ import ScrollToTopButton from "@/components/ScrollToTopButton";
 import { getGalleryGroups } from "@/lib/galleryImages.server";
 import { listSections } from "@/lib/content/sections-store";
 import { getCopy, isLocale, type Locale } from "@/lib/i18n";
-import { isGiftBox, products } from "@/lib/products";
+import { isGiftBox } from "@/lib/products";
+import { productRecordToProduct } from "@/lib/products/map-product";
+import { listProducts } from "@/lib/products/products-store";
 
 const siteUrl = "https://www.gola-handcrafted.eu";
 
@@ -71,6 +73,10 @@ export default async function HomePage({
   const copy = getCopy(locale);
   const galleryGroups = getGalleryGroups(copy.gallery.groups);
   const dynamicSections = await listSections({ publishedOnly: true });
+  const productRecords = await listProducts({ publishedOnly: true });
+  const products = productRecords.map((record) => productRecordToProduct(record, locale));
+  const handbagItems = products.filter((product) => product.productKind === "handbag");
+  const giftBoxItem = products.find((product) => product.productKind === "giftBox");
 
   const webPageJsonLd = {
     "@context": "https://schema.org",
@@ -139,14 +145,21 @@ export default async function HomePage({
       <Navbar copy={copy.nav} locale={locale} />
       <main id="main-content">
         <Hero copy={copy.hero} />
-        <HomeCatalog locale={locale} copy={{ collection: copy.collection, product: copy.product }} />
-        <GiftBoxSection
+        <HomeCatalog
           locale={locale}
-          sectionCopy={copy.giftBox}
-          productCopy={copy.product}
-          viewDetailsLabel={copy.product.viewDetails}
-          viewDetailsAriaTemplate={copy.product.aria.viewDetailsFor}
+          copy={{ collection: copy.collection, product: copy.product }}
+          items={handbagItems}
         />
+        {giftBoxItem ? (
+          <GiftBoxSection
+            locale={locale}
+            product={giftBoxItem}
+            sectionCopy={copy.giftBox}
+            productCopy={copy.product}
+            viewDetailsLabel={copy.product.viewDetails}
+            viewDetailsAriaTemplate={copy.product.aria.viewDetailsFor}
+          />
+        ) : null}
         <CraftsmanshipSection copy={copy.craftsmanship} />
         <GallerySection copy={copy.gallery} groups={galleryGroups} />
         <CustomSection copy={copy.custom} />

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SECTION_LAYOUTS } from "@/types/content-section";
+import { SECTION_LAYOUTS, type ContentSection } from "@/types/content-section";
 
 const localizedSchema = z.object({
   en: z.string(),
@@ -38,6 +38,18 @@ export function formValuesToInput(values: ContentSectionFormValues) {
     slug: values.slug.trim(),
     imageUrl: values.imageUrl?.trim() || null,
     ctaHref: values.ctaHref?.trim() || null
+  };
+}
+
+export function formValuesToPreviewSection(
+  values: ContentSectionFormValues,
+  section: Pick<ContentSection, "id" | "createdAt" | "updatedAt">
+): ContentSection {
+  return {
+    id: section.id,
+    createdAt: section.createdAt,
+    updatedAt: section.updatedAt,
+    ...formValuesToInput(values)
   };
 }
 

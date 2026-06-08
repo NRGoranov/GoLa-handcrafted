@@ -34,7 +34,7 @@ export default function CollectionSection({
       ...product,
       name: preview.name,
       description: preview.detailDescription,
-      cardSummary: preview.cardSummary
+      cardSummary: product.cardSummary?.trim() || preview.cardSummary
     };
   });
 

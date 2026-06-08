@@ -1,11 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  SECTION_LAYOUTS,
-  SECTION_LAYOUT_LABELS,
-  type ContentSection
-} from "@/types/content-section";
+import { useEffect, useMemo, useRef, useState } from "react";
+import ImageUploadField from "@/components/admin/ImageUploadField";
+import { SECTION_LAYOUT_LABELS, type ContentSection } from "@/types/content-section";
+import LayoutPicker from "@/components/admin/LayoutPicker";
 import {
   contentSectionInputSchema,
   formValuesToInput,
@@ -16,17 +14,45 @@ import {
 type SectionEditorProps = {
   initialSection: ContentSection;
   onSaved?: (section: ContentSection) => void;
+  onValuesChange?: (values: ContentSectionFormValues) => void;
+  compact?: boolean;
 };
 
 function emptyBullets(): [string, string, string] {
   return ["", "", ""];
 }
 
-export default function SectionEditor({ initialSection, onSaved }: SectionEditorProps) {
+export default function SectionEditor({
+  initialSection,
+  onSaved,
+  onValuesChange,
+  compact = false
+}: SectionEditorProps) {
   const [values, setValues] = useState<ContentSectionFormValues>(() => sectionToFormValues(initialSection));
+
+  const patchValues = (updater: (prev: ContentSectionFormValues) => ContentSectionFormValues) => {
+    setValues((prev) => updater(prev));
+  };
   const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
-  const [uploading, setUploading] = useState(false);
+  const lastSyncedAtRef = useRef(initialSection.updatedAt);
+
+  useEffect(() => {
+    lastSyncedAtRef.current = initialSection.updatedAt;
+    setValues(sectionToFormValues(initialSection));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when switching sections
+  }, [initialSection.id]);
+
+  useEffect(() => {
+    if (status === "saving") return;
+    if (Date.parse(initialSection.updatedAt) <= Date.parse(lastSyncedAtRef.current)) return;
+    lastSyncedAtRef.current = initialSection.updatedAt;
+    setValues(sectionToFormValues(initialSection));
+  }, [initialSection, status]);
+
+  useEffect(() => {
+    onValuesChange?.(values);
+  }, [values, onValuesChange]);
 
   const layoutHelp = useMemo(() => SECTION_LAYOUT_LABELS[values.layout].description, [values.layout]);
 
@@ -38,30 +64,22 @@ export default function SectionEditor({ initialSection, onSaved }: SectionEditor
     locale: "en" | "bg",
     nextValue: string
   ) => {
-    setValues((prev) => ({
+    patchValues((prev) => ({
       ...prev,
       [field]: { ...prev[field], [locale]: nextValue }
     }));
   };
 
   const onUpload = async (file: File) => {
-    setUploading(true);
-    setMessage("");
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await fetch("/api/admin/upload", { method: "POST", body: formData });
-      const result = (await response.json()) as { ok: boolean; url?: string; message?: string };
-      if (!response.ok || !result.ok || !result.url) {
-        throw new Error(result.message || "Upload failed.");
-      }
-      setValues((prev) => ({ ...prev, imageUrl: result.url ?? null }));
-      setMessage("Image uploaded.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Upload failed.");
-    } finally {
-      setUploading(false);
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await fetch("/api/admin/upload", { method: "POST", body: formData });
+    const result = (await response.json()) as { ok: boolean; url?: string; message?: string };
+    if (!response.ok || !result.ok || !result.url) {
+      throw new Error(result.message || "Upload failed.");
     }
+    patchValues((prev) => ({ ...prev, imageUrl: result.url ?? null }));
+    setMessage("Image uploaded.");
   };
 
   const onSubmit = async (event: React.FormEvent) => {
@@ -88,6 +106,7 @@ export default function SectionEditor({ initialSection, onSaved }: SectionEditor
       }
       setStatus("success");
       setMessage("Section saved.");
+      lastSyncedAtRef.current = result.section.updatedAt;
       onSaved?.(result.section);
     } catch (error) {
       setStatus("error");
@@ -96,15 +115,15 @@ export default function SectionEditor({ initialSection, onSaved }: SectionEditor
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-8">
-      <section className="rounded-2xl border border-ivory/10 bg-[#111] p-6">
-        <h2 className="font-serif text-2xl text-ivory">Section settings</h2>
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <Field label="Slug (used for anchor id)">
+    <form onSubmit={onSubmit} className={`space-y-6 ${compact ? "" : "space-y-8"}`}>
+      <section className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
+        <h2 className="font-serif text-xl text-ivory">Section settings</h2>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <Field label="Slug (anchor id)">
             <input
               className="admin-input"
               value={values.slug}
-              onChange={(event) => setValues((prev) => ({ ...prev, slug: event.target.value }))}
+              onChange={(event) => patchValues((prev) => ({ ...prev, slug: event.target.value }))}
               placeholder="atelier-story"
             />
           </Field>
@@ -115,36 +134,25 @@ export default function SectionEditor({ initialSection, onSaved }: SectionEditor
               min={0}
               value={values.sortOrder}
               onChange={(event) =>
-                setValues((prev) => ({ ...prev, sortOrder: Number(event.target.value) || 0 }))
+                patchValues((prev) => ({ ...prev, sortOrder: Number(event.target.value) || 0 }))
               }
             />
           </Field>
-          <Field label="Layout">
-            <select
-              className="admin-input"
-              value={values.layout}
-              onChange={(event) =>
-                setValues((prev) => ({
-                  ...prev,
-                  layout: event.target.value as ContentSectionFormValues["layout"]
-                }))
-              }
-            >
-              {SECTION_LAYOUTS.map((layout) => (
-                <option key={layout} value={layout} className="bg-ink text-ivory">
-                  {SECTION_LAYOUT_LABELS[layout].label}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <label className="flex items-center gap-3 pt-7 text-sm text-mist">
+          <label className="flex items-center gap-3 pt-7 text-sm text-mist md:col-span-2">
             <input
               type="checkbox"
               checked={values.published}
-              onChange={(event) => setValues((prev) => ({ ...prev, published: event.target.checked }))}
+              onChange={(event) => patchValues((prev) => ({ ...prev, published: event.target.checked }))}
             />
             Published on site
           </label>
+        </div>
+        <div className="mt-5">
+          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-mist">Layout</p>
+          <LayoutPicker
+            value={values.layout}
+            onChange={(layout) => patchValues((prev) => ({ ...prev, layout }))}
+          />
         </div>
         <p className="mt-3 text-sm text-mist">{layoutHelp}</p>
       </section>
@@ -179,14 +187,14 @@ export default function SectionEditor({ initialSection, onSaved }: SectionEditor
               onChange={(event) => {
                 const next = [...(values.bullets ?? emptyBullets())] as [string, string, string];
                 next[index] = event.target.value;
-                setValues((prev) => ({ ...prev, bullets: next }));
+                patchValues((prev) => ({ ...prev, bullets: next }));
               }}
             />
           ))}
           <button
             type="button"
             className="text-sm text-caramel underline"
-            onClick={() => setValues((prev) => ({ ...prev, bullets: null }))}
+            onClick={() => patchValues((prev) => ({ ...prev, bullets: null }))}
           >
             Clear bullets
           </button>
@@ -205,27 +213,23 @@ export default function SectionEditor({ initialSection, onSaved }: SectionEditor
 
       <section className="rounded-2xl border border-ivory/10 bg-[#111] p-6">
         <h2 className="font-serif text-2xl text-ivory">Image</h2>
+        <p className="mt-2 text-xs text-mist">
+          Upload a file or paste a path/URL below. Uploaded files are stored in Supabase and work on the live site.
+        </p>
         <div className="mt-4 space-y-4">
-          <Field label="Image URL (site path or Supabase URL)">
+          <ImageUploadField
+            label="Upload section image"
+            hint="Click Choose file and select a photo. When upload completes, the URL field fills in automatically."
+            onUpload={onUpload}
+          />
+          <Field label="Or paste image URL / site path">
             <input
               className="admin-input"
               value={values.imageUrl ?? ""}
               onChange={(event) =>
-                setValues((prev) => ({ ...prev, imageUrl: event.target.value || null }))
+                patchValues((prev) => ({ ...prev, imageUrl: event.target.value || null }))
               }
               placeholder="/images/heroRotation/hero-2.jpeg"
-            />
-          </Field>
-          <Field label="Upload image">
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              disabled={uploading}
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void onUpload(file);
-              }}
-              className="block w-full text-sm text-mist file:mr-4 file:rounded-full file:border-0 file:bg-caramel file:px-4 file:py-2 file:text-sm file:font-medium file:text-ink"
             />
           </Field>
           <LocalizedBlock
@@ -248,7 +252,7 @@ export default function SectionEditor({ initialSection, onSaved }: SectionEditor
         <input
           className="admin-input"
           value={values.ctaHref ?? ""}
-          onChange={(event) => setValues((prev) => ({ ...prev, ctaHref: event.target.value || null }))}
+          onChange={(event) => patchValues((prev) => ({ ...prev, ctaHref: event.target.value || null }))}
           placeholder="#inquiry or https://..."
         />
       </Field>

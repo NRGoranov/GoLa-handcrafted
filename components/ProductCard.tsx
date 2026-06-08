@@ -1,4 +1,4 @@
-import Image from "next/image";
+import CmsImage from "@/components/CmsImage";
 import { intrinsicContainMaxStyle, intrinsicSizesProductCard } from "@/lib/intrinsicImages";
 import { type Product, isGiftBox } from "@/lib/products";
 
@@ -25,7 +25,7 @@ export default function ProductCard({ product, summary, onView, copy }: ProductC
         onClick={() => onView(product)}
         aria-label={copy.aria.viewDetailsFor.replace("{name}", product.name)}
       >
-        <Image
+        <CmsImage
           src={heroSrc}
           alt={
             isGiftBox(product)
