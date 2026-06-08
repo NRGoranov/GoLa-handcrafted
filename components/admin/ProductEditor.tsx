@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import AdminImage from "@/components/admin/AdminImage";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import PublishField from "@/components/admin/PublishField";
-import PublishIssuesPanel from "@/components/admin/PublishIssuesPanel";
+import PublishActionsFooter from "@/components/admin/PublishActionsFooter";
 import {
   publishIssueFieldIds,
   scrollToPublishField,
@@ -179,8 +179,6 @@ export default function ProductEditor({
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
-      <PublishIssuesPanel issues={publishIssues} />
-
       <section className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
         <h2 className="font-serif text-xl text-ivory">Product settings</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -214,19 +212,6 @@ export default function ProductEditor({
               <option value="giftBox" className="bg-ink">Gift box</option>
             </select>
           </label>
-          <div id="field-published" className="scroll-mt-24 md:col-span-2">
-            <label className="flex items-center gap-3 pt-2 text-sm text-mist">
-              <input
-                type="checkbox"
-                checked={values.published}
-                onChange={(e) => trySetPublished(e.target.checked)}
-              />
-              Published on site
-            </label>
-            <p className="mt-1 text-xs text-mist">
-              Requires name, card summary, price, and at least one photo in both languages.
-            </p>
-          </div>
         </div>
       </section>
 
@@ -442,18 +427,14 @@ export default function ProductEditor({
         </div>
       </section>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="submit"
-          disabled={status === "saving"}
-          className="rounded-full bg-caramel px-6 py-3 text-sm font-medium text-ink disabled:opacity-60"
-        >
-          {status === "saving" ? "Saving…" : values.published ? "Save & publish" : "Save draft"}
-        </button>
-        {message ? (
-          <p className={`text-sm ${status === "error" ? "text-red-300" : "text-caramel"}`}>{message}</p>
-        ) : null}
-      </div>
+      <PublishActionsFooter
+        published={values.published}
+        onPublishedChange={trySetPublished}
+        requirementsHint="Requires name, card summary, price, and at least one photo in both languages."
+        issues={publishIssues}
+        status={status}
+        message={message}
+      />
     </form>
   );
 }

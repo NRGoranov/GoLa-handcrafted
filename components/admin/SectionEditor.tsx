@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import PublishField from "@/components/admin/PublishField";
-import PublishIssuesPanel from "@/components/admin/PublishIssuesPanel";
-import { SECTION_LAYOUT_LABELS, type ContentSection } from "@/types/content-section";
+import PublishActionsFooter from "@/components/admin/PublishActionsFooter";
+import { type ContentSection } from "@/types/content-section";
 import LayoutPicker from "@/components/admin/LayoutPicker";
 import {
   publishIssueFieldIds,
@@ -70,8 +70,6 @@ export default function SectionEditor({
     if (publishIssues.length === 0) return;
     setPublishIssues(validateSectionForPublish(values));
   }, [values, publishIssues.length]);
-
-  const layoutHelp = useMemo(() => SECTION_LAYOUT_LABELS[values.layout].description, [values.layout]);
 
   const updateLocalized = (
     field: keyof Pick<
@@ -175,8 +173,6 @@ export default function SectionEditor({
 
   return (
     <form onSubmit={onSubmit} className={`space-y-6 ${compact ? "" : "space-y-8"}`}>
-      <PublishIssuesPanel issues={publishIssues} />
-
       <section className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
         <h2 className="font-serif text-xl text-ivory">Section settings</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -204,19 +200,6 @@ export default function SectionEditor({
               }
             />
           </PublishField>
-          <div id="field-published" className="scroll-mt-24 md:col-span-2">
-            <label className="flex items-center gap-3 pt-2 text-sm text-mist">
-              <input
-                type="checkbox"
-                checked={values.published}
-                onChange={(event) => trySetPublished(event.target.checked)}
-              />
-              Published on site
-            </label>
-            <p className="mt-1 text-xs text-mist">
-              Requires slug, both titles, both descriptions{values.layout !== "text-only" ? ", image + alt text" : ""}.
-            </p>
-          </div>
         </div>
         <div className="mt-5">
           <p className="mb-3 text-xs uppercase tracking-[0.16em] text-mist">Layout</p>
@@ -225,7 +208,6 @@ export default function SectionEditor({
             onChange={(layout) => patchValues((prev) => ({ ...prev, layout }))}
           />
         </div>
-        <p className="mt-3 text-sm text-mist">{layoutHelp}</p>
       </section>
 
       <LocalizedBlock
@@ -350,18 +332,14 @@ export default function SectionEditor({
         />
       </PublishField>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="submit"
-          disabled={status === "saving"}
-          className="rounded-full bg-caramel px-6 py-3 text-sm font-medium text-ink disabled:opacity-60"
-        >
-          {status === "saving" ? "Saving…" : values.published ? "Save & publish" : "Save draft"}
-        </button>
-        {message ? (
-          <p className={`text-sm ${status === "error" ? "text-red-300" : "text-caramel"}`}>{message}</p>
-        ) : null}
-      </div>
+      <PublishActionsFooter
+        published={values.published}
+        onPublishedChange={trySetPublished}
+        requirementsHint={`Requires slug, both titles, both descriptions${values.layout !== "text-only" ? ", image + alt text" : ""}.`}
+        issues={publishIssues}
+        status={status}
+        message={message}
+      />
     </form>
   );
 }

@@ -6,7 +6,7 @@ const layoutPreviewClass: Record<SectionLayout, string> = {
   "split-left": "grid grid-cols-2 gap-1",
   "split-right": "grid grid-cols-2 gap-1",
   centered: "flex flex-col items-center gap-1",
-  "full-bleed": "relative h-full",
+  "full-bleed": "",
   "text-only": "flex flex-col gap-1"
 };
 
@@ -32,7 +32,7 @@ export default function LayoutPicker({
                 : "border-ivory/10 bg-black/20 hover:border-caramel/30"
             }`}
           >
-            <div className={`mb-3 h-16 rounded-lg border border-ivory/10 bg-[#0b0b0b] p-2 ${layoutPreviewClass[layout]}`}>
+            <div className={`relative mb-3 h-16 rounded-lg border border-ivory/10 bg-[#0b0b0b] p-2 ${layoutPreviewClass[layout]}`}>
               {layout === "split-left" ? (
                 <>
                   <div className="rounded bg-ivory/20" />
@@ -72,7 +72,9 @@ export default function LayoutPicker({
               ) : null}
             </div>
             <p className="text-sm font-medium text-ivory">{SECTION_LAYOUT_LABELS[layout].label}</p>
-            <p className="mt-1 text-xs text-mist">{SECTION_LAYOUT_LABELS[layout].description}</p>
+            <p className="mt-1 min-h-[2.5rem] text-xs leading-relaxed text-mist">
+              {SECTION_LAYOUT_LABELS[layout].description}
+            </p>
           </button>
         );
       })}

@@ -154,6 +154,12 @@ export default function DynamicContentSection({ section, locale }: DynamicConten
   }
 
   if (section.layout === "full-bleed") {
+    const desc = description.trim();
+    const bodyText = body.trim();
+    const duplicateCopy = Boolean(desc && bodyText && desc === bodyText);
+    const headingDescription = duplicateCopy ? undefined : desc || undefined;
+    const overlayBody = duplicateCopy ? desc : bodyText && bodyText !== desc ? bodyText : undefined;
+
     return (
       <section id={sectionId} className="border-y border-ivory/10 bg-[#0f0f0f] py-20 sm:py-24">
         <div className="container-luxury">
@@ -165,8 +171,14 @@ export default function DynamicContentSection({ section, locale }: DynamicConten
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-[#0b0b0b] via-[#0b0b0b]/55 to-transparent" />
             <div className="relative z-10 flex min-h-[420px] flex-col justify-end p-8 sm:p-12">
-              <SectionHeading eyebrow={eyebrow || undefined} title={title} description={description || undefined} />
-              {body ? <p className="max-w-2xl text-sm text-mist sm:text-base">{body}</p> : null}
+              <SectionHeading
+                eyebrow={eyebrow || undefined}
+                title={title}
+                description={headingDescription}
+              />
+              {overlayBody ? (
+                <p className="max-w-2xl text-sm text-mist sm:text-base">{overlayBody}</p>
+              ) : null}
               {section.ctaHref ? <CtaLink label={ctaLabel} href={section.ctaHref} /> : null}
             </div>
           </div>

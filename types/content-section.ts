@@ -54,7 +54,7 @@ export const SECTION_LAYOUT_LABELS: Record<
   },
   "full-bleed": {
     label: "Full bleed",
-    description: "Wide image with text overlay at the bottom."
+    description: "Wide image with title and copy overlaid at the bottom."
   },
   "text-only": {
     label: "Text only",
