@@ -5,6 +5,12 @@ const smtpVars = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "TO_EMAIL"
 const legacyGmailVars = ["EMAIL_USER", "EMAIL_PASSWORD"];
 const supabaseVars = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
 
+function isSupabaseConfigured() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+  return Boolean(url?.trim() && key?.trim());
+}
+
 function isSmtpConfigured() {
   if (legacyGmailVars.every(has)) return true;
   return smtpVars.every((name) => has(name));
@@ -45,13 +51,12 @@ console.log(smtpReady
   : "Email missing — form still saves locally in dev.");
 
 section("Supabase (production persistence)");
-const supabaseReady = supabaseVars.every(has);
-for (const name of supabaseVars) {
-  console.log(`${has(name) ? "OK" : "MISSING"}  ${name}`);
-}
+const supabaseReady = isSupabaseConfigured();
+console.log(`${process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL ? "OK" : "MISSING"}  NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL)`);
+console.log(`${process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY ? "OK" : "MISSING"}  SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY)`);
 console.log(supabaseReady
-  ? "Sections and inquiries persist on Vercel."
-  : "Local dev uses data/content-sections.json until Supabase is added.");
+  ? "Sections, inquiries, and visit counts persist on Vercel."
+  : "Local dev uses JSON files until Supabase is added.");
 
 section("Summary");
 if (has("ADMIN_PASSWORD") && has("ADMIN_SESSION_SECRET")) {
