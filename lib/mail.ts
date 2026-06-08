@@ -21,8 +21,17 @@ export function isSmtpConfigured(): boolean {
   return SMTP_VARS.every((name) => Boolean(process.env[name]?.trim()));
 }
 
-function getRecipientEmail(senderEmail: string): string {
-  return process.env.TO_EMAIL?.trim() || senderEmail;
+/** Comma-separated list in TO_EMAIL, e.g. a@x.com,b@y.com */
+export function getRecipientEmails(senderEmail: string): string[] {
+  const raw = process.env.TO_EMAIL?.trim();
+  if (!raw) return [senderEmail];
+
+  const emails = raw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  return emails.length > 0 ? emails : [senderEmail];
 }
 
 function createTransporter() {
@@ -61,7 +70,7 @@ export async function sendInquiryMail(data: InquiryPayload): Promise<void> {
   }
 
   const senderEmail = getSenderEmail();
-  const toEmail = getRecipientEmail(senderEmail);
+  const toEmails = getRecipientEmails(senderEmail);
   const transporter = createTransporter();
 
   const text = [
@@ -92,7 +101,7 @@ export async function sendInquiryMail(data: InquiryPayload): Promise<void> {
 
   await transporter.sendMail({
     from: `"GoLa Handcrafted Inquiry" <${senderEmail}>`,
-    to: toEmail,
+    to: toEmails,
     subject: `New ${data.inquiryType} inquiry from ${data.name}`,
     text,
     html,

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { cookies } from "next/headers";
+import VisitTracker from "@/components/VisitTracker";
 
 const playfair = Playfair_Display({
   subsets: ["latin", "latin-ext", "cyrillic"],
@@ -156,6 +157,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
         {/* <TranslatePrompt /> */}
+        <VisitTracker />
         {children}
       </body>
     </html>
