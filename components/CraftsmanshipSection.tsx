@@ -1,5 +1,7 @@
-import Image from "next/image";
+import CmsImage from "@/components/CmsImage";
 import SectionHeading from "./SectionHeading";
+
+const DEFAULT_IMAGE = "/images/heroRotation/hero-2.jpeg";
 
 type CraftsmanshipCopy = {
   eyebrow: string;
@@ -9,13 +11,19 @@ type CraftsmanshipCopy = {
   imageAlt: string;
 };
 
-export default function CraftsmanshipSection({ copy }: { copy: CraftsmanshipCopy }) {
+export default function CraftsmanshipSection({
+  copy,
+  imageUrl
+}: {
+  copy: CraftsmanshipCopy;
+  imageUrl?: string | null;
+}) {
   return (
     <section id="craftsmanship" className="border-y border-ivory/10 bg-[#0f0f0f] py-20 sm:py-24">
       <div className="container-luxury grid items-center gap-10 md:grid-cols-2">
         <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-ivory/10">
-          <Image
-            src="/images/heroRotation/hero-2.jpeg"
+          <CmsImage
+            src={imageUrl || DEFAULT_IMAGE}
             alt={copy.imageAlt}
             fill
             className="object-cover"

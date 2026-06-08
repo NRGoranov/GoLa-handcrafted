@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
-import HomeCatalog from "@/components/HomeCatalog";
-import GiftBoxSection from "@/components/GiftBoxSection";
-import CraftsmanshipSection from "@/components/CraftsmanshipSection";
-import GallerySection from "@/components/GallerySection";
-import CustomSection from "@/components/CustomSection";
-import InquirySection from "@/components/InquirySection";
-import DynamicContentSection from "@/components/DynamicContentSection";
+import HomePageMain from "@/components/HomePageMain";
 import Footer from "@/components/Footer";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
-import { getGalleryGroups } from "@/lib/galleryImages.server";
+import { getGalleryGroupsForLocale } from "@/lib/gallery/gallery-store";
+import { buildHomepageNavLinks } from "@/lib/content/homepage-nav-links";
+import { getResolvedHomepageLayout } from "@/lib/content/homepage-layout-store";
 import { listSections } from "@/lib/content/sections-store";
+import { getBuiltinSectionImageUrl, getSiteCopy } from "@/lib/content/resolve-site-copy";
 import { getCopy, isLocale, type Locale } from "@/lib/i18n";
 import { isGiftBox } from "@/lib/products";
 import { productRecordToProduct } from "@/lib/products/map-product";
@@ -70,13 +66,22 @@ export default async function HomePage({
 }) {
   const { locale: rawLocale } = await params;
   const locale = resolveLocale(rawLocale);
-  const copy = getCopy(locale);
-  const galleryGroups = getGalleryGroups(copy.gallery.groups);
+  const [copy, craftsmanshipImageUrl, homepageLayout, galleryGroups] = await Promise.all([
+    getSiteCopy(locale),
+    getBuiltinSectionImageUrl("craftsmanship"),
+    getResolvedHomepageLayout(),
+    getGalleryGroupsForLocale(locale)
+  ]);
   const dynamicSections = await listSections({ publishedOnly: true });
   const productRecords = await listProducts({ publishedOnly: true });
   const products = productRecords.map((record) => productRecordToProduct(record, locale));
   const handbagItems = products.filter((product) => product.productKind === "handbag");
   const giftBoxItem = products.find((product) => product.productKind === "giftBox");
+  const navLinks = buildHomepageNavLinks({
+    locale,
+    layout: homepageLayout,
+    sections: dynamicSections
+  });
 
   const webPageJsonLd = {
     "@context": "https://schema.org",
@@ -142,31 +147,18 @@ export default async function HomePage({
       <a href="#main-content" className="focus-ring sr-only focus:not-sr-only">
         Skip to content
       </a>
-      <Navbar copy={copy.nav} locale={locale} />
+      <Navbar copy={copy.nav} locale={locale} links={navLinks} />
       <main id="main-content">
-        <Hero copy={copy.hero} />
-        <HomeCatalog
+        <HomePageMain
           locale={locale}
-          copy={{ collection: copy.collection, product: copy.product }}
-          items={handbagItems}
+          copy={copy}
+          layout={homepageLayout}
+          craftsmanshipImageUrl={craftsmanshipImageUrl}
+          galleryGroups={galleryGroups}
+          dynamicSections={dynamicSections}
+          handbagItems={handbagItems}
+          giftBoxItem={giftBoxItem}
         />
-        {giftBoxItem ? (
-          <GiftBoxSection
-            locale={locale}
-            product={giftBoxItem}
-            sectionCopy={copy.giftBox}
-            productCopy={copy.product}
-            viewDetailsLabel={copy.product.viewDetails}
-            viewDetailsAriaTemplate={copy.product.aria.viewDetailsFor}
-          />
-        ) : null}
-        <CraftsmanshipSection copy={copy.craftsmanship} />
-        <GallerySection copy={copy.gallery} groups={galleryGroups} />
-        <CustomSection copy={copy.custom} />
-        {dynamicSections.map((section) => (
-          <DynamicContentSection key={section.id} section={section} locale={locale} />
-        ))}
-        <InquirySection copy={copy.inquiry} locale={locale} />
       </main>
       <ScrollToTopButton label={copy.nav.goToTop} />
       <Footer copy={copy.footer} />

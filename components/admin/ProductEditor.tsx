@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AdminImage from "@/components/admin/AdminImage";
 import ImageUploadField from "@/components/admin/ImageUploadField";
+import PublishField from "@/components/admin/PublishField";
+import PublishIssuesPanel from "@/components/admin/PublishIssuesPanel";
+import {
+  publishIssueFieldIds,
+  scrollToPublishField,
+  validateProductForPublish,
+  type PublishIssue
+} from "@/lib/admin/publish-validation";
 import type { ProductRecord, ProductRecordInput } from "@/types/product-record";
 
 type ProductEditorProps = {
@@ -32,11 +40,14 @@ export default function ProductEditor({
   const [status, setStatus] = useState<"idle" | "saving" | "error" | "success">("idle");
   const [message, setMessage] = useState("");
   const [imageUrlInput, setImageUrlInput] = useState("");
+  const [publishIssues, setPublishIssues] = useState<PublishIssue[]>([]);
   const lastSyncedAtRef = useRef(initialProduct.updatedAt);
+  const invalidFields = useMemo(() => publishIssueFieldIds(publishIssues), [publishIssues]);
 
   useEffect(() => {
     lastSyncedAtRef.current = initialProduct.updatedAt;
     setValues(initialProduct);
+    setPublishIssues([]);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when switching products
   }, [initialProduct.id]);
 
@@ -50,6 +61,31 @@ export default function ProductEditor({
   useEffect(() => {
     onValuesChange?.(values);
   }, [values, onValuesChange]);
+
+  useEffect(() => {
+    if (publishIssues.length === 0) return;
+    setPublishIssues(validateProductForPublish(values));
+  }, [values, publishIssues.length]);
+
+  const trySetPublished = (nextPublished: boolean) => {
+    if (!nextPublished) {
+      setPublishIssues([]);
+      patch((prev) => ({ ...prev, published: false }));
+      return;
+    }
+
+    const issues = validateProductForPublish(values);
+    if (issues.length > 0) {
+      setPublishIssues(issues);
+      setStatus("error");
+      setMessage("Complete the highlighted fields to publish.");
+      scrollToPublishField(issues[0].fieldId);
+      return;
+    }
+
+    setPublishIssues([]);
+    patch((prev) => ({ ...prev, published: true }));
+  };
 
   const patch = (updater: (prev: ProductRecordInput) => ProductRecordInput) => {
     setValues((prev) => updater(prev));
@@ -96,20 +132,43 @@ export default function ProductEditor({
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setStatus("saving");
     setMessage("");
+
+    if (values.published) {
+      const issues = validateProductForPublish(values);
+      if (issues.length > 0) {
+        setStatus("error");
+        setPublishIssues(issues);
+        setMessage("Complete the highlighted fields to publish.");
+        scrollToPublishField(issues[0].fieldId);
+        return;
+      }
+    }
+
+    setStatus("saving");
+
     try {
       const response = await fetch(`/api/admin/products/${initialProduct.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values)
       });
-      const result = (await response.json()) as { ok: boolean; product?: ProductRecord; message?: string };
+      const result = (await response.json()) as {
+        ok: boolean;
+        product?: ProductRecord;
+        message?: string;
+        issues?: PublishIssue[];
+      };
       if (!response.ok || !result.ok || !result.product) {
+        if (result.issues?.length) {
+          setPublishIssues(result.issues);
+          scrollToPublishField(result.issues[0].fieldId);
+        }
         throw new Error(result.message || "Unable to save product.");
       }
       setStatus("success");
-      setMessage("Product saved.");
+      setPublishIssues([]);
+      setMessage(values.published ? "Product published." : "Draft saved.");
       lastSyncedAtRef.current = result.product.updatedAt;
       onSaved?.(result.product);
     } catch (error) {
@@ -120,6 +179,8 @@ export default function ProductEditor({
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
+      <PublishIssuesPanel issues={publishIssues} />
+
       <section className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
         <h2 className="font-serif text-xl text-ivory">Product settings</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -153,14 +214,19 @@ export default function ProductEditor({
               <option value="giftBox" className="bg-ink">Gift box</option>
             </select>
           </label>
-          <label className="flex items-center gap-3 pt-7 text-sm text-mist">
-            <input
-              type="checkbox"
-              checked={values.published}
-              onChange={(e) => patch((prev) => ({ ...prev, published: e.target.checked }))}
-            />
-            Published on site
-          </label>
+          <div id="field-published" className="scroll-mt-24 md:col-span-2">
+            <label className="flex items-center gap-3 pt-2 text-sm text-mist">
+              <input
+                type="checkbox"
+                checked={values.published}
+                onChange={(e) => trySetPublished(e.target.checked)}
+              />
+              Published on site
+            </label>
+            <p className="mt-1 text-xs text-mist">
+              Requires name, card summary, price, and at least one photo in both languages.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -170,24 +236,40 @@ export default function ProductEditor({
             {locale === "en" ? "English" : "Bulgarian"}
           </p>
           <div className="mt-4 space-y-3">
-            <input
-              className="admin-input"
-              placeholder="Name"
-              value={values.name[locale]}
-              onChange={(e) => patch((prev) => localizedField(prev, "name", locale, e.target.value))}
-            />
-            <textarea
-              className="admin-input min-h-20"
-              placeholder="Card summary"
-              value={values.cardSummary[locale]}
-              onChange={(e) => patch((prev) => localizedField(prev, "cardSummary", locale, e.target.value))}
-            />
-            <textarea
-              className="admin-input min-h-28"
-              placeholder="Full description"
-              value={values.description[locale]}
-              onChange={(e) => patch((prev) => localizedField(prev, "description", locale, e.target.value))}
-            />
+            <PublishField
+              fieldId={`field-product-name-${locale}`}
+              label="Name"
+              invalid={invalidFields.has(`field-product-name-${locale}`)}
+              hint={publishIssues.find((issue) => issue.fieldId === `field-product-name-${locale}`)?.message}
+            >
+              <input
+                className="admin-input"
+                placeholder="Name"
+                value={values.name[locale]}
+                onChange={(e) => patch((prev) => localizedField(prev, "name", locale, e.target.value))}
+              />
+            </PublishField>
+            <PublishField
+              fieldId={`field-product-summary-${locale}`}
+              label="Card summary"
+              invalid={invalidFields.has(`field-product-summary-${locale}`)}
+              hint={publishIssues.find((issue) => issue.fieldId === `field-product-summary-${locale}`)?.message}
+            >
+              <textarea
+                className="admin-input min-h-20"
+                placeholder="Card summary"
+                value={values.cardSummary[locale]}
+                onChange={(e) => patch((prev) => localizedField(prev, "cardSummary", locale, e.target.value))}
+              />
+            </PublishField>
+            <PublishField label="Full description">
+              <textarea
+                className="admin-input min-h-28"
+                placeholder="Full description"
+                value={values.description[locale]}
+                onChange={(e) => patch((prev) => localizedField(prev, "description", locale, e.target.value))}
+              />
+            </PublishField>
           </div>
         </section>
       ))}
@@ -195,14 +277,21 @@ export default function ProductEditor({
       <section className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
         <h2 className="font-serif text-xl text-ivory">Pricing & dimensions</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <input
-            className="admin-input"
-            placeholder="Price (EUR)"
-            type="number"
-            min={0}
-            value={values.priceEur}
-            onChange={(e) => patch((prev) => ({ ...prev, priceEur: Number(e.target.value) || 0 }))}
-          />
+          <PublishField
+            fieldId="field-product-price"
+            label="Price (EUR)"
+            invalid={invalidFields.has("field-product-price")}
+            hint={publishIssues.find((issue) => issue.fieldId === "field-product-price")?.message}
+          >
+            <input
+              className="admin-input"
+              placeholder="Price (EUR)"
+              type="number"
+              min={0}
+              value={values.priceEur}
+              onChange={(e) => patch((prev) => ({ ...prev, priceEur: Number(e.target.value) || 0 }))}
+            />
+          </PublishField>
           <input
             className="admin-input"
             placeholder="Dimensions label"
@@ -234,8 +323,18 @@ export default function ProductEditor({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
-        <h2 className="font-serif text-xl text-ivory">Images</h2>
+      <section
+        id="field-product-images"
+        className={`scroll-mt-24 rounded-2xl border bg-[#111] p-5 ${
+          invalidFields.has("field-product-images") ? "border-red-400/50 ring-1 ring-red-400/40" : "border-ivory/10"
+        }`}
+      >
+        <h2 className="font-serif text-xl text-ivory">Images · required</h2>
+        {invalidFields.has("field-product-images") ? (
+          <p className="mt-1 text-xs text-red-200/90">
+            {publishIssues.find((issue) => issue.fieldId === "field-product-images")?.message}
+          </p>
+        ) : null}
         <p className="mt-2 text-xs text-mist">
           The cover image is the homepage card thumbnail. Use Set cover, then Save product.
         </p>
@@ -349,7 +448,7 @@ export default function ProductEditor({
           disabled={status === "saving"}
           className="rounded-full bg-caramel px-6 py-3 text-sm font-medium text-ink disabled:opacity-60"
         >
-          {status === "saving" ? "Saving…" : "Save product"}
+          {status === "saving" ? "Saving…" : values.published ? "Save & publish" : "Save draft"}
         </button>
         {message ? (
           <p className={`text-sm ${status === "error" ? "text-red-300" : "text-caramel"}`}>{message}</p>

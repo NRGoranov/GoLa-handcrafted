@@ -283,6 +283,48 @@ export async function updateProduct(id: string, input: ProductRecordInput): Prom
   return record;
 }
 
+export async function reorderProducts(orderedIds: string[]): Promise<ProductRecord[]> {
+  const products = await listProducts({ skipSeed: true });
+  const productMap = new Map(products.map((product) => [product.id, product]));
+
+  if (orderedIds.length !== products.length) {
+    throw new Error("Invalid product order.");
+  }
+
+  const reordered: ProductRecord[] = [];
+  for (let index = 0; index < orderedIds.length; index += 1) {
+    const product = productMap.get(orderedIds[index]);
+    if (!product) throw new Error("Invalid product order.");
+    reordered.push({
+      ...product,
+      sortOrder: index,
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    for (const record of reordered) {
+      const { error } = await supabase.from("products").update(recordToRow(record)).eq("id", record.id);
+      if (error) {
+        if (isMissingProductsTable(error.message) && shouldUseJsonStorage()) {
+          await writeJsonProducts(reordered);
+          return reordered;
+        }
+        throw new Error(error.message);
+      }
+    }
+    return reordered;
+  }
+
+  if (!shouldUseJsonStorage()) {
+    throw new Error("Supabase is required to reorder products in production.");
+  }
+
+  await writeJsonProducts(reordered);
+  return reordered;
+}
+
 export async function deleteProduct(id: string): Promise<void> {
   const supabase = getSupabaseAdmin();
   if (supabase) {

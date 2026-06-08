@@ -49,6 +49,34 @@ create table if not exists public.inquiries (
   created_at timestamptz not null default now()
 );
 
+-- Homepage block order (built-in sections + custom CMS blocks)
+create table if not exists public.homepage_layout (
+  id text primary key default 'default',
+  block_order jsonb not null default '[]'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+-- Gallery modal sections and image URLs (managed in Content Studio)
+create table if not exists public.gallery_groups (
+  id text primary key,
+  label_en text not null default '',
+  label_bg text not null default '',
+  sort_order integer not null default 0,
+  images text[] not null default '{}',
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists gallery_groups_sort_idx on public.gallery_groups (sort_order);
+
+-- Built-in homepage section copy (hero, collection headings, etc.)
+create table if not exists public.builtin_sections (
+  section_key text primary key,
+  content_en jsonb not null default '{}'::jsonb,
+  content_bg jsonb not null default '{}'::jsonb,
+  image_url text null,
+  updated_at timestamptz not null default now()
+);
+
 -- Product catalog (handbags + gift box cards)
 create table if not exists public.products (
   id text primary key,
@@ -137,6 +165,9 @@ create policy "section-images service upload"
 
 -- Server-only access via SUPABASE_SECRET_KEY in Next.js API routes
 alter table public.content_sections disable row level security;
+alter table public.homepage_layout disable row level security;
+alter table public.gallery_groups disable row level security;
+alter table public.builtin_sections disable row level security;
 alter table public.inquiries disable row level security;
 alter table public.products disable row level security;
 alter table public.site_visit_stats disable row level security;
@@ -145,6 +176,9 @@ alter table public.site_visit_daily disable row level security;
 grant usage on schema public to service_role;
 
 grant select, insert, update, delete on table public.content_sections to service_role;
+grant select, insert, update, delete on table public.homepage_layout to service_role;
+grant select, insert, update, delete on table public.gallery_groups to service_role;
+grant select, insert, update, delete on table public.builtin_sections to service_role;
 grant select, insert, update, delete on table public.inquiries to service_role;
 grant select, insert, update, delete on table public.products to service_role;
 grant select, insert, update, delete on table public.site_visit_stats to service_role;

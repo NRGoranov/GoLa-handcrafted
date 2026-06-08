@@ -53,6 +53,14 @@ export function formValuesToPreviewSection(
   };
 }
 
+export function sectionToInput(section: ContentSection) {
+  const { id, createdAt, updatedAt, ...input } = section;
+  void id;
+  void createdAt;
+  void updatedAt;
+  return input;
+}
+
 export function sectionToFormValues(section: {
   slug: string;
   layout: ContentSectionFormValues["layout"];

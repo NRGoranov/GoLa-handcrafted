@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin/require-admin-api";
+import { validateProductForPublish } from "@/lib/admin/publish-validation";
 import { deleteProduct, getProduct, updateProduct } from "@/lib/products/products-store";
 import type { ProductRecordInput } from "@/types/product-record";
 
@@ -27,6 +28,21 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   try {
     const { id } = await params;
     const body = (await req.json()) as ProductRecordInput;
+
+    if (body.published) {
+      const issues = validateProductForPublish({ ...body, id });
+      if (issues.length > 0) {
+        return NextResponse.json(
+          {
+            ok: false,
+            message: `Complete required fields: ${issues[0].label}.`,
+            issues
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const product = await updateProduct(id, { ...body, id });
     return NextResponse.json({ ok: true, product });
   } catch (error) {

@@ -529,10 +529,13 @@ function GalleryFocusedView({
 
 export default function GallerySection({
   copy,
-  groups
+  groups,
+  containedModal = false
 }: {
   copy: GalleryCopy;
   groups: GalleryImageGroup[];
+  /** Keep the modal inside the preview frame instead of the browser viewport. */
+  containedModal?: boolean;
 }) {
   const images = flattenGalleryImages(groups);
   const [open, setOpen] = useState(false);
@@ -604,7 +607,9 @@ export default function GallerySection({
     if (!open) return;
 
     const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (!containedModal) {
+      document.body.style.overflow = "hidden";
+    }
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (focusedIndex !== null && event.key === "ArrowLeft") {
@@ -627,10 +632,12 @@ export default function GallerySection({
 
     window.addEventListener("keydown", onKeyDown);
     return () => {
-      document.body.style.overflow = previousOverflow;
+      if (!containedModal) {
+        document.body.style.overflow = previousOverflow;
+      }
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [backToGrid, closeGallery, focusNextImage, focusPreviousImage, focusedIndex, open]);
+  }, [backToGrid, closeGallery, containedModal, focusNextImage, focusPreviousImage, focusedIndex, open]);
 
   useEffect(() => {
     if (!open || focusedIndex !== null || restoreFocusedIndexRef.current === null) return;
@@ -649,8 +656,10 @@ export default function GallerySection({
   const focusedSrc = focusedIndex !== null ? images[focusedIndex] : null;
   const isFocused = focusedIndex !== null && focusedSrc;
 
+  const modalPositionClass = containedModal ? "absolute inset-0" : "fixed inset-0";
+
   return (
-    <>
+    <div className={containedModal ? "relative" : undefined}>
       <section
         id="gallery"
         aria-label={copy.sectionAria}
@@ -688,7 +697,7 @@ export default function GallerySection({
       <AnimatePresence>
         {open ? (
           <motion.div
-            className="fixed inset-0 z-[60] flex items-end justify-center bg-black/75 p-0 sm:items-center sm:p-4"
+            className={`${modalPositionClass} z-[60] flex items-end justify-center bg-black/75 p-0 sm:items-center sm:p-4`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -759,6 +768,6 @@ export default function GallerySection({
           </motion.div>
         ) : null}
       </AnimatePresence>
-    </>
+    </div>
   );
 }

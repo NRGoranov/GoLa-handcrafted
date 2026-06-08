@@ -52,6 +52,45 @@ a {
   @apply mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 xl:px-12;
 }
 
+.studio-preview-draft section,
+.studio-preview-draft article,
+.studio-preview-draft header {
+  outline: 1px dashed rgba(183, 139, 90, 0.42);
+  outline-offset: 3px;
+}
+
+.studio-preview-draft:not(.studio-preview-card) section::before,
+.studio-preview-draft:not(.studio-preview-card) article::before {
+  content: "Editable block";
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 5;
+  border-radius: 9999px;
+  border: 1px dashed rgba(183, 139, 90, 0.55);
+  background: rgba(11, 11, 11, 0.82);
+  padding: 0.1rem 0.45rem;
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #b78b5a;
+  pointer-events: none;
+}
+
+.studio-preview-draft section,
+.studio-preview-draft article {
+  position: relative;
+}
+
+.studio-preview-screen {
+  will-change: width, height;
+}
+
+.studio-preview-screen-inner {
+  will-change: transform;
+  transition: transform 0.3s ease-out;
+}
+
 .admin-input {
   @apply focus-ring w-full rounded-xl border border-ivory/20 bg-[#0b0b0b] px-4 py-3 text-sm text-ivory;
 }

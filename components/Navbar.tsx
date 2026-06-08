@@ -4,14 +4,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type NavbarCopy = {
-  links: {
-    collection: string;
-    giftBox: string;
-    craftsmanship: string;
-    gallery: string;
-    custom: string;
-    inquiry: string;
-  };
   menu: string;
   openMenuAria: string;
   closeMenuAria: string;
@@ -20,16 +12,20 @@ type NavbarCopy = {
   languageLabel: string;
 };
 
-const sectionLinks = [
-  { href: "#collection", key: "collection" as const },
-  { href: "#gift-box", key: "giftBox" as const },
-  { href: "#craftsmanship", key: "craftsmanship" as const },
-  { href: "#gallery", key: "gallery" as const },
-  { href: "#custom", key: "custom" as const },
-  { href: "#inquiry", key: "inquiry" as const }
-];
+export type NavbarLink = {
+  href: string;
+  label: string;
+};
 
-export default function Navbar({ copy, locale }: { copy: NavbarCopy; locale: "en" | "bg" }) {
+export default function Navbar({
+  copy,
+  locale,
+  links
+}: {
+  copy: NavbarCopy;
+  locale: "en" | "bg";
+  links: NavbarLink[];
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
@@ -89,13 +85,13 @@ export default function Navbar({ copy, locale }: { copy: NavbarCopy; locale: "en
         </a>
 
         <ul className="hidden items-center gap-[clamp(1rem,2.2vw,2.5rem)] md:flex">
-          {sectionLinks.map((link) => (
+          {links.map((link) => (
             <li key={link.href}>
               <a
                 href={link.href}
                 className="focus-ring text-sm text-ivory/85 transition hover:text-caramel"
               >
-                {copy.links[link.key]}
+                {link.label}
               </a>
             </li>
           ))}
@@ -140,14 +136,14 @@ export default function Navbar({ copy, locale }: { copy: NavbarCopy; locale: "en
               {otherLocale.toUpperCase()}
             </a>
           </li>
-          {sectionLinks.map((link) => (
+          {links.map((link) => (
             <li key={link.href}>
               <a
                 href={link.href}
                 className="focus-ring block py-3 text-sm text-ivory/85 transition hover:text-caramel"
                 onClick={() => setMenuOpen(false)}
               >
-                {copy.links[link.key]}
+                {link.label}
               </a>
             </li>
           ))}

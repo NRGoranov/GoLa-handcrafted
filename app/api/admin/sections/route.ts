@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin/require-admin-api";
+import { registerNewCmsBlock } from "@/lib/content/homepage-layout-store";
 import {
   createSection,
   listSections,
@@ -35,6 +36,7 @@ export async function POST(req: Request) {
     }
 
     const section = await createSection(formValuesToInput(parsed.data));
+    await registerNewCmsBlock(section.id);
     return NextResponse.json({ ok: true, section });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to create section.";
@@ -53,6 +55,7 @@ export async function PUT() {
     draft.slug = `section-${Date.now()}`;
     draft.title.en = "New section";
     const section = await createSection(draft);
+    await registerNewCmsBlock(section.id);
     return NextResponse.json({ ok: true, section });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to create draft section.";

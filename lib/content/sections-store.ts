@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
+import { sectionToInput } from "@/lib/content/section-schema";
 import type { ContentSection, ContentSectionInput } from "@/types/content-section";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/server";
 
@@ -209,6 +210,18 @@ export async function updateSection(id: string, input: ContentSectionInput): Pro
   sections[index] = section;
   await writeJsonSections(sections);
   return section;
+}
+
+export async function reorderCmsSections(orderedIds: string[]): Promise<void> {
+  const sections = await listSections();
+  const sectionMap = new Map(sections.map((section) => [section.id, section]));
+
+  for (let index = 0; index < orderedIds.length; index += 1) {
+    const section = sectionMap.get(orderedIds[index]);
+    if (!section || section.sortOrder === index) continue;
+
+    await updateSection(section.id, { ...sectionToInput(section), sortOrder: index });
+  }
 }
 
 export async function deleteSection(id: string): Promise<void> {

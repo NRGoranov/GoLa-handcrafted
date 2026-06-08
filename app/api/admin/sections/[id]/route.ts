@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin/require-admin-api";
+import { unregisterCmsBlock } from "@/lib/content/homepage-layout-store";
 import {
   deleteSection,
   getSectionById,
   updateSection
 } from "@/lib/content/sections-store";
+import { validateSectionForPublish } from "@/lib/admin/publish-validation";
 import { contentSectionInputSchema, formValuesToInput } from "@/lib/content/section-schema";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -41,6 +43,20 @@ export async function PUT(req: Request, context: RouteContext) {
       );
     }
 
+    if (parsed.data.published) {
+      const issues = validateSectionForPublish(parsed.data);
+      if (issues.length > 0) {
+        return NextResponse.json(
+          {
+            ok: false,
+            message: `Complete required fields: ${issues[0].label}.`,
+            issues
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const section = await updateSection(id, formValuesToInput(parsed.data));
     return NextResponse.json({ ok: true, section });
   } catch (error) {
@@ -56,6 +72,7 @@ export async function DELETE(_req: Request, context: RouteContext) {
 
   const { id } = await context.params;
   try {
+    await unregisterCmsBlock(id);
     await deleteSection(id);
     return NextResponse.json({ ok: true });
   } catch (error) {

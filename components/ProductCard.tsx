@@ -10,9 +10,11 @@ type ProductCardProps = {
     viewDetails: string;
     aria: { viewDetailsFor: string };
   };
+  /** Fill parent height (admin live preview). */
+  previewFill?: boolean;
 };
 
-export default function ProductCard({ product, summary, onView, copy }: ProductCardProps) {
+export default function ProductCard({ product, summary, onView, copy, previewFill = false }: ProductCardProps) {
   const heroSrc = product.images[0];
   const maxStyle = intrinsicContainMaxStyle(heroSrc);
 
@@ -20,8 +22,10 @@ export default function ProductCard({ product, summary, onView, copy }: ProductC
     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-ivory/15 bg-[#111]">
       <button
         type="button"
-        className="focus-ring relative mx-auto aspect-[4/5] w-full overflow-hidden text-left"
-        style={maxStyle}
+        className={`focus-ring relative mx-auto w-full overflow-hidden text-left ${
+          previewFill ? "min-h-0 flex-1" : "aspect-[4/5]"
+        }`}
+        style={previewFill ? undefined : maxStyle}
         onClick={() => onView(product)}
         aria-label={copy.aria.viewDetailsFor.replace("{name}", product.name)}
       >
