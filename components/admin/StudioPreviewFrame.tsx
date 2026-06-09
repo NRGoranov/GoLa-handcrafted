@@ -10,8 +10,8 @@ const DEVICE_WIDTH: Record<PreviewDevice, number> = {
 };
 
 const DEVICE_HEIGHT: Record<PreviewDevice, number> = {
-  desktop: 800,
-  phone: 844
+  desktop: 1600,
+  phone: 1688
 };
 
 type StudioPreviewFrameProps = {
@@ -119,13 +119,13 @@ export default function StudioPreviewFrame({
   }, [children, device, isDraft, isCard, screenSized]);
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col">
+    <div className={`flex w-full flex-col ${isCard ? "shrink-0" : "h-full min-h-0"}`}>
       <div className="mb-2 flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-ivory/10 pb-2">
         <div className="min-w-0">
           <p className="truncate text-[10px] uppercase tracking-[0.14em] text-mist">{label}</p>
           <p className="text-[10px] text-mist/80">
             {isCard
-              ? "Catalog card · fills preview"
+              ? "Catalog card · actual size"
               : screenSized
                 ? device === "desktop"
                   ? `Screen preview (${designWidth}×${designHeight})`
@@ -164,21 +164,23 @@ export default function StudioPreviewFrame({
 
       <div
         ref={viewportRef}
-        className={`min-h-0 w-full flex-1 rounded-xl border border-ivory/10 bg-[#080808] ${
+        className={`w-full rounded-xl border border-ivory/10 bg-[#080808] ${
           isCard
-            ? "overflow-hidden p-2"
-            : screenSized
+            ? "flex shrink-0 items-start justify-center p-3 pb-4"
+            : `min-h-0 flex-1 ${
+            screenSized
               ? device === "phone"
                 ? "flex items-start justify-center overflow-y-auto overflow-x-hidden overscroll-contain p-2"
                 : "overflow-y-auto overflow-x-hidden overscroll-contain p-1"
               : `overflow-y-auto overflow-x-hidden overscroll-contain p-1 ${
-                  expanded ? "min-h-[min(52vh,580px)]" : ""
+                  expanded ? "min-h-[min(104vh,1160px)]" : ""
                 }`
+          }`
         }`}
       >
         {isCard ? (
           <div
-            className={`studio-preview-card h-full min-h-0 w-full overflow-hidden rounded-lg bg-ink shadow-2xl ${
+            className={`studio-preview-card shrink-0 overflow-hidden rounded-lg bg-ink shadow-2xl ${
               isDraft ? "studio-preview-draft" : "studio-preview-live"
             } ${blockInteraction}`}
           >

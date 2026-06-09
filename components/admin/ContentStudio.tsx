@@ -37,16 +37,23 @@ type VisitStats = {
 
 const REFRESH_MS = 30_000;
 
+const PRODUCT_PREVIEW_HEIGHT =
+  "max-lg:max-h-[82vh] lg:h-[82vh] lg:max-h-[82vh] lg:sticky lg:top-[22vh] lg:self-start";
+const PRODUCT_EDITOR_HEIGHT =
+  "max-lg:max-h-[70vh] lg:h-[70vh] lg:max-h-[70vh] lg:sticky lg:top-[25vh] lg:self-start";
+
 function StudioColumn({
   title,
   action,
   children,
-  className = ""
+  className = "",
+  scrollable = false
 }: {
   title: string;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  scrollable?: boolean;
 }) {
   return (
     <div className={`flex min-h-0 flex-col ${className}`}>
@@ -54,7 +61,11 @@ function StudioColumn({
         <p className="text-xs font-medium uppercase tracking-[0.16em] text-mist">{title}</p>
         {action}
       </div>
-      <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-ivory/10 bg-[#111] transition-[flex] duration-300 ease-in-out">
+      <div
+        className={`min-h-0 flex-1 rounded-2xl border border-ivory/10 bg-[#111] transition-[flex] duration-300 ease-in-out ${
+          scrollable ? "overflow-y-auto overscroll-contain" : "overflow-hidden"
+        }`}
+      >
         {children}
       </div>
     </div>
@@ -432,7 +443,7 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
   );
 
   const editorBody = (
-    <div className="h-full overflow-y-auto overscroll-contain bg-[#0b0b0b] p-4">
+    <div className={`bg-[#0b0b0b] p-4 ${tab === "products" ? "min-h-full" : "h-full overflow-y-auto overscroll-contain"}`}>
       {tab === "sections" && !selectedSection && !selectedBuiltinSection && !loading ? (
         <div className="rounded-xl border border-ivory/10 bg-[#111] p-6">
           <h2 className="font-serif text-xl text-ivory">Select a section to edit</h2>
@@ -485,21 +496,27 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
     </div>
   );
 
-  const previewBody = (
+  const productPreviewBody =
+    productPreviewValues || selectedProduct ? (
+      <StudioPreviewFrame
+        variant="card"
+        label={
+          (productPreviewValues ?? selectedProduct)!.name.en ||
+          (productPreviewValues ?? selectedProduct)!.name.bg ||
+          "Product card"
+        }
+        isDraft={isProductDirty}
+      >
+        <ProductLivePreview product={productPreviewValues ?? selectedProduct!} />
+      </StudioPreviewFrame>
+    ) : (
+      <div className="flex h-full items-center justify-center p-6 text-center text-sm text-mist">
+        Select a product to preview its catalog card.
+      </div>
+    );
+
+  const sectionPreviewBody = (
     <div className="flex h-full min-h-0 w-full flex-col bg-ink p-1">
-      {tab === "products" && (productPreviewValues || selectedProduct) ? (
-        <StudioPreviewFrame
-          variant="card"
-          label={
-            (productPreviewValues ?? selectedProduct)!.name.en ||
-            (productPreviewValues ?? selectedProduct)!.name.bg ||
-            "Product card"
-          }
-          isDraft={isProductDirty}
-        >
-          <ProductLivePreview product={productPreviewValues ?? selectedProduct!} />
-        </StudioPreviewFrame>
-      ) : null}
       {tab === "sections" && previewBuiltinSection && selectedBuiltinKey ? (
         <StudioPreviewFrame
           expanded
@@ -530,11 +547,6 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
         >
           <SectionLivePreview section={previewSection} />
         </StudioPreviewFrame>
-      ) : null}
-      {tab === "products" && !selectedProduct ? (
-        <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-ivory/15 p-6 text-center text-sm text-mist">
-          Preview appears here while you edit.
-        </div>
       ) : null}
       {tab === "sections" && !selectedSection && !selectedBuiltinSection ? (
         <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-ivory/15 p-6 text-center text-sm text-mist">
@@ -896,21 +908,32 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
           </aside>
 
           {tab === "sections" ? (
-            <div className="flex min-h-[min(120vh,1320px)] min-w-0 flex-1 flex-col gap-4 lg:min-h-[calc(100vh-10rem)]">
+            <div className="flex min-h-[min(240vh,2640px)] min-w-0 flex-1 flex-col gap-4 lg:min-h-[calc(200vh-20rem)]">
               <StudioColumn className="min-h-0 w-full flex-[7] basis-0" title="Live preview">
-                {previewBody}
+                {sectionPreviewBody}
               </StudioColumn>
               <StudioColumn className="min-h-0 w-full flex-[6] basis-0" title="Editor" action={editorActions}>
                 {editorBody}
               </StudioColumn>
             </div>
           ) : (
-            <div className="flex min-h-[min(82vh,920px)] min-w-0 flex-1 gap-4 lg:min-h-[calc(100vh-10rem)]">
-              <StudioColumn className="min-h-0 min-w-0 flex-1 basis-0" title="Editor" action={editorActions}>
-                {editorBody}
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:items-start">
+              <StudioColumn
+                className={`h-full w-full shrink-0 sm:w-auto sm:max-w-sm ${PRODUCT_PREVIEW_HEIGHT}`}
+                title="Live preview"
+                scrollable
+              >
+                <div className="flex min-h-full items-start justify-center bg-ink p-2 pb-3">
+                  {productPreviewBody}
+                </div>
               </StudioColumn>
-              <StudioColumn className="min-h-0 min-w-0 flex-1 basis-0" title="Live preview">
-                {previewBody}
+              <StudioColumn
+                className={`h-full min-h-0 min-w-0 flex-1 ${PRODUCT_EDITOR_HEIGHT}`}
+                title="Editor"
+                action={editorActions}
+                scrollable
+              >
+                {editorBody}
               </StudioColumn>
             </div>
           )}

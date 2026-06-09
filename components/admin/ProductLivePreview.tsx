@@ -29,19 +29,16 @@ export default function ProductLivePreview({
   const copy = getCopy(locale).product;
 
   return (
-    <div className="h-full min-h-0 w-full">
-      <div className="h-full w-full">
-        <ProductCard
-          product={preview}
-          summary={summary}
-          onView={() => undefined}
-          copy={{
-            viewDetails: copy.viewDetails,
-            aria: { viewDetailsFor: copy.aria.viewDetailsFor }
-          }}
-          previewFill
-        />
-      </div>
+    <div className="w-full max-w-sm">
+      <ProductCard
+        product={preview}
+        summary={summary}
+        onView={() => undefined}
+        copy={{
+          viewDetails: copy.viewDetails,
+          aria: { viewDetailsFor: copy.aria.viewDetailsFor }
+        }}
+      />
     </div>
   );
 }
