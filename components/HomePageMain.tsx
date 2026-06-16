@@ -52,6 +52,7 @@ export default function HomePageMain({
                   locale={locale}
                   copy={{ collection: copy.collection, product: copy.product }}
                   items={handbagItems}
+                  giftBoxProduct={giftBoxItem ?? null}
                 />
               );
             case "giftBox":
@@ -60,6 +61,7 @@ export default function HomePageMain({
                   key={blockId}
                   locale={locale}
                   product={giftBoxItem}
+                  handbagItems={handbagItems}
                   sectionCopy={copy.giftBox}
                   productCopy={copy.product}
                   viewDetailsLabel={copy.product.viewDetails}

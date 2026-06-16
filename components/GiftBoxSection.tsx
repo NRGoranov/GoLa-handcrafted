@@ -1,7 +1,7 @@
 "use client";
 
 import CmsImage from "@/components/CmsImage";
-import { useState, type ComponentProps } from "react";
+import { useMemo, useState, type ComponentProps } from "react";
 import { GIFT_BOX_HERO_IMAGE } from "@/lib/giftBoxAssets";
 import { intrinsicContainMaxStyle, intrinsicSizesHalfWidthGrid } from "@/lib/intrinsicImages";
 import { type Product } from "@/lib/products";
@@ -16,11 +16,13 @@ export default function GiftBoxSection({
   sectionCopy,
   productCopy,
   product,
+  handbagItems = [],
   viewDetailsLabel,
   viewDetailsAriaTemplate
 }: {
   locale: Locale;
   product: Product;
+  handbagItems?: Product[];
   sectionCopy: {
     eyebrow: string;
     title: string;
@@ -40,6 +42,19 @@ export default function GiftBoxSection({
     description: preview.detailDescription,
     cardSummary: product.cardSummary?.trim() || preview.cardSummary
   };
+  const localizedHandbags = useMemo(
+    () =>
+      handbagItems.map((item) => {
+        const itemPreview = getLocalizedProductPreview(locale, item);
+        return {
+          ...item,
+          name: itemPreview.name,
+          description: itemPreview.detailDescription,
+          cardSummary: item.cardSummary?.trim() || itemPreview.cardSummary
+        };
+      }),
+    [handbagItems, locale]
+  );
   const heroImage = product.images[0] ?? GIFT_BOX_HERO_IMAGE;
 
   const openDetails = () => setSelectedProduct(productForModal);
@@ -97,7 +112,13 @@ export default function GiftBoxSection({
         </div>
       </section>
 
-      <ProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} copy={productCopy} />
+      <ProductModal
+        product={selectedProduct}
+        giftBoxProduct={productForModal}
+        handbagItems={localizedHandbags}
+        onClose={() => setSelectedProduct(null)}
+        copy={productCopy}
+      />
     </>
   );
 }

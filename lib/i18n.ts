@@ -151,6 +151,29 @@ type SiteCopy = {
       customizationNo: string;
       insideLeather: string;
     };
+    prefill: {
+      pocketsYes: string;
+      pocketsNo: string;
+      engravingYes: string;
+      engravingNo: string;
+    };
+    placeholders: {
+      engravingText: string;
+    };
+    giftBoxAddonHeading: string;
+    handbagAddonHeading: string;
+    standaloneGiftBoxHeading: string;
+    requestItemHeading: string;
+    includeGiftBox: string;
+    includeHandbag: string;
+    selectHandbag: string;
+    giftBoxAddonAdds: string;
+    addToRequest: string;
+    addBoxOnly: string;
+    addModelToRequest: string;
+    sendInquiry: string;
+    inYourRequest: string;
+    removeFromRequest: string;
     options: {
       colors: string[];
       woodCoatingColors: string[];
@@ -353,6 +376,29 @@ const dictionary: Record<Locale, SiteCopy> = {
         customizationNo: "No",
         insideLeather: "естествена кожа (natural leather)"
       },
+      prefill: {
+        pocketsYes: "Yes",
+        pocketsNo: "No",
+        engravingYes: "Yes",
+        engravingNo: "No"
+      },
+      placeholders: {
+        engravingText: "Engraving text…"
+      },
+      giftBoxAddonHeading: "Box details",
+      handbagAddonHeading: "Model details",
+      standaloneGiftBoxHeading: "Standalone gift box",
+      requestItemHeading: "Item {index} — {name}",
+      includeGiftBox: "Add premium gift box",
+      includeHandbag: "Add a handbag",
+      selectHandbag: "Choose model",
+      giftBoxAddonAdds: "adds +EUR {amount}",
+      addToRequest: "Add to request",
+      addBoxOnly: "Add box to request",
+      addModelToRequest: "Add model to request",
+      sendInquiry: "Send inquiry",
+      inYourRequest: "In your request",
+      removeFromRequest: "Remove",
       options: {
         colors: [
           "Light Beige",
@@ -592,6 +638,29 @@ const dictionary: Record<Locale, SiteCopy> = {
         customizationNo: "Не",
         insideLeather: "естествена кожа"
       },
+      prefill: {
+        pocketsYes: "Да",
+        pocketsNo: "Без",
+        engravingYes: "Да",
+        engravingNo: "Без"
+      },
+      placeholders: {
+        engravingText: "Текст за гравиране…"
+      },
+      giftBoxAddonHeading: "Детайли за кутията",
+      handbagAddonHeading: "Детайли за модела",
+      standaloneGiftBoxHeading: "Отделна кутия",
+      requestItemHeading: "Позиция {index} — {name}",
+      includeGiftBox: "Добави премиум подаръчна кутия",
+      includeHandbag: "Добави чанта",
+      selectHandbag: "Избери модел",
+      giftBoxAddonAdds: "+EUR {amount}",
+      addToRequest: "Добави към запитването",
+      addBoxOnly: "Добави кутията към запитването",
+      addModelToRequest: "Добави модела към запитването",
+      sendInquiry: "Изпрати запитване",
+      inYourRequest: "В запитването",
+      removeFromRequest: "Премахни",
       options: {
         colors: [
           "Светъл бежов",

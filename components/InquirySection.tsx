@@ -1,7 +1,13 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import SectionHeading from "./SectionHeading";
+import {
+  consumeInquiryPrefill,
+  INQUIRY_PREFILL_EVENT,
+  type InquiryPrefillDetail
+} from "@/lib/inquiry-prefill";
+import { clearInquiryCart } from "@/lib/inquiry-cart";
 import type { Locale } from "@/lib/i18n";
 
 type InquiryState = "idle" | "loading" | "success" | "error";
@@ -60,6 +66,29 @@ export default function InquirySection({
   const [form, setForm] = useState(defaultForm);
   const [status, setStatus] = useState<InquiryState>("idle");
   const [feedback, setFeedback] = useState("");
+  const messageRef = useRef<HTMLTextAreaElement>(null);
+
+  const applyPrefill = (detail: InquiryPrefillDetail) => {
+    setForm((prev) => ({
+      ...prev,
+      message: detail.message,
+      inquiryType: detail.inquiryType ?? prev.inquiryType
+    }));
+    window.requestAnimationFrame(() => messageRef.current?.focus());
+  };
+
+  useEffect(() => {
+    const onPrefill = (event: Event) => {
+      applyPrefill((event as CustomEvent<InquiryPrefillDetail>).detail);
+    };
+
+    window.addEventListener(INQUIRY_PREFILL_EVENT, onPrefill);
+
+    const stored = consumeInquiryPrefill();
+    if (stored) applyPrefill(stored);
+
+    return () => window.removeEventListener(INQUIRY_PREFILL_EVENT, onPrefill);
+  }, []);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -91,6 +120,7 @@ export default function InquirySection({
       setStatus("success");
       setFeedback(copy.success);
       setForm(defaultForm);
+      clearInquiryCart();
     } catch (error) {
       setStatus("error");
       setFeedback(error instanceof Error ? error.message : copy.errors.generic);
@@ -225,7 +255,8 @@ export default function InquirySection({
 
           <Field label={copy.fields.message} required requiredMark={copy.fields.requiredMark}>
             <textarea
-              className="focus-ring min-h-28 w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
+              ref={messageRef}
+              className="focus-ring min-h-48 w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
               name="message"
               required
               value={form.message}
