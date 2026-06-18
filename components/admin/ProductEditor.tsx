@@ -261,6 +261,12 @@ export default function ProductEditor({
 
       <section className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
         <h2 className="font-serif text-xl text-ivory">Pricing & dimensions</h2>
+        {values.productKind === "handbag" ? (
+          <p className="mt-2 rounded-xl border border-caramel/25 bg-caramel/10 px-3 py-2 text-xs text-ivory/90">
+            Опцията „Вътрешни джобове“ е премахната от конфигуратора за клиентите. Не се управлява отделно от
+            админа — след публикуване на последната версия на сайта няма да се показва при поръчка.
+          </p>
+        ) : null}
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <PublishField
             fieldId="field-product-price"
@@ -284,26 +290,15 @@ export default function ProductEditor({
             onChange={(e) => patch((prev) => ({ ...prev, dimensions: e.target.value }))}
           />
           {values.productKind === "handbag" ? (
-            <>
-              <input
-                className="admin-input"
-                type="number"
-                placeholder="Pockets add-on EUR"
-                value={values.pocketsAddOnEur ?? 20}
-                onChange={(e) =>
-                  patch((prev) => ({ ...prev, pocketsAddOnEur: Number(e.target.value) || 0 }))
-                }
-              />
-              <input
-                className="admin-input"
-                type="number"
-                placeholder="Engraving add-on EUR"
-                value={values.engravingAddOnEur ?? 20}
-                onChange={(e) =>
-                  patch((prev) => ({ ...prev, engravingAddOnEur: Number(e.target.value) || 0 }))
-                }
-              />
-            </>
+            <input
+              className="admin-input"
+              type="number"
+              placeholder="Engraving add-on EUR"
+              value={values.engravingAddOnEur ?? 20}
+              onChange={(e) =>
+                patch((prev) => ({ ...prev, engravingAddOnEur: Number(e.target.value) || 0 }))
+              }
+            />
           ) : null}
         </div>
       </section>

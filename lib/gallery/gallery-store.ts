@@ -1,5 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
+import { filterGalleryImages } from "@/lib/gallery-excluded-images";
 import { getGalleryGroups as getFilesystemGalleryGroups } from "@/lib/galleryImages.server";
 import { GALLERY_GROUP_SORT_ORDER } from "@/lib/galleryFolderMap";
 import { getCopy, type Locale } from "@/lib/i18n";
@@ -67,7 +68,7 @@ function buildDefaultRecords(): GalleryGroupRecord[] {
     labelEn: enLabels[key as keyof typeof enLabels],
     labelBg: bgLabels[key as keyof typeof bgLabels],
     sortOrder: index,
-    images: fsById.get(key)?.images ?? [],
+    images: filterGalleryImages(fsById.get(key)?.images ?? []),
     updatedAt: now
   }));
 
@@ -78,7 +79,7 @@ function buildDefaultRecords(): GalleryGroupRecord[] {
       labelEn: group.label,
       labelBg: group.label,
       sortOrder: records.length,
-      images: group.images,
+      images: filterGalleryImages(group.images),
       updatedAt: now
     });
   }
@@ -117,7 +118,7 @@ export function recordsToGalleryGroups(
     .map((record) => ({
       id: record.id,
       label: locale === "bg" ? record.labelBg : record.labelEn,
-      images: record.images
+      images: filterGalleryImages(record.images)
     }));
 }
 
@@ -153,7 +154,10 @@ export async function listGalleryGroups(options?: {
     await writeJsonRecords(records);
   }
 
-  return records;
+  return records.map((record) => ({
+    ...record,
+    images: filterGalleryImages(record.images)
+  }));
 }
 
 export async function getGalleryGroupsForLocale(locale: Locale): Promise<GalleryImageGroup[]> {
@@ -179,7 +183,11 @@ export async function createGalleryGroup(input: {
 }
 
 export async function saveGalleryGroup(record: GalleryGroupRecord): Promise<GalleryGroupRecord> {
-  const next = { ...record, updatedAt: new Date().toISOString() };
+  const next = {
+    ...record,
+    images: filterGalleryImages(record.images),
+    updatedAt: new Date().toISOString()
+  };
   const supabase = getSupabaseAdmin();
 
   if (supabase) {
@@ -296,8 +304,8 @@ export async function syncFilesystemGalleryImages(): Promise<GalleryGroupRecord[
     const fsGroup = fsById.get(record.id);
     if (!fsGroup?.images.length) return record;
 
-    const images = [...record.images];
-    for (const url of fsGroup.images) {
+    const images = filterGalleryImages([...record.images]);
+    for (const url of filterGalleryImages(fsGroup.images)) {
       if (!images.includes(url)) images.push(url);
     }
 
@@ -311,7 +319,7 @@ export async function syncFilesystemGalleryImages(): Promise<GalleryGroupRecord[
       labelEn: enLabels[fsGroup.id as keyof typeof enLabels] ?? fsGroup.label,
       labelBg: bgLabels[fsGroup.id as keyof typeof bgLabels] ?? fsGroup.label,
       sortOrder: merged.length,
-      images: [...fsGroup.images],
+      images: filterGalleryImages([...fsGroup.images]),
       updatedAt: now
     });
   }

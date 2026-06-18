@@ -142,8 +142,9 @@ export default function BuiltinSectionEditor({
           </p>
         ) : sectionKey === "gallery" ? (
           <p className="mt-2 text-sm text-mist">
-            Edit the section heading and intro below. Add gallery sections, upload photos, and reorder
-            them — changes appear in the live preview and on the site.
+            Галерията се редактира тук по-долу: отвори секция → <strong className="text-ivory">Remove</strong> на
+            снимка. Заглавията на секцията са в полетата English/Bulgarian по-долу. Снимките с джобове се скриват
+            автоматично от сайта.
           </p>
         ) : null}
       </div>

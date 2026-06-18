@@ -16,15 +16,20 @@ function imageDraftKey(groupId: string, index: number) {
 
 export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
   const [groups, setGroups] = useState<GalleryGroupRecord[]>([]);
+  const groupsRef = useRef<GalleryGroupRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [savingGroupId, setSavingGroupId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [urlInputs, setUrlInputs] = useState<Record<string, string>>({});
   const [imageUrlDrafts, setImageUrlDrafts] = useState<Record<string, string>>({});
   const [replacing, setReplacing] = useState(false);
   const replaceTargetRef = useRef<{ groupId: string; index: number } | null>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
+
+  groupsRef.current = groups;
 
   const refresh = useCallback(async () => {
     const response = await fetch("/api/admin/gallery", { cache: "no-store" });
@@ -42,27 +47,55 @@ export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
   }, [refresh]);
 
   const notify = (text: string) => {
+    setErrorMessage("");
     setMessage(text);
     onUpdated?.();
   };
 
-  const saveGroup = async (group: GalleryGroupRecord) => {
-    const response = await fetch(`/api/admin/gallery/groups/${group.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        labelEn: group.labelEn,
-        labelBg: group.labelBg,
-        images: group.images
-      })
-    });
-    const result = (await response.json()) as { ok: boolean; group?: GalleryGroupRecord; message?: string };
-    if (!response.ok || !result.ok || !result.group) {
-      throw new Error(result.message || "Unable to save gallery group.");
+  const persistGroup = async (
+    groupId: string,
+    updater: (group: GalleryGroupRecord) => GalleryGroupRecord,
+    successMessage = "Gallery saved."
+  ) => {
+    const current = groupsRef.current.find((entry) => entry.id === groupId);
+    if (!current) return;
+
+    const next = updater(current);
+    const unchanged =
+      next.labelEn === current.labelEn &&
+      next.labelBg === current.labelBg &&
+      next.images.length === current.images.length &&
+      next.images.every((url, index) => url === current.images[index]);
+    if (unchanged) return;
+
+    setSavingGroupId(groupId);
+    setErrorMessage("");
+    setGroups((prev) => prev.map((entry) => (entry.id === groupId ? next : entry)));
+
+    try {
+      const response = await fetch(`/api/admin/gallery/groups/${groupId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          labelEn: next.labelEn,
+          labelBg: next.labelBg,
+          images: next.images
+        })
+      });
+      const result = (await response.json()) as { ok: boolean; group?: GalleryGroupRecord; message?: string };
+      if (!response.ok || !result.ok || !result.group) {
+        throw new Error(result.message || "Unable to save gallery group.");
+      }
+      setGroups((prev) => prev.map((entry) => (entry.id === result.group!.id ? result.group! : entry)));
+      setImageUrlDrafts({});
+      if (successMessage) notify(successMessage);
+    } catch (error) {
+      setGroups((prev) => prev.map((entry) => (entry.id === groupId ? current : entry)));
+      setErrorMessage(error instanceof Error ? error.message : "Unable to save gallery group.");
+      throw error;
+    } finally {
+      setSavingGroupId(null);
     }
-    setGroups((prev) => prev.map((entry) => (entry.id === result.group!.id ? result.group! : entry)));
-    setImageUrlDrafts({});
-    notify("Gallery saved.");
   };
 
   const syncFolderPhotos = async () => {
@@ -145,47 +178,67 @@ export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
     if (!response.ok || !result.ok || !result.url) {
       throw new Error(result.message || "Upload failed.");
     }
+    const uploadedUrl = result.url;
 
-    const group = groups.find((entry) => entry.id === groupId);
-    if (!group) return;
-    await saveGroup({ ...group, images: [...group.images, result.url] });
+    await persistGroup(groupId, (group) => ({ ...group, images: [...group.images, uploadedUrl] }), "Photo added.");
   };
 
   const addImageUrl = async (groupId: string) => {
     const url = urlInputs[groupId]?.trim();
     if (!url) return;
-    const group = groups.find((entry) => entry.id === groupId);
-    if (!group) return;
-    await saveGroup({ ...group, images: [...group.images, url] });
-    setUrlInputs((prev) => ({ ...prev, [groupId]: "" }));
+    try {
+      await persistGroup(groupId, (group) => ({ ...group, images: [...group.images, url] }), "Photo added.");
+      setUrlInputs((prev) => ({ ...prev, [groupId]: "" }));
+    } catch {
+      // Error shown via errorMessage.
+    }
   };
 
   const updateImageAtIndex = async (groupId: string, index: number, nextUrl: string) => {
-    const group = groups.find((entry) => entry.id === groupId);
-    if (!group) return;
     const trimmed = nextUrl.trim();
-    if (!trimmed || trimmed === group.images[index]) return;
+    const current = groupsRef.current.find((entry) => entry.id === groupId);
+    if (!current || !trimmed || trimmed === current.images[index]) return;
 
-    const images = [...group.images];
-    images[index] = trimmed;
-    await saveGroup({ ...group, images });
+    try {
+      await persistGroup(groupId, (group) => {
+        const images = [...group.images];
+        images[index] = trimmed;
+        return { ...group, images };
+      });
+    } catch {
+      // Error shown via errorMessage.
+    }
   };
 
   const moveImage = async (groupId: string, index: number, direction: -1 | 1) => {
-    const group = groups.find((entry) => entry.id === groupId);
-    if (!group) return;
+    const current = groupsRef.current.find((entry) => entry.id === groupId);
+    if (!current) return;
     const target = index + direction;
-    if (target < 0 || target >= group.images.length) return;
+    if (target < 0 || target >= current.images.length) return;
 
-    const images = [...group.images];
-    [images[index], images[target]] = [images[target], images[index]];
-    await saveGroup({ ...group, images });
+    try {
+      await persistGroup(groupId, (group) => {
+        const images = [...group.images];
+        [images[index], images[target]] = [images[target], images[index]];
+        return { ...group, images };
+      }, "Photo order saved.");
+    } catch {
+      // Error shown via errorMessage.
+    }
   };
 
   const removeImageAtIndex = async (groupId: string, index: number) => {
-    const group = groups.find((entry) => entry.id === groupId);
-    if (!group) return;
-    await saveGroup({ ...group, images: group.images.filter((_, imageIndex) => imageIndex !== index) });
+    if (!window.confirm("Премахване на тази снимка от галерията?")) return;
+
+    try {
+      await persistGroup(
+        groupId,
+        (group) => ({ ...group, images: group.images.filter((_, imageIndex) => imageIndex !== index) }),
+        "Photo removed."
+      );
+    } catch {
+      // Error shown via errorMessage.
+    }
   };
 
   const startReplaceImage = (groupId: string, index: number) => {
@@ -210,12 +263,13 @@ export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
       if (!response.ok || !result.ok || !result.url) {
         throw new Error(result.message || "Upload failed.");
       }
+      const uploadedUrl = result.url;
 
-      const group = groups.find((entry) => entry.id === target.groupId);
-      if (!group) return;
-      const images = [...group.images];
-      images[target.index] = result.url;
-      await saveGroup({ ...group, images });
+      await persistGroup(target.groupId, (group) => {
+        const images = [...group.images];
+        images[target.index] = uploadedUrl;
+        return { ...group, images };
+      }, "Photo replaced.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to replace image.");
     } finally {
@@ -245,7 +299,8 @@ export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
         <div>
           <p className="text-xs uppercase tracking-[0.16em] text-caramel">Gallery sections & photos</p>
           <p className="mt-1 text-sm text-mist">
-            Edit each photo&apos;s URL, replace files, reorder, or remove. Drag sections to reorder the modal.
+            Отвори секция (клик върху името), после натисни <strong className="text-ivory">Remove</strong> на
+            снимката. Промените се записват веднага. Влачи секциите за подреждане в модала.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -309,14 +364,18 @@ export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
                         placeholder="Section title (English)"
                         value={group.labelEn}
                         onChange={(e) => patchGroup(group.id, { labelEn: e.target.value })}
-                        onBlur={(e) => void saveGroup({ ...group, labelEn: e.target.value })}
+                        onBlur={(e) =>
+                          void persistGroup(group.id, (current) => ({ ...current, labelEn: e.target.value }), "")
+                        }
                       />
                       <input
                         className="admin-input w-full"
                         placeholder="Section title (Bulgarian)"
                         value={group.labelBg}
                         onChange={(e) => patchGroup(group.id, { labelBg: e.target.value })}
-                        onBlur={(e) => void saveGroup({ ...group, labelBg: e.target.value })}
+                        onBlur={(e) =>
+                          void persistGroup(group.id, (current) => ({ ...current, labelBg: e.target.value }), "")
+                        }
                       />
                     </div>
 
@@ -413,10 +472,11 @@ export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
                                     </button>
                                     <button
                                       type="button"
+                                      disabled={savingGroupId === group.id}
                                       onClick={() => void removeImageAtIndex(group.id, imageIndex)}
-                                      className="ml-auto rounded-full bg-red-950/80 px-2 py-0.5 text-[10px] text-red-200"
+                                      className="ml-auto rounded-full bg-red-950/80 px-2 py-0.5 text-[10px] text-red-200 disabled:opacity-50"
                                     >
-                                      Remove
+                                      {savingGroupId === group.id ? "Saving…" : "Remove"}
                                     </button>
                                   </div>
                                 </div>
@@ -436,6 +496,16 @@ export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
         />
       )}
 
+      {errorMessage ? (
+        <p className="rounded-xl border border-red-400/30 bg-red-950/40 px-4 py-3 text-sm text-red-100">
+          {errorMessage}
+          {errorMessage.toLowerCase().includes("supabase") ? (
+            <span className="mt-1 block text-xs text-red-200/80">
+              Провери дали таблицата gallery_groups съществува в Supabase (виж supabase/gola-full-setup.sql).
+            </span>
+          ) : null}
+        </p>
+      ) : null}
       {message ? <p className="text-sm text-caramel">{message}</p> : null}
     </section>
   );

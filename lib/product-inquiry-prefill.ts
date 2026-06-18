@@ -107,7 +107,7 @@ export function normalizeProductConfiguration(
 
   if (parsed.handbag && parsed.giftBox) {
     return {
-      handbag: { ...defaultHandbagConfiguration, ...parsed.handbag },
+      handbag: { ...defaultHandbagConfiguration, ...parsed.handbag, insidePockets: false },
       giftBox: { ...defaultGiftBoxConfiguration, ...parsed.giftBox },
       includeGiftBox: parsed.includeGiftBox ?? false,
       includeHandbag: parsed.includeHandbag ?? false,
@@ -120,7 +120,7 @@ export function normalizeProductConfiguration(
       liningColor: parsed.liningColor ?? defaultHandbagConfiguration.liningColor,
       woodCoatingColor: parsed.woodCoatingColor ?? defaultHandbagConfiguration.woodCoatingColor,
       chainColor: parsed.chainColor ?? defaultHandbagConfiguration.chainColor,
-      insidePockets: parsed.insidePockets ?? defaultHandbagConfiguration.insidePockets,
+      insidePockets: false,
       customEngraving: parsed.customEngraving ?? defaultHandbagConfiguration.customEngraving,
       engravingText: parsed.engravingText ?? defaultHandbagConfiguration.engravingText
     },
@@ -164,7 +164,6 @@ function buildHandbagConfigLines(
     `${copy.labels.liningColor} - ${copy.options.colors[config.liningColor] ?? ""}`,
     `${copy.labels.woodCoatingColor} - ${copy.options.woodCoatingColors[config.woodCoatingColor] ?? ""}`,
     `${copy.labels.chainColor} - ${copy.options.chainColors[config.chainColor] ?? ""}`,
-    `${copy.labels.insidePockets} - ${config.insidePockets ? copy.prefill.pocketsYes : copy.prefill.pocketsNo}`,
     `${copy.labels.engraving} - ${formatEngravingValue(config.customEngraving, config.engravingText, copy)}`
   ];
 }

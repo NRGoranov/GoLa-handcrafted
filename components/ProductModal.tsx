@@ -347,9 +347,7 @@ export default function ProductModal({
 
   const handbagAddonPrice =
     selectedHandbag && isHandbag(selectedHandbag)
-      ? selectedHandbag.priceEur +
-        (handbagConfig.insidePockets ? selectedHandbag.pocketsAddOnEur : 0) +
-        (handbagConfig.customEngraving ? selectedHandbag.engravingAddOnEur : 0)
+      ? selectedHandbag.priceEur + (handbagConfig.customEngraving ? selectedHandbag.engravingAddOnEur : 0)
       : 0;
 
   const displayPrice =
@@ -357,7 +355,6 @@ export default function ProductModal({
       ? product.priceEur + (meta.includeHandbag ? handbagAddonPrice : 0)
       : product && isHandbag(product)
         ? product.priceEur +
-          (handbagConfig.insidePockets ? product.pocketsAddOnEur : 0) +
           (handbagConfig.customEngraving ? product.engravingAddOnEur : 0) +
           (meta.includeGiftBox && effectiveGiftBoxProduct ? effectiveGiftBoxProduct.priceEur : 0)
         : 0;
@@ -456,7 +453,6 @@ export default function ProductModal({
                         groupId={`${optionsGroupId}-model`}
                         copy={copy}
                         config={handbagConfig}
-                        pocketsAddOnEur={product.pocketsAddOnEur}
                         engravingAddOnEur={product.engravingAddOnEur}
                         onUpdate={updateHandbagField}
                       />
@@ -570,7 +566,6 @@ export default function ProductModal({
                                   groupId={`${optionsGroupId}-model-addon`}
                                   copy={copy}
                                   config={handbagConfig}
-                                  pocketsAddOnEur={selectedHandbag.pocketsAddOnEur}
                                   engravingAddOnEur={selectedHandbag.engravingAddOnEur}
                                   onUpdate={updateHandbagField}
                                 />
@@ -726,14 +721,12 @@ function HandbagOptionsPanel({
   groupId,
   copy,
   config,
-  pocketsAddOnEur,
   engravingAddOnEur,
   onUpdate
 }: {
   groupId: string;
   copy: ProductModalCopy;
   config: HandbagConfigurationState;
-  pocketsAddOnEur: number;
   engravingAddOnEur: number;
   onUpdate: <K extends keyof HandbagConfigurationState>(
     key: K,
@@ -772,21 +765,6 @@ function HandbagOptionsPanel({
       />
 
       <label className="mt-4 flex cursor-pointer items-start gap-3">
-        <input
-          type="checkbox"
-          className="mt-1 h-4 w-4 accent-[#b78b5a]"
-          checked={config.insidePockets}
-          onChange={(event) => onUpdate("insidePockets", event.target.checked)}
-        />
-        <span className="text-sm text-ivory/90">
-          <span className="font-medium text-caramel">{copy.labels.insidePockets}</span>{" "}
-          <span className="text-mist">
-            ({copy.options.pocketsAdds.replace("{amount}", String(pocketsAddOnEur))})
-          </span>
-        </span>
-      </label>
-
-      <label className="mt-3 flex cursor-pointer items-start gap-3">
         <input
           type="checkbox"
           className="mt-1 h-4 w-4 accent-[#b78b5a]"
