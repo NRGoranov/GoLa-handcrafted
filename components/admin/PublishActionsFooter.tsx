@@ -32,6 +32,11 @@ export default function PublishActionsFooter({
           Published on site
         </label>
         <p className="mt-1 text-xs text-mist">{requirementsHint}</p>
+        {!published ? (
+          <p className="mt-2 text-xs text-caramel/90">
+            Drafts are saved to the database but stay hidden on the public site until you check Published on site.
+          </p>
+        ) : null}
       </div>
 
       <PublishIssuesPanel issues={issues} />

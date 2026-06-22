@@ -41,6 +41,10 @@ const PRODUCT_PREVIEW_HEIGHT =
   "max-lg:max-h-[82vh] lg:h-[82vh] lg:max-h-[82vh] lg:sticky lg:top-[22vh] lg:self-start";
 const PRODUCT_EDITOR_HEIGHT =
   "max-lg:max-h-[70vh] lg:h-[70vh] lg:max-h-[70vh] lg:sticky lg:top-[25vh] lg:self-start";
+const SECTION_PREVIEW_HEIGHT =
+  "max-lg:max-h-[60vh] lg:h-[60vh] lg:max-h-[60vh] lg:sticky lg:top-[22vh] lg:self-start";
+const SECTION_EDITOR_HEIGHT =
+  "max-lg:max-h-[75vh] lg:h-[75vh] lg:max-h-[75vh] lg:sticky lg:top-[22vh] lg:self-start";
 
 function StudioColumn({
   title,
@@ -252,13 +256,14 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
   }, [selectedProduct, productPreviewValues]);
 
   const isBuiltinDirty = useMemo(() => {
-    if (!selectedBuiltinSection || !builtinPreviewValues) return false;
+    if (!selectedBuiltinSection || !builtinPreviewValues || !selectedBuiltinKey) return false;
+    if (builtinPreviewValues.key !== selectedBuiltinKey) return false;
     return (
       JSON.stringify(builtinPreviewValues.contentEn) !== JSON.stringify(selectedBuiltinSection.contentEn) ||
       JSON.stringify(builtinPreviewValues.contentBg) !== JSON.stringify(selectedBuiltinSection.contentBg) ||
       builtinPreviewValues.imageUrl !== selectedBuiltinSection.imageUrl
     );
-  }, [selectedBuiltinSection, builtinPreviewValues]);
+  }, [selectedBuiltinSection, builtinPreviewValues, selectedBuiltinKey]);
 
   const isSectionDirty = useMemo(() => {
     if (!selectedSection || !sectionPreviewValues) return false;
@@ -266,6 +271,18 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
       JSON.stringify(sectionPreviewValues) !== JSON.stringify(sectionToFormValues(selectedSection))
     );
   }, [selectedSection, sectionPreviewValues]);
+
+  useEffect(() => {
+    setProductPreviewValues(null);
+  }, [selectedProduct?.id]);
+
+  useEffect(() => {
+    setBuiltinPreviewValues(null);
+  }, [selectedBuiltinKey]);
+
+  useEffect(() => {
+    setSectionPreviewValues(null);
+  }, [selectedSection?.id]);
 
   const seedDefaultProducts = async (force = false) => {
     setMessage("");
@@ -467,6 +484,7 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
           onValuesChange={handleProductPreviewChange}
           onSaved={async (product) => {
             setProducts((prev) => prev.map((entry) => (entry.id === product.id ? product : entry)));
+            setProductPreviewValues(product);
           }}
         />
       ) : null}
@@ -479,6 +497,7 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
           onGalleryUpdated={() => void refreshGalleryPreview()}
           onSaved={(section) => {
             setBuiltinSections((prev) => prev.map((entry) => (entry.key === section.key ? section : entry)));
+            setBuiltinPreviewValues(section);
           }}
         />
       ) : null}
@@ -490,6 +509,7 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
           onValuesChange={handleSectionPreviewChange}
           onSaved={async (section) => {
             setSections((prev) => prev.map((entry) => (entry.id === section.id ? section : entry)));
+            setSectionPreviewValues(sectionToFormValues(section));
           }}
         />
       ) : null}
@@ -622,6 +642,17 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
             </button>
           ))}
         </div>
+
+        {storageMode === "read-only" ? (
+          <div className="rounded-2xl border border-red-400/40 bg-red-950/30 p-4">
+            <p className="font-medium text-red-100">Changes cannot be saved (read-only storage)</p>
+            <p className="mt-2 text-sm text-red-200/90">
+              Connect Supabase in production (<code className="rounded bg-black/30 px-1">NEXT_PUBLIC_SUPABASE_URL</code>{" "}
+              and <code className="rounded bg-black/30 px-1">SUPABASE_SERVICE_ROLE_KEY</code>). Until then, edits only
+              appear in the preview and are not written to the database.
+            </p>
+          </div>
+        ) : null}
 
         {message ? (
           <p
@@ -908,12 +939,21 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
           </aside>
 
           {tab === "sections" ? (
-            <div className="flex min-h-[min(240vh,2640px)] min-w-0 flex-1 flex-col gap-4 lg:min-h-[calc(200vh-20rem)]">
-              <StudioColumn className="min-h-0 w-full flex-[7] basis-0" title="Live preview">
-                {sectionPreviewBody}
-              </StudioColumn>
-              <StudioColumn className="min-h-0 w-full flex-[6] basis-0" title="Editor" action={editorActions}>
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 lg:flex-row lg:items-start">
+              <StudioColumn
+                className={`min-h-0 min-w-0 flex-1 lg:max-w-[min(52rem,58%)] ${SECTION_EDITOR_HEIGHT}`}
+                title="Editor"
+                action={editorActions}
+                scrollable
+              >
                 {editorBody}
+              </StudioColumn>
+              <StudioColumn
+                className={`min-h-0 min-w-0 flex-1 ${SECTION_PREVIEW_HEIGHT}`}
+                title="Live preview"
+                scrollable
+              >
+                {sectionPreviewBody}
               </StudioColumn>
             </div>
           ) : (

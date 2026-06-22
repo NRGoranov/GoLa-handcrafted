@@ -22,7 +22,7 @@ export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
   const [savingGroupId, setSavingGroupId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [urlInputs, setUrlInputs] = useState<Record<string, string>>({});
   const [imageUrlDrafts, setImageUrlDrafts] = useState<Record<string, string>>({});
   const [replacing, setReplacing] = useState(false);
@@ -32,14 +32,27 @@ export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
   groupsRef.current = groups;
 
   const refresh = useCallback(async () => {
-    const response = await fetch("/api/admin/gallery", { cache: "no-store" });
-    const result = (await response.json()) as { ok: boolean; records?: GalleryGroupRecord[] };
-    if (result.ok && result.records) {
+    setLoading(true);
+    setErrorMessage("");
+    try {
+      const response = await fetch("/api/admin/gallery", { cache: "no-store" });
+      const result = (await response.json()) as {
+        ok: boolean;
+        records?: GalleryGroupRecord[];
+        message?: string;
+      };
+      if (!response.ok || !result.ok || !result.records) {
+        throw new Error(result.message || "Unable to load gallery.");
+      }
       setGroups(result.records);
-      setExpandedId((current) => current ?? result.records![0]?.id ?? null);
+      setExpandedIds(new Set(result.records.map((record) => record.id)));
       setImageUrlDrafts({});
+    } catch (error) {
+      setGroups([]);
+      setErrorMessage(error instanceof Error ? error.message : "Unable to load gallery.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -152,7 +165,7 @@ export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
       return;
     }
     setGroups((prev) => [...prev, result.group!]);
-    setExpandedId(result.group.id);
+    setExpandedIds((prev) => new Set([...prev, result.group!.id]));
     notify("Group added.");
   };
 
@@ -165,7 +178,11 @@ export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
       return;
     }
     setGroups((prev) => prev.filter((group) => group.id !== id));
-    if (expandedId === id) setExpandedId(null);
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
     notify("Group deleted.");
   };
 
@@ -299,8 +316,8 @@ export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
         <div>
           <p className="text-xs uppercase tracking-[0.16em] text-caramel">Gallery sections & photos</p>
           <p className="mt-1 text-sm text-mist">
-            Отвори секция (клик върху името), после натисни <strong className="text-ivory">Remove</strong> на
-            снимката. Промените се записват веднага. Влачи секциите за подреждане в модала.
+            Снимките се записват веднага при Upload, Add URL или Remove. Заглавията на галерията (English/Bulgarian
+            по-долу в секцията) изискват <strong className="text-ivory">Save section</strong>.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -329,7 +346,7 @@ export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
           items={groups}
           onReorder={reorderGroups}
           renderItem={(group, index, { dragHandleProps }) => {
-            const expanded = expandedId === group.id;
+            const expanded = expandedIds.has(group.id);
             return (
               <div className="rounded-xl border border-ivory/10 bg-[#0d0d0d]">
                 <div className="flex items-center gap-2 p-3">
@@ -339,7 +356,14 @@ export default function GalleryEditor({ onUpdated }: GalleryEditorProps) {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setExpandedId(expanded ? null : group.id)}
+                    onClick={() =>
+                      setExpandedIds((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(group.id)) next.delete(group.id);
+                        else next.add(group.id);
+                        return next;
+                      })
+                    }
                     className="min-w-0 flex-1 text-left"
                   >
                     <p className="truncate text-sm font-medium text-ivory">{group.labelEn || group.id}</p>

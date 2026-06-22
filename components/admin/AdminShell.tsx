@@ -36,7 +36,10 @@ export default function AdminShell({
         >
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-caramel">GoLa Admin</p>
-            <p className="text-sm text-mist">Storage: {storageMode}</p>
+            <p className={`text-sm ${storageMode === "read-only" ? "text-red-300" : "text-mist"}`}>
+              Storage:{" "}
+              <strong className={storageMode === "read-only" ? "text-red-200" : "text-ivory"}>{storageMode}</strong>
+            </p>
           </div>
           <nav className="flex flex-wrap items-center gap-2">
             {links.map((link) => {

@@ -138,7 +138,7 @@ export default function StudioPreviewFrame({
         <div className="flex shrink-0 items-center gap-2">
           {isDraft ? (
             <span className="rounded-full border border-dashed border-caramel/50 px-2 py-0.5 text-[10px] text-caramel">
-              Editing
+              Unsaved changes
             </span>
           ) : (
             <span className="rounded-full bg-caramel/15 px-2 py-0.5 text-[10px] text-caramel">Saved</span>

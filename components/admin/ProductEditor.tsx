@@ -168,7 +168,11 @@ export default function ProductEditor({
       }
       setStatus("success");
       setPublishIssues([]);
-      setMessage(values.published ? "Product published." : "Draft saved.");
+      setMessage(
+        values.published
+          ? "Product published — visible on the live site."
+          : "Draft saved — check Published on site to make it visible to visitors."
+      );
       lastSyncedAtRef.current = result.product.updatedAt;
       onSaved?.(result.product);
     } catch (error) {

@@ -118,7 +118,11 @@ export default function BuiltinSectionEditor({
         throw new Error(result.message || "Unable to save section.");
       }
       setStatus("success");
-      setMessage("Section saved. Changes appear on the live site.");
+      setMessage(
+        sectionKey === "gallery"
+          ? "Section headings saved. Photo changes were already saved automatically."
+          : "Section saved. Changes appear on the live site."
+      );
       lastSyncedAtRef.current = result.section.updatedAt;
       onSaved?.(result.section);
     } catch (error) {
@@ -142,9 +146,10 @@ export default function BuiltinSectionEditor({
           </p>
         ) : sectionKey === "gallery" ? (
           <p className="mt-2 text-sm text-mist">
-            Галерията се редактира тук по-долу: отвори секция → <strong className="text-ivory">Remove</strong> на
-            снимка. Заглавията на секцията са в полетата English/Bulgarian по-долу. Снимките с джобове се скриват
-            автоматично от сайта.
+            <strong className="text-ivory">Photos</strong> (panel below): upload, add URL, or Remove — each change saves
+            immediately to the live gallery. <strong className="text-ivory">Section headings</strong> (English/Bulgarian
+            fields further down) need <strong className="text-ivory">Save section</strong>. Pocket photos are hidden
+            automatically on the public site.
           </p>
         ) : null}
       </div>
