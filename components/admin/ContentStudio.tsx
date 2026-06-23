@@ -339,17 +339,24 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
       return;
     }
     if (tab === "products" && !selectedProduct) return;
-    if (!window.confirm("Delete this item?")) return;
+    await deleteItem(tab, selectedId);
+  };
 
-    const endpoint = tab === "products" ? `/api/admin/products/${selectedId}` : `/api/admin/sections/${selectedId}`;
+  const deleteItem = async (itemTab: StudioTab, id: string) => {
+    if (!window.confirm("Delete this item? This cannot be undone.")) return;
+
+    setMessage("");
+    const endpoint =
+      itemTab === "products" ? `/api/admin/products/${id}` : `/api/admin/sections/${id}`;
     const response = await fetch(endpoint, { method: "DELETE" });
     const result = (await response.json()) as { ok: boolean; message?: string };
-    if (!result.ok) {
+    if (!response.ok || !result.ok) {
       setMessage(result.message || "Unable to delete.");
       return;
     }
     await refresh({ showLoading: false });
-    setTab(tab);
+    setTab(itemTab);
+    setMessage(itemTab === "products" ? "Product deleted." : "Section deleted.");
   };
 
   const sortedProducts = useMemo(
@@ -892,6 +899,14 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
                             >
                               {section.published ? "Live" : "Draft"}
                             </span>
+                            <button
+                              type="button"
+                              onClick={() => void deleteItem("sections", section.id)}
+                              className="shrink-0 rounded-full border border-red-400/30 px-2 py-0.5 text-[10px] text-red-200 hover:bg-red-950/40"
+                              title="Delete section"
+                            >
+                              Delete
+                            </button>
                           </div>
                         );
                       }}

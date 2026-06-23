@@ -72,8 +72,8 @@ export async function DELETE(_req: Request, context: RouteContext) {
 
   const { id } = await context.params;
   try {
-    await unregisterCmsBlock(id);
     await deleteSection(id);
+    await unregisterCmsBlock(id);
     return NextResponse.json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to delete section.";

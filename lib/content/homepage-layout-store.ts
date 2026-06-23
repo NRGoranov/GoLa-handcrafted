@@ -161,20 +161,17 @@ export async function registerNewCmsBlock(sectionId: string): Promise<void> {
 export async function unregisterCmsBlock(sectionId: string): Promise<void> {
   const cmsIds = await cmsSectionIds();
   const saved = await readSavedBlockOrder();
+  const filteredSaved = saved?.filter((blockId) => blockId !== sectionId) ?? null;
+  const nextLayout = normalizeHomepageLayout(filteredSaved, cmsIds);
 
-  if (saved?.includes(sectionId)) {
-    await updateHomepageLayout(
-      normalizeHomepageLayout(
-        saved.filter((blockId) => blockId !== sectionId),
-        cmsIds
-      )
-    );
-    return;
+  if (!isValidHomepageLayout(nextLayout, cmsIds)) {
+    throw new Error("Invalid homepage layout order.");
   }
 
-  const layout = await getResolvedHomepageLayout();
-  if (!layout.includes(sectionId)) return;
-  await updateHomepageLayout(layout.filter((blockId) => blockId !== sectionId));
+  const currentLayout = normalizeHomepageLayout(saved, cmsIds);
+  if (JSON.stringify(currentLayout) === JSON.stringify(nextLayout)) return;
+
+  await updateHomepageLayout(nextLayout);
 }
 
 export function shouldUseJsonStorage(): boolean {
