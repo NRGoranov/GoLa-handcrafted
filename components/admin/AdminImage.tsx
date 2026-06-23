@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import CmsImage from "@/components/CmsImage";
 
 type AdminImageProps = {
-  src: string;
+  src: string | null | undefined;
   alt: string;
   fill?: boolean;
   className?: string;
@@ -18,7 +18,7 @@ export default function AdminImage({ src, alt, fill, className, sizes }: AdminIm
     setFailed(false);
   }, [src]);
 
-  if (!src.trim()) {
+  if (!src?.trim()) {
     return (
       <div className="flex h-full min-h-[4rem] items-center justify-center bg-black/40 text-[10px] text-mist">
         No image

@@ -43,7 +43,7 @@ export default function AdminShell({
           </div>
           <nav className="flex flex-wrap items-center gap-2">
             {links.map((link) => {
-              const active = pathname === link.match || pathname.startsWith(`${link.match}/`);
+              const active = pathname === link.match || (pathname?.startsWith(`${link.match}/`) ?? false);
               return (
                 <Link
                   key={link.href}

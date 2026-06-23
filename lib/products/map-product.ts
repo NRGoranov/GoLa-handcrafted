@@ -21,7 +21,7 @@ export function productRecordToProduct(record: ProductRecord, locale: Locale): P
     heightCm: record.heightCm,
     thicknessCm: record.thicknessCm,
     priceEur: record.priceEur,
-    images: record.images,
+    images: (record.images ?? []).filter((url): url is string => typeof url === "string" && url.trim().length > 0),
     customizable: true as const
   };
 

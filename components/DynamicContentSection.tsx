@@ -16,7 +16,8 @@ function pickLocalized(section: ContentSection, locale: Locale, field: keyof Pic
   "eyebrow" | "title" | "description" | "body" | "imageAlt" | "ctaLabel" | "highlightTitle" | "highlightBody"
 >) {
   const value = section[field];
-  return value[locale]?.trim() || value.en || value.bg;
+  if (!value || typeof value !== "object") return "";
+  return value[locale]?.trim() || value.en?.trim() || value.bg?.trim() || "";
 }
 
 function SectionImage({
@@ -30,18 +31,21 @@ function SectionImage({
   className?: string;
   priority?: boolean;
 }) {
-  const isExternal = src.startsWith("http://") || src.startsWith("https://");
+  const normalizedSrc = typeof src === "string" ? src.trim() : "";
+  if (!normalizedSrc) return null;
+
+  const isExternal = normalizedSrc.startsWith("http://") || normalizedSrc.startsWith("https://");
 
   if (isExternal) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={src} alt={alt} className={className ?? "h-full w-full object-cover"} loading={priority ? "eager" : "lazy"} />
+      <img src={normalizedSrc} alt={alt} className={className ?? "h-full w-full object-cover"} loading={priority ? "eager" : "lazy"} />
     );
   }
 
   return (
     <Image
-      src={src}
+      src={normalizedSrc}
       alt={alt}
       fill
       className={className ?? "object-cover"}
@@ -76,31 +80,32 @@ function BulletList({ bullets }: { bullets: [string, string, string] | null }) {
 }
 
 function CtaLink({ label, href }: { label: string; href: string }) {
-  if (!label || !href) return null;
-  const external = href.startsWith("http");
+  const normalizedHref = typeof href === "string" ? href.trim() : "";
+  if (!label?.trim() || !normalizedHref) return null;
+  const external = normalizedHref.startsWith("http");
   const className =
     "focus-ring mt-8 inline-flex min-h-11 items-center rounded-full border border-caramel/60 px-6 py-3 text-sm font-medium text-caramel transition hover:bg-caramel/10";
 
   if (external) {
     return (
-      <a href={href} target="_blank" rel="noreferrer" className={className}>
+      <a href={normalizedHref} target="_blank" rel="noreferrer" className={className}>
         {label}
       </a>
     );
   }
 
   return (
-    <Link href={href} className={className}>
+    <Link href={normalizedHref} className={className}>
       {label}
     </Link>
   );
 }
 
 export default function DynamicContentSection({ section, locale }: DynamicContentSectionProps) {
-  const eyebrow = pickLocalized(section, locale, "eyebrow");
-  const title = pickLocalized(section, locale, "title");
-  const description = pickLocalized(section, locale, "description");
-  const body = pickLocalized(section, locale, "body");
+  const eyebrow = pickLocalized(section, locale, "eyebrow") ?? "";
+  const title = pickLocalized(section, locale, "title") ?? "";
+  const description = pickLocalized(section, locale, "description") ?? "";
+  const body = pickLocalized(section, locale, "body") ?? "";
   const imageAlt = pickLocalized(section, locale, "imageAlt") || title;
   const ctaLabel = pickLocalized(section, locale, "ctaLabel");
   const highlightTitle = pickLocalized(section, locale, "highlightTitle");

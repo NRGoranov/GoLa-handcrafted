@@ -363,7 +363,9 @@ export default function ProductEditor({
               </p>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {values.images.map((src, index) => (
+                {values.images.map((src, index) => {
+                  if (!src?.trim()) return null;
+                  return (
                   <div
                     key={`${src}-${index}`}
                     className={`relative overflow-hidden rounded-xl border bg-black/20 ${
@@ -419,7 +421,8 @@ export default function ProductEditor({
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

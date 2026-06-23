@@ -1,7 +1,7 @@
 import Image from "next/image";
 
-export function isRemoteImageSrc(src: string): boolean {
-  return src.startsWith("http://") || src.startsWith("https://");
+export function isRemoteImageSrc(src: string | null | undefined): boolean {
+  return typeof src === "string" && (src.startsWith("http://") || src.startsWith("https://"));
 }
 
 type CmsImageProps = {
@@ -26,7 +26,24 @@ export default function CmsImage({
   priority,
   onError
 }: CmsImageProps) {
-  if (isRemoteImageSrc(src)) {
+  const normalizedSrc = typeof src === "string" ? src.trim() : "";
+
+  if (!normalizedSrc) {
+    return (
+      <div
+        className={
+          fill
+            ? `absolute inset-0 flex items-center justify-center bg-black/40 text-xs text-mist ${className ?? ""}`
+            : `flex min-h-[4rem] items-center justify-center bg-black/40 text-xs text-mist ${className ?? ""}`
+        }
+        aria-hidden={!alt}
+      >
+        No image
+      </div>
+    );
+  }
+
+  if (isRemoteImageSrc(normalizedSrc)) {
     const remoteClass = fill
       ? `absolute inset-0 h-full w-full object-cover ${className ?? ""}`
       : (className ?? "h-full w-full object-cover");
@@ -34,7 +51,7 @@ export default function CmsImage({
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={src}
+        src={normalizedSrc}
         alt={alt}
         className={remoteClass}
         loading={priority ? "eager" : loading}
@@ -45,7 +62,7 @@ export default function CmsImage({
 
   return (
     <Image
-      src={src}
+      src={normalizedSrc}
       alt={alt}
       fill={fill}
       className={className}

@@ -12,9 +12,14 @@ export default function ProductLivePreview({
   product: ProductRecordInput;
   locale?: "en" | "bg";
 }) {
+  const sanitizedImages = (product.images ?? []).filter(
+    (url): url is string => typeof url === "string" && url.trim().length > 0
+  );
+
   const preview = productRecordToProduct(
     {
       ...product,
+      images: sanitizedImages,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     },

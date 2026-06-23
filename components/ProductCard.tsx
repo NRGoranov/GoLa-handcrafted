@@ -13,8 +13,8 @@ type ProductCardProps = {
 };
 
 export default function ProductCard({ product, summary, onView, copy }: ProductCardProps) {
-  const heroSrc = product.images[0];
-  const maxStyle = intrinsicContainMaxStyle(heroSrc);
+  const heroSrc = product.images.find((url) => typeof url === "string" && url.trim()) ?? "";
+  const maxStyle = heroSrc ? intrinsicContainMaxStyle(heroSrc) : undefined;
 
   return (
     <article className="flex flex-col overflow-hidden rounded-2xl border border-ivory/15 bg-[#111]">
@@ -34,7 +34,7 @@ export default function ProductCard({ product, summary, onView, copy }: ProductC
           }
           fill
           className="object-cover transition duration-300 hover:scale-[1.02]"
-          sizes={intrinsicSizesProductCard(heroSrc)}
+          sizes={heroSrc ? intrinsicSizesProductCard(heroSrc) : undefined}
         />
       </button>
       <div className="flex flex-1 flex-col p-5">
