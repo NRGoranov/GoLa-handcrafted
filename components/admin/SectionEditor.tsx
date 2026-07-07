@@ -277,7 +277,7 @@ export default function SectionEditor({
         }`}
       >
         <h2 className="font-serif text-2xl text-ivory">
-          Image{values.layout !== "text-only" ? " · required" : ""}
+          Image{values.layout !== "text-only" && values.layout !== "product-grid" ? " · required" : ""}
         </h2>
         {invalidFields.has("field-image") ? (
           <p className="mt-1 text-xs text-red-200/90">
@@ -335,7 +335,7 @@ export default function SectionEditor({
       <PublishActionsFooter
         published={values.published}
         onPublishedChange={trySetPublished}
-        requirementsHint={`Requires slug, both titles, both descriptions${values.layout !== "text-only" ? ", image + alt text" : ""}.`}
+        requirementsHint={`Requires slug, both titles, both descriptions${values.layout !== "text-only" && values.layout !== "product-grid" ? ", image + alt text" : ""}.`}
         issues={publishIssues}
         status={status}
         message={message}

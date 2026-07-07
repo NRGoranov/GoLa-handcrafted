@@ -13,6 +13,16 @@ import ProductLivePreview from "@/components/admin/ProductLivePreview";
 import SectionEditor from "@/components/admin/SectionEditor";
 import SectionLivePreview from "@/components/admin/SectionLivePreview";
 import { BUILTIN_HOMEPAGE_SECTIONS } from "@/lib/content/builtin-sections";
+import {
+  listCmsPlacementOptions,
+  mergeCategoryReorder,
+  placementLabel,
+  PLACEMENT_FILTER_ALL,
+  PLACEMENT_GIFT_BOX,
+  PLACEMENT_HAND_BAG,
+  productMatchesPlacementFilter,
+  type ProductPlacementFilter
+} from "@/lib/products/product-placement";
 import type { GalleryImageGroup } from "@/lib/galleryTypes";
 import {
   formValuesToPreviewSection,
@@ -97,6 +107,9 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
   const [galleryPreviewGroups, setGalleryPreviewGroups] = useState<GalleryImageGroup[] | null>(null);
   const [galleryPreviewLoading, setGalleryPreviewLoading] = useState(false);
   const [blocksPanelOpen, setBlocksPanelOpen] = useState(true);
+  const [productPlacementFilter, setProductPlacementFilter] = useState<ProductPlacementFilter>(
+    PLACEMENT_FILTER_ALL
+  );
 
   const refreshGalleryPreview = useCallback(async () => {
     setGalleryPreviewLoading(true);
@@ -306,11 +319,11 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
     if (first) setTab("products", first);
   };
 
-  const createProduct = async (kind: "handbag" | "giftBox") => {
+  const createProduct = async (kind: "handbag" | "giftBox", categorySlug: string | null = null) => {
     const response = await fetch("/api/admin/products", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind })
+      body: JSON.stringify({ kind, categorySlug })
     });
     const result = (await response.json()) as { ok: boolean; product?: ProductRecord; message?: string };
     if (!result.ok || !result.product) {
@@ -364,6 +377,29 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
     [products]
   );
 
+  const cmsSectionFilters = useMemo(
+    () =>
+      listCmsPlacementOptions(sections)
+        .filter((option) => !option.disabled)
+        .map((option) => ({ value: option.value, label: option.label })),
+    [sections]
+  );
+
+  const filteredProducts = useMemo(() => {
+    if (productPlacementFilter === PLACEMENT_FILTER_ALL) return sortedProducts;
+    return sortedProducts.filter((product) => productMatchesPlacementFilter(product, productPlacementFilter));
+  }, [productPlacementFilter, sortedProducts]);
+
+  const productPlacementFilters = useMemo(
+    () => [
+      { value: PLACEMENT_FILTER_ALL, label: "All" },
+      { value: PLACEMENT_HAND_BAG, label: "Handbag" },
+      { value: PLACEMENT_GIFT_BOX, label: "Gift" },
+      ...cmsSectionFilters
+    ],
+    [cmsSectionFilters]
+  );
+
   const sectionMap = useMemo(() => new Map(sections.map((section) => [section.id, section])), [sections]);
 
   const builtinMap = useMemo(
@@ -389,7 +425,16 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
 
   const reorderProducts = async (orderedIds: string[]) => {
     const previous = sortedProducts;
-    const nextProducts = orderedIds
+    const mergedIds =
+      productPlacementFilter === PLACEMENT_FILTER_ALL
+        ? orderedIds
+        : mergeCategoryReorder(
+            previous,
+            new Set(filteredProducts.map((product) => product.id)),
+            orderedIds
+          );
+
+    const nextProducts = mergedIds
       .map((id, index) => {
         const product = previous.find((entry) => entry.id === id);
         return product ? { ...product, sortOrder: index } : null;
@@ -404,7 +449,7 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
       const response = await fetch("/api/admin/products/reorder", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: orderedIds })
+        body: JSON.stringify({ ids: mergedIds })
       });
       const result = (await response.json()) as { ok: boolean; products?: ProductRecord[]; message?: string };
       if (!response.ok || !result.ok || !result.products) {
@@ -488,6 +533,7 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
         <ProductEditor
           key={selectedProduct.id}
           initialProduct={selectedProduct}
+          cmsSections={sections}
           onValuesChange={handleProductPreviewChange}
           onSaved={async (product) => {
             setProducts((prev) => prev.map((entry) => (entry.id === product.id ? product : entry)));
@@ -710,20 +756,26 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
               action={
                 <div className="flex items-center gap-2">
                   {tab === "products" ? (
-                    <div className="flex gap-1">
+                    <div className="flex flex-wrap gap-1">
                       <button
                         type="button"
-                        onClick={() => void createProduct("handbag")}
+                        onClick={() => {
+                          if (productPlacementFilter === PLACEMENT_GIFT_BOX) {
+                            void createProduct("giftBox");
+                            return;
+                          }
+                          const categorySlug =
+                            productPlacementFilter !== PLACEMENT_FILTER_ALL &&
+                            productPlacementFilter !== PLACEMENT_HAND_BAG &&
+                            productPlacementFilter !== PLACEMENT_GIFT_BOX
+                              ? productPlacementFilter
+                              : null;
+                          void createProduct("handbag", categorySlug);
+                        }}
                         className="rounded-full bg-caramel px-3 py-1 text-[10px] font-medium text-ink"
+                        title="Add product in the active category"
                       >
-                        + Handbag
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void createProduct("giftBox")}
-                        className="rounded-full border border-caramel/40 px-3 py-1 text-[10px] text-caramel"
-                      >
-                        + Gift
+                        +
                       </button>
                     </div>
                   ) : (
@@ -752,11 +804,30 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
 
               {tab === "products" && sortedProducts.length > 0 ? (
                 <>
+                  <div className="mb-3 flex flex-wrap gap-1.5 px-1">
+                    {productPlacementFilters.map((filter) => {
+                      const active = productPlacementFilter === filter.value;
+                      return (
+                        <button
+                          key={filter.value}
+                          type="button"
+                          onClick={() => setProductPlacementFilter(filter.value)}
+                          className={`rounded-full px-3 py-1 text-[10px] transition ${
+                            active
+                              ? "bg-caramel text-ink"
+                              : "border border-ivory/15 text-mist hover:border-caramel/40 hover:text-ivory"
+                          }`}
+                        >
+                          {filter.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                   <p className="mb-2 px-1 text-[10px] uppercase tracking-[0.14em] text-mist">
-                    Drag to reorder catalog cards
+                    Drag to reorder {productPlacementFilter === PLACEMENT_FILTER_ALL ? "catalog cards" : "products in this section"}
                   </p>
                   <DragSortList
-                    items={sortedProducts}
+                    items={filteredProducts}
                     disabled={reordering}
                     onReorder={reorderProducts}
                     renderItem={(product, index, { dragHandleProps, isDragging }) => {
@@ -789,7 +860,7 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
                                 {product.name.en || product.name.bg || product.id}
                               </p>
                               <p className="truncate text-xs text-mist">
-                                {product.productKind} · €{product.priceEur}
+                                {placementLabel(product, sections)} · €{product.priceEur}
                               </p>
                             </div>
                           </button>

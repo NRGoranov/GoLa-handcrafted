@@ -35,7 +35,12 @@ function rowToRecord(row: DbRow): ProductRecord {
   return {
     id: row.id,
     productKind: row.product_kind as ProductRecord["productKind"],
-    categorySlug: typeof row.category_slug === "string" ? row.category_slug : row.category_slug ?? null,
+    categorySlug:
+      typeof row.category_slug === "string"
+        ? row.category_slug
+        : row.category_slug === null || row.category_slug === undefined
+          ? null
+          : null,
     sortOrder: row.sort_order,
     published: row.published,
     model: row.model,
@@ -91,7 +96,11 @@ async function readJsonProducts(): Promise<ProductRecord[]> {
   try {
     const raw = await fs.readFile(JSON_PATH, "utf8");
     const parsed = JSON.parse(raw) as ProductRecord[];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((product) => ({
+      ...product,
+      categorySlug: product.categorySlug ?? null
+    }));
   } catch {
     return [];
   }
@@ -351,11 +360,15 @@ export async function deleteProduct(id: string): Promise<void> {
   await writeJsonProducts(products.filter((p) => p.id !== id));
 }
 
-export function createEmptyProductInput(kind: "handbag" | "giftBox", sortOrder: number): ProductRecordInput {
+export function createEmptyProductInput(
+  kind: "handbag" | "giftBox",
+  sortOrder: number,
+  categorySlug: string | null = null
+): ProductRecordInput {
   return {
     id: `product-${Date.now()}`,
     productKind: kind,
-    categorySlug: null,
+    categorySlug: kind === "handbag" ? categorySlug : null,
     sortOrder,
     published: false,
     model: kind === "handbag" ? 1 : null,
@@ -373,7 +386,10 @@ export function createEmptyProductInput(kind: "handbag" | "giftBox", sortOrder: 
   };
 }
 
-export async function createDraftProduct(kind: "handbag" | "giftBox"): Promise<ProductRecord> {
+export async function createDraftProduct(
+  kind: "handbag" | "giftBox",
+  categorySlug: string | null = null
+): Promise<ProductRecord> {
   const products = await listProducts();
-  return createProduct(createEmptyProductInput(kind, products.length));
+  return createProduct(createEmptyProductInput(kind, products.length, categorySlug));
 }

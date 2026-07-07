@@ -7,7 +7,7 @@ create extension if not exists "pgcrypto";
 create table if not exists public.content_sections (
   id uuid primary key default gen_random_uuid(),
   slug text not null unique,
-  layout text not null check (layout in ('split-left', 'split-right', 'centered', 'full-bleed', 'text-only')),
+  layout text not null check (layout in ('split-left', 'split-right', 'centered', 'full-bleed', 'text-only', 'product-grid')),
   sort_order integer not null default 0,
   published boolean not null default false,
   eyebrow_en text not null default '',
@@ -186,3 +186,10 @@ grant select, insert, update, delete on table public.site_visit_stats to service
 grant select, insert, update, delete on table public.site_visit_daily to service_role;
 
 grant execute on function public.increment_site_visit() to service_role;
+
+alter table public.products add column if not exists category_slug text null;
+
+alter table public.content_sections drop constraint if exists content_sections_layout_check;
+alter table public.content_sections
+  add constraint content_sections_layout_check
+  check (layout in ('split-left', 'split-right', 'centered', 'full-bleed', 'text-only', 'product-grid'));

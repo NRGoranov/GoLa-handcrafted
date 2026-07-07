@@ -12,18 +12,23 @@ import {
   type PublishIssue
 } from "@/lib/admin/publish-validation";
 import type { ProductRecord, ProductRecordInput } from "@/types/product-record";
+import type { ContentSection } from "@/types/content-section";
+import {
+  applyProductPlacement,
+  listCmsPlacementOptions,
+  mergeContentSections,
+  normalizeProductRecordInput,
+  placementLabel,
+  productPlacementValue,
+  PLACEMENT_GIFT_BOX,
+  PLACEMENT_HAND_BAG
+} from "@/lib/products/product-placement";
 
 type ProductEditorProps = {
   initialProduct: ProductRecord;
+  cmsSections: ContentSection[];
   onSaved?: (product: ProductRecord) => void;
   onValuesChange?: (product: ProductRecordInput) => void;
-};
-
-type CmsSectionOption = {
-  id: string;
-  slug: string;
-  title?: { en: string; bg: string };
-  published?: boolean;
 };
 
 function localizedField(
@@ -40,21 +45,64 @@ function localizedField(
 
 export default function ProductEditor({
   initialProduct,
+  cmsSections,
   onSaved,
   onValuesChange
 }: ProductEditorProps) {
-  const [values, setValues] = useState<ProductRecordInput>(initialProduct);
+  const [values, setValues] = useState<ProductRecordInput>(() =>
+    normalizeProductRecordInput(initialProduct)
+  );
   const [status, setStatus] = useState<"idle" | "saving" | "error" | "success">("idle");
   const [message, setMessage] = useState("");
   const [imageUrlInput, setImageUrlInput] = useState("");
   const [publishIssues, setPublishIssues] = useState<PublishIssue[]>([]);
-  const [cmsSections, setCmsSections] = useState<CmsSectionOption[]>([]);
+  const [fetchedSections, setFetchedSections] = useState<ContentSection[]>([]);
+  const [sectionsLoadError, setSectionsLoadError] = useState("");
   const lastSyncedAtRef = useRef(initialProduct.updatedAt);
   const invalidFields = useMemo(() => publishIssueFieldIds(publishIssues), [publishIssues]);
+  const allSections = useMemo(
+    () => mergeContentSections(cmsSections, fetchedSections),
+    [cmsSections, fetchedSections]
+  );
+  const placementValue = useMemo(() => productPlacementValue(values), [values]);
+  const placementOptions = useMemo(() => {
+    const cmsOptions = listCmsPlacementOptions(allSections);
+    return [
+      { value: PLACEMENT_HAND_BAG, label: "Handbag (main collection)" },
+      { value: PLACEMENT_GIFT_BOX, label: "Gift box" },
+      ...cmsOptions
+    ];
+  }, [allSections]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch("/api/admin/sections", { cache: "no-store" });
+        const result = (await response.json()) as {
+          ok: boolean;
+          sections?: ContentSection[];
+          message?: string;
+        };
+        if (cancelled) return;
+        if (!response.ok || !result.ok || !Array.isArray(result.sections)) {
+          setSectionsLoadError(result.message || "Unable to load page sections.");
+          return;
+        }
+        setFetchedSections(result.sections);
+        setSectionsLoadError("");
+      } catch {
+        if (!cancelled) setSectionsLoadError("Unable to load page sections.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     lastSyncedAtRef.current = initialProduct.updatedAt;
-    setValues(initialProduct);
+    setValues(normalizeProductRecordInput(initialProduct));
     setPublishIssues([]);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when switching products
   }, [initialProduct.id]);
@@ -63,7 +111,7 @@ export default function ProductEditor({
     if (status === "saving") return;
     if (Date.parse(initialProduct.updatedAt) <= Date.parse(lastSyncedAtRef.current)) return;
     lastSyncedAtRef.current = initialProduct.updatedAt;
-    setValues(initialProduct);
+    setValues(normalizeProductRecordInput(initialProduct));
   }, [initialProduct, status]);
 
   useEffect(() => {
@@ -74,24 +122,6 @@ export default function ProductEditor({
     if (publishIssues.length === 0) return;
     setPublishIssues(validateProductForPublish(values));
   }, [values, publishIssues.length]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const response = await fetch("/api/admin/sections", { method: "GET" });
-        const result = (await response.json()) as { ok: boolean; sections?: CmsSectionOption[] };
-        if (!response.ok || !result.ok || !Array.isArray(result.sections)) return;
-        if (cancelled) return;
-        setCmsSections(result.sections);
-      } catch {
-        // Silent: section dropdown is optional; products can still be edited without it.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const trySetPublished = (nextPublished: boolean) => {
     if (!nextPublished) {
@@ -226,52 +256,40 @@ export default function ProductEditor({
               onChange={(e) => patch((prev) => ({ ...prev, sortOrder: Number(e.target.value) || 0 }))}
             />
           </label>
-          <label className="block space-y-2">
-            <span className="text-xs uppercase tracking-[0.16em] text-mist">Type</span>
+          <label className="block space-y-2 md:col-span-2">
+            <span className="text-xs uppercase tracking-[0.16em] text-mist">Type / section</span>
             <select
               className="admin-input"
-              value={values.productKind}
-              onChange={(e) =>
-                patch((prev) => ({
-                  ...prev,
-                  productKind: e.target.value as ProductRecordInput["productKind"]
-                }))
-              }
+              value={placementValue}
+              onChange={(e) => patch((prev) => applyProductPlacement(prev, e.target.value))}
             >
-              <option value="handbag" className="bg-ink">Handbag</option>
-              <option value="giftBox" className="bg-ink">Gift box</option>
-            </select>
-          </label>
-          <label className="block space-y-2">
-            <span className="text-xs uppercase tracking-[0.16em] text-mist">Category (CMS section)</span>
-            <select
-              className="admin-input"
-              value={values.categorySlug ?? ""}
-              onChange={(e) =>
-                patch((prev) => ({
-                  ...prev,
-                  categorySlug: e.target.value ? e.target.value : null
-                }))
-              }
-            >
-              <option value="" className="bg-ink">— None —</option>
-              {values.categorySlug &&
-              values.categorySlug !== "" &&
-              !cmsSections.some((section) => section.slug === values.categorySlug) ? (
-                <option value={values.categorySlug} className="bg-ink">
-                  Missing section: {values.categorySlug}
-                </option>
-              ) : null}
-              {cmsSections.map((section) => (
-                <option key={section.id} value={section.slug} className="bg-ink">
-                  {section.slug}
+              {placementOptions.map((option) => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                  disabled={option.disabled}
+                  className="bg-ink"
+                >
+                  {option.label}
                 </option>
               ))}
+              {!placementOptions.some((option) => option.value === placementValue) && placementValue ? (
+                <option value={placementValue} className="bg-ink">
+                  Missing section: {placementValue}
+                </option>
+              ) : null}
             </select>
             <p className="text-xs text-mist">
-              This links the product to a dynamic CMS section (e.g. “Обеци”). Use a CMS section layout “Product grid” to
-              display products for that slug on the live site.
+              Choose where this product appears. CMS sections (e.g. earrings) need layout “Product grid” under Page
+              sections. Loaded {allSections.length} page section{allSections.length === 1 ? "" : "s"}. Current:{" "}
+              {placementLabel(values, allSections)}.
             </p>
+            {sectionsLoadError ? <p className="text-xs text-red-300/90">{sectionsLoadError}</p> : null}
+            {allSections.length === 0 && !sectionsLoadError ? (
+              <p className="text-xs text-amber-200/90">
+                No page sections found yet. Create one under the Page sections tab, then refresh.
+              </p>
+            ) : null}
           </label>
         </div>
       </section>

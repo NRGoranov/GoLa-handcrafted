@@ -24,9 +24,13 @@ export async function PUT(req: Request) {
   if (unauthorized) return unauthorized;
 
   try {
-    const body = (await req.json().catch(() => ({}))) as { kind?: string };
+    const body = (await req.json().catch(() => ({}))) as { kind?: string; categorySlug?: string | null };
     const kind = body.kind === "giftBox" ? "giftBox" : "handbag";
-    const product = await createDraftProduct(kind);
+    const categorySlug =
+      kind === "handbag" && typeof body.categorySlug === "string" && body.categorySlug.trim()
+        ? body.categorySlug.trim()
+        : null;
+    const product = await createDraftProduct(kind, categorySlug);
     return NextResponse.json({ ok: true, product });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to create product.";
