@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin/require-admin-api";
+import { revalidatePublicHomepages } from "@/lib/content/revalidate-public";
 import { unregisterCmsBlock } from "@/lib/content/homepage-layout-store";
 import {
   deleteSection,
@@ -58,6 +59,7 @@ export async function PUT(req: Request, context: RouteContext) {
     }
 
     const section = await updateSection(id, formValuesToInput(parsed.data));
+    revalidatePublicHomepages();
     return NextResponse.json({ ok: true, section });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to update section.";

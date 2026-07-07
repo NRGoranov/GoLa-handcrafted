@@ -136,3 +136,24 @@ export function normalizeProductRecordInput(product: ProductRecordInput): Produc
     categorySlug: product.categorySlug ?? null
   };
 }
+
+export function isMainCollectionHandbag(product: {
+  productKind: ProductRecordInput["productKind"];
+  categorySlug?: string | null;
+}): boolean {
+  return product.productKind === "handbag" && !(product.categorySlug ?? "").trim();
+}
+
+export function productsForSection<T extends { categorySlug?: string | null }>(
+  section: Pick<ContentSection, "id" | "slug">,
+  products: T[]
+): T[] {
+  const categoryKey = sectionPlacementKey(section) ?? section.id;
+  const normalizedKey = categoryKey.toLowerCase();
+
+  return products.filter((product) => {
+    const assigned = (product.categorySlug ?? "").trim();
+    if (!assigned) return false;
+    return assigned === categoryKey || assigned.toLowerCase() === normalizedKey;
+  });
+}

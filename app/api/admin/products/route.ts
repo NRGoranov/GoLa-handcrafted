@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin/require-admin-api";
+import { revalidatePublicHomepages } from "@/lib/content/revalidate-public";
 import { createDraftProduct, listProducts, seedDefaultProducts } from "@/lib/products/products-store";
 
 export async function GET() {
@@ -31,6 +32,7 @@ export async function PUT(req: Request) {
         ? body.categorySlug.trim()
         : null;
     const product = await createDraftProduct(kind, categorySlug);
+    revalidatePublicHomepages();
     return NextResponse.json({ ok: true, product });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to create product.";

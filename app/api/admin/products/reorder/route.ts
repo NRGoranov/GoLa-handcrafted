@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin/require-admin-api";
+import { revalidatePublicHomepages } from "@/lib/content/revalidate-public";
 import { reorderProducts } from "@/lib/products/products-store";
 
 export async function PUT(req: Request) {
@@ -13,6 +14,7 @@ export async function PUT(req: Request) {
     }
 
     const products = await reorderProducts(body.ids);
+    revalidatePublicHomepages();
     return NextResponse.json({ ok: true, products });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to reorder products.";

@@ -12,8 +12,12 @@ import { getCopy, isLocale, type Locale } from "@/lib/i18n";
 import { isGiftBox } from "@/lib/products";
 import { productRecordToProduct } from "@/lib/products/map-product";
 import { listProducts } from "@/lib/products/products-store";
+import { isMainCollectionHandbag } from "@/lib/products/product-placement";
 
 const siteUrl = "https://www.gola-handcrafted.eu";
+
+/** Refresh catalog + CMS sections from Supabase without a full redeploy. */
+export const revalidate = 60;
 
 export function generateStaticParams() {
   return [{ locale: "en" }, { locale: "bg" }];
@@ -75,7 +79,7 @@ export default async function HomePage({
   const dynamicSections = await listSections({ publishedOnly: true });
   const productRecords = await listProducts({ publishedOnly: true });
   const products = productRecords.map((record) => productRecordToProduct(record, locale));
-  const handbagItems = products.filter((product) => product.productKind === "handbag");
+  const handbagItems = products.filter(isMainCollectionHandbag);
   const giftBoxItem = products.find((product) => product.productKind === "giftBox");
   const navLinks = buildHomepageNavLinks({
     locale,

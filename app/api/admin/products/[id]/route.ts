@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin/require-admin-api";
+import { revalidatePublicHomepages } from "@/lib/content/revalidate-public";
 import { validateProductForPublish } from "@/lib/admin/publish-validation";
 import { deleteProduct, getProduct, updateProduct } from "@/lib/products/products-store";
+import { normalizeProductRecordInput } from "@/lib/products/product-placement";
 import type { ProductRecordInput } from "@/types/product-record";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -28,9 +30,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   try {
     const { id } = await params;
     const body = (await req.json()) as ProductRecordInput;
+    const input = normalizeProductRecordInput({ ...body, id });
 
-    if (body.published) {
-      const issues = validateProductForPublish({ ...body, id });
+    if (input.published) {
+      const issues = validateProductForPublish(input);
       if (issues.length > 0) {
         return NextResponse.json(
           {
@@ -43,7 +46,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       }
     }
 
-    const product = await updateProduct(id, { ...body, id });
+    const product = await updateProduct(id, input);
+    revalidatePublicHomepages();
     return NextResponse.json({ ok: true, product });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to save product.";

@@ -6,6 +6,7 @@ import { useMemo, useState, type ComponentProps } from "react";
 import CollectionSection from "@/components/CollectionSection";
 import ProductModal from "@/components/ProductModal";
 import { getLocalizedProductPreview } from "@/lib/i18n";
+import { productsForSection } from "@/lib/products/product-placement";
 import type { Product } from "@/lib/products";
 import SectionHeading from "@/components/SectionHeading";
 import type { ContentSection } from "@/types/content-section";
@@ -129,7 +130,6 @@ export default function DynamicContentSection({
   const highlightBody = pickLocalized(section, locale, "highlightBody");
   const imageUrl = section.imageUrl?.trim() || null;
   const sectionId = section.slug || section.id;
-  const isProductGrid = section.layout === "product-grid";
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
@@ -155,31 +155,14 @@ export default function DynamicContentSection({
     };
   }, [giftBoxProduct, locale, productModalCopy]);
 
-  const filteredProducts = useMemo(() => {
-    if (!isProductGrid) return [];
-    const categoryKey = (section.slug?.trim() ? section.slug.trim() : section.id).toString();
-    return products.filter((product) => (product.categorySlug ?? "").trim() === categoryKey);
-  }, [isProductGrid, products, section.id, section.slug]);
-
-  const textBlock = (
-    <div>
-      <SectionHeading eyebrow={eyebrow || undefined} title={title} description={description || undefined} />
-      <HighlightBox title={highlightTitle} body={highlightBody} />
-      {body ? <p className="mb-6 text-sm text-mist sm:text-base">{body}</p> : null}
-      <BulletList bullets={section.bullets} />
-      {section.ctaHref ? <CtaLink label={ctaLabel} href={section.ctaHref} /> : null}
-    </div>
+  const filteredProducts = useMemo(
+    () => productsForSection(section, products),
+    [section, products]
   );
 
-  if (section.layout === "text-only") {
-    return (
-      <section id={sectionId} className="border-y border-ivory/10 bg-[#0f0f0f] py-20 sm:py-24">
-        <div className="container-luxury max-w-4xl">{textBlock}</div>
-      </section>
-    );
-  }
+  const showProductGrid = section.layout === "product-grid" || filteredProducts.length > 0;
 
-  if (section.layout === "product-grid") {
+  if (showProductGrid) {
     return (
       <>
         <CollectionSection
@@ -200,6 +183,24 @@ export default function DynamicContentSection({
           />
         ) : null}
       </>
+    );
+  }
+
+  const textBlock = (
+    <div>
+      <SectionHeading eyebrow={eyebrow || undefined} title={title} description={description || undefined} />
+      <HighlightBox title={highlightTitle} body={highlightBody} />
+      {body ? <p className="mb-6 text-sm text-mist sm:text-base">{body}</p> : null}
+      <BulletList bullets={section.bullets} />
+      {section.ctaHref ? <CtaLink label={ctaLabel} href={section.ctaHref} /> : null}
+    </div>
+  );
+
+  if (section.layout === "text-only") {
+    return (
+      <section id={sectionId} className="border-y border-ivory/10 bg-[#0f0f0f] py-20 sm:py-24">
+        <div className="container-luxury max-w-4xl">{textBlock}</div>
+      </section>
     );
   }
 
