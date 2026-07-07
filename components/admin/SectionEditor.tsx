@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import PublishField from "@/components/admin/PublishField";
 import PublishActionsFooter from "@/components/admin/PublishActionsFooter";
@@ -12,6 +12,7 @@ import {
   validateSectionForPublish,
   type PublishIssue
 } from "@/lib/admin/publish-validation";
+import type { AdminEditorSaveHandle } from "@/types/admin-editor-save";
 import {
   contentSectionInputSchema,
   formValuesToInput,
@@ -30,12 +31,15 @@ function emptyBullets(): [string, string, string] {
   return ["", "", ""];
 }
 
-export default function SectionEditor({
+export default forwardRef<AdminEditorSaveHandle, SectionEditorProps>(function SectionEditor(
+  {
   initialSection,
   onSaved,
   onValuesChange,
   compact = false
-}: SectionEditorProps) {
+}: SectionEditorProps,
+  ref
+) {
   const [values, setValues] = useState<ContentSectionFormValues>(() => sectionToFormValues(initialSection));
 
   const patchValues = (updater: (prev: ContentSectionFormValues) => ContentSectionFormValues) => {
@@ -117,58 +121,72 @@ export default function SectionEditor({
     setMessage("Image uploaded.");
   };
 
+  const performSave = useCallback(
+    async (published: boolean): Promise<boolean> => {
+      setMessage("");
+      const nextValues = { ...values, published };
+
+      if (published) {
+        const issues = validateSectionForPublish(nextValues);
+        if (issues.length > 0) {
+          setStatus("error");
+          setPublishIssues(issues);
+          setMessage("Complete the highlighted fields to publish.");
+          scrollToPublishField(issues[0].fieldId);
+          return false;
+        }
+      }
+
+      setStatus("saving");
+      setValues(nextValues);
+
+      const parsed = contentSectionInputSchema.safeParse(nextValues);
+      if (!parsed.success) {
+        setStatus("error");
+        setMessage(parsed.error.issues[0]?.message ?? "Invalid section data.");
+        return false;
+      }
+
+      try {
+        const response = await fetch(`/api/admin/sections/${initialSection.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formValuesToInput(parsed.data))
+        });
+        const result = (await response.json()) as {
+          ok: boolean;
+          section?: ContentSection;
+          message?: string;
+          issues?: PublishIssue[];
+        };
+        if (!response.ok || !result.ok || !result.section) {
+          if (result.issues?.length) {
+            setPublishIssues(result.issues);
+            scrollToPublishField(result.issues[0].fieldId);
+          }
+          throw new Error(result.message || "Unable to save section.");
+        }
+        setStatus("success");
+        setPublishIssues([]);
+        setMessage(published ? "Section published." : "Draft saved.");
+        lastSyncedAtRef.current = result.section.updatedAt;
+        setValues(sectionToFormValues(result.section));
+        onSaved?.(result.section);
+        return true;
+      } catch (error) {
+        setStatus("error");
+        setMessage(error instanceof Error ? error.message : "Unable to save section.");
+        return false;
+      }
+    },
+    [initialSection.id, onSaved, values]
+  );
+
+  useImperativeHandle(ref, () => ({ save: performSave }), [performSave]);
+
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setMessage("");
-
-    if (values.published) {
-      const issues = validateSectionForPublish(values);
-      if (issues.length > 0) {
-        setStatus("error");
-        setPublishIssues(issues);
-        setMessage("Complete the highlighted fields to publish.");
-        scrollToPublishField(issues[0].fieldId);
-        return;
-      }
-    }
-
-    setStatus("saving");
-
-    const parsed = contentSectionInputSchema.safeParse(values);
-    if (!parsed.success) {
-      setStatus("error");
-      setMessage(parsed.error.issues[0]?.message ?? "Invalid section data.");
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/admin/sections/${initialSection.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formValuesToInput(parsed.data))
-      });
-      const result = (await response.json()) as {
-        ok: boolean;
-        section?: ContentSection;
-        message?: string;
-        issues?: PublishIssue[];
-      };
-      if (!response.ok || !result.ok || !result.section) {
-        if (result.issues?.length) {
-          setPublishIssues(result.issues);
-          scrollToPublishField(result.issues[0].fieldId);
-        }
-        throw new Error(result.message || "Unable to save section.");
-      }
-      setStatus("success");
-      setPublishIssues([]);
-      setMessage(values.published ? "Section published." : "Draft saved.");
-      lastSyncedAtRef.current = result.section.updatedAt;
-      onSaved?.(result.section);
-    } catch (error) {
-      setStatus("error");
-      setMessage(error instanceof Error ? error.message : "Unable to save section.");
-    }
+    await performSave(values.published);
   };
 
   return (
@@ -342,7 +360,7 @@ export default function SectionEditor({
       />
     </form>
   );
-}
+});
 
 type LocalizedFieldKey = keyof Pick<
   ContentSectionFormValues,

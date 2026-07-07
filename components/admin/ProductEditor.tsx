@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import AdminImage from "@/components/admin/AdminImage";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import PublishField from "@/components/admin/PublishField";
@@ -11,6 +11,7 @@ import {
   validateProductForPublish,
   type PublishIssue
 } from "@/lib/admin/publish-validation";
+import type { AdminEditorSaveHandle } from "@/types/admin-editor-save";
 import type { ProductRecord, ProductRecordInput } from "@/types/product-record";
 import type { ContentSection } from "@/types/content-section";
 import {
@@ -43,12 +44,15 @@ function localizedField(
   };
 }
 
-export default function ProductEditor({
+export default forwardRef<AdminEditorSaveHandle, ProductEditorProps>(function ProductEditor(
+  {
   initialProduct,
   cmsSections,
   onSaved,
   onValuesChange
-}: ProductEditorProps) {
+}: ProductEditorProps,
+  ref
+) {
   const [values, setValues] = useState<ProductRecordInput>(() =>
     normalizeProductRecordInput(initialProduct)
   );
@@ -186,55 +190,69 @@ export default function ProductEditor({
     });
   };
 
+  const performSave = useCallback(
+    async (published: boolean): Promise<boolean> => {
+      setMessage("");
+      const payload: ProductRecordInput = { ...values, published };
+
+      if (published) {
+        const issues = validateProductForPublish(payload);
+        if (issues.length > 0) {
+          setStatus("error");
+          setPublishIssues(issues);
+          setMessage("Complete the highlighted fields to publish.");
+          scrollToPublishField(issues[0].fieldId);
+          return false;
+        }
+      }
+
+      setStatus("saving");
+      setValues(payload);
+
+      try {
+        const response = await fetch(`/api/admin/products/${initialProduct.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = (await response.json()) as {
+          ok: boolean;
+          product?: ProductRecord;
+          message?: string;
+          issues?: PublishIssue[];
+        };
+        if (!response.ok || !result.ok || !result.product) {
+          if (result.issues?.length) {
+            setPublishIssues(result.issues);
+            scrollToPublishField(result.issues[0].fieldId);
+          }
+          throw new Error(result.message || "Unable to save product.");
+        }
+        setStatus("success");
+        setPublishIssues([]);
+        setMessage(
+          published
+            ? "Product published — visible on the live site."
+            : "Draft saved — check Published on site to make it visible to visitors."
+        );
+        lastSyncedAtRef.current = result.product.updatedAt;
+        setValues(normalizeProductRecordInput(result.product));
+        onSaved?.(result.product);
+        return true;
+      } catch (error) {
+        setStatus("error");
+        setMessage(error instanceof Error ? error.message : "Unable to save product.");
+        return false;
+      }
+    },
+    [initialProduct.id, onSaved, values]
+  );
+
+  useImperativeHandle(ref, () => ({ save: performSave }), [performSave]);
+
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setMessage("");
-
-    if (values.published) {
-      const issues = validateProductForPublish(values);
-      if (issues.length > 0) {
-        setStatus("error");
-        setPublishIssues(issues);
-        setMessage("Complete the highlighted fields to publish.");
-        scrollToPublishField(issues[0].fieldId);
-        return;
-      }
-    }
-
-    setStatus("saving");
-
-    try {
-      const response = await fetch(`/api/admin/products/${initialProduct.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values)
-      });
-      const result = (await response.json()) as {
-        ok: boolean;
-        product?: ProductRecord;
-        message?: string;
-        issues?: PublishIssue[];
-      };
-      if (!response.ok || !result.ok || !result.product) {
-        if (result.issues?.length) {
-          setPublishIssues(result.issues);
-          scrollToPublishField(result.issues[0].fieldId);
-        }
-        throw new Error(result.message || "Unable to save product.");
-      }
-      setStatus("success");
-      setPublishIssues([]);
-      setMessage(
-        values.published
-          ? "Product published — visible on the live site."
-          : "Draft saved — check Published on site to make it visible to visitors."
-      );
-      lastSyncedAtRef.current = result.product.updatedAt;
-      onSaved?.(result.product);
-    } catch (error) {
-      setStatus("error");
-      setMessage(error instanceof Error ? error.message : "Unable to save product.");
-    }
+    await performSave(values.published);
   };
 
   return (
@@ -514,4 +532,4 @@ export default function ProductEditor({
       />
     </form>
   );
-}
+});

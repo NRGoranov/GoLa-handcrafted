@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import {
   BUILTIN_SECTION_FIELDS,
@@ -10,6 +9,7 @@ import {
 } from "@/lib/content/builtin-section-fields";
 import { BUILTIN_HOMEPAGE_SECTIONS } from "@/lib/content/builtin-sections";
 import GalleryEditor from "@/components/admin/GalleryEditor";
+import type { AdminEditorSaveHandle } from "@/types/admin-editor-save";
 import type { BuiltinSectionKey, BuiltinSectionRecord } from "@/types/builtin-section";
 
 type BuiltinSectionEditorProps = {
@@ -18,19 +18,24 @@ type BuiltinSectionEditorProps = {
   onValuesChange?: (section: BuiltinSectionRecord) => void;
   onSaved?: (section: BuiltinSectionRecord) => void;
   onGalleryUpdated?: () => void;
+  onNavigate?: (action: () => void) => void;
 };
 
 const SECTION_TITLES = Object.fromEntries(
   BUILTIN_HOMEPAGE_SECTIONS.map((section) => [section.key, section.title])
 ) as Record<BuiltinSectionKey, string>;
 
-export default function BuiltinSectionEditor({
+export default forwardRef<AdminEditorSaveHandle, BuiltinSectionEditorProps>(function BuiltinSectionEditor(
+  {
   sectionKey,
   initialSection,
   onValuesChange,
   onSaved,
-  onGalleryUpdated
-}: BuiltinSectionEditorProps) {
+  onGalleryUpdated,
+  onNavigate
+}: BuiltinSectionEditorProps,
+  ref
+) {
   const [contentEn, setContentEn] = useState<Record<string, unknown>>(initialSection.contentEn);
   const [contentBg, setContentBg] = useState<Record<string, unknown>>(initialSection.contentBg);
   const [imageUrl, setImageUrl] = useState<string | null>(initialSection.imageUrl);
@@ -102,8 +107,7 @@ export default function BuiltinSectionEditor({
     setImageUrl(result.url);
   };
 
-  const onSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const performSave = useCallback(async (): Promise<boolean> => {
     setStatus("saving");
     setMessage("");
 
@@ -125,10 +129,39 @@ export default function BuiltinSectionEditor({
       );
       lastSyncedAtRef.current = result.section.updatedAt;
       onSaved?.(result.section);
+      return true;
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Unable to save section.");
+      return false;
     }
+  }, [contentBg, contentEn, imageUrl, onSaved, sectionKey]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      save: async (published: boolean) => {
+        void published;
+        return performSave();
+      }
+    }),
+    [performSave]
+  );
+
+  const onSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await performSave();
+  };
+
+  const goToProducts = () => {
+    const action = () => {
+      window.location.assign("/admin/studio?tab=products");
+    };
+    if (onNavigate) {
+      onNavigate(action);
+      return;
+    }
+    action();
   };
 
   return (
@@ -139,9 +172,9 @@ export default function BuiltinSectionEditor({
         {sectionKey === "collection" || sectionKey === "giftBox" ? (
           <p className="mt-2 text-sm text-mist">
             Product cards and pricing are edited under{" "}
-            <Link href="/admin/studio?tab=products" className="text-caramel underline">
+            <button type="button" onClick={goToProducts} className="text-caramel underline">
               Products
-            </Link>
+            </button>
             . This form controls the section heading and description text.
           </p>
         ) : sectionKey === "gallery" ? (
@@ -240,4 +273,4 @@ export default function BuiltinSectionEditor({
       </div>
     </form>
   );
-}
+});

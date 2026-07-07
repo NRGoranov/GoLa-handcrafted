@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import DragSortList, { DragHandle } from "@/components/admin/DragSortList";
 import StudioPreviewFrame from "@/components/admin/StudioPreviewFrame";
+import UnsavedChangesDialog from "@/components/admin/UnsavedChangesDialog";
 import BuiltinSectionEditor from "@/components/admin/BuiltinSectionEditor";
 import BuiltinSectionLivePreview from "@/components/admin/BuiltinSectionLivePreview";
 import ProductEditor from "@/components/admin/ProductEditor";
@@ -35,9 +36,18 @@ import {
   type BuiltinSectionRecord
 } from "@/types/builtin-section";
 import { SECTION_LAYOUT_LABELS, type ContentSection } from "@/types/content-section";
+import type { AdminEditorSaveHandle } from "@/types/admin-editor-save";
 import type { ProductRecord, ProductRecordInput } from "@/types/product-record";
 
 type StudioTab = "products" | "sections" | "inquiries";
+
+type DirtyEditorKind = "product" | "section" | "builtin";
+
+type UnsavedModalState = {
+  pending: () => void;
+  supportsDraft: boolean;
+  editor: DirtyEditorKind;
+};
 
 type VisitStats = {
   totalVisits: number;
@@ -110,6 +120,11 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
   const [productPlacementFilter, setProductPlacementFilter] = useState<ProductPlacementFilter>(
     PLACEMENT_FILTER_ALL
   );
+  const [unsavedModal, setUnsavedModal] = useState<UnsavedModalState | null>(null);
+  const [unsavedModalSaving, setUnsavedModalSaving] = useState(false);
+  const productEditorRef = useRef<AdminEditorSaveHandle>(null);
+  const sectionEditorRef = useRef<AdminEditorSaveHandle>(null);
+  const builtinEditorRef = useRef<AdminEditorSaveHandle>(null);
 
   const refreshGalleryPreview = useCallback(async () => {
     setGalleryPreviewLoading(true);
@@ -193,16 +208,6 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
     }
   }, []);
 
-  const setTab = useCallback(
-    (nextTab: StudioTab, id?: string) => {
-      const params = new URLSearchParams();
-      params.set("tab", nextTab);
-      if (id) params.set("id", id);
-      router.push(`/admin/studio?${params.toString()}`);
-    },
-    [router]
-  );
-
   useEffect(() => {
     void refresh({ showLoading: true });
   }, [refresh]);
@@ -221,12 +226,6 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
       document.removeEventListener("visibilitychange", sync);
     };
   }, [refresh]);
-
-  useEffect(() => {
-    if (loading || selectedId || tab !== "products") return;
-    const first = products[0]?.id;
-    if (first) setTab("products", first);
-  }, [loading, selectedId, tab, products, setTab]);
 
   const selectedProduct = useMemo(
     () => products.find((product) => product.id === selectedId) ?? null,
@@ -247,11 +246,6 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
     if (tab !== "sections" || !selectedId || selectedBuiltinKey) return null;
     return sections.find((section) => section.id === selectedId) ?? null;
   }, [sections, selectedId, selectedBuiltinKey, tab]);
-
-  useEffect(() => {
-    if (tab !== "sections" || loading || !selectedId || selectedSection || selectedBuiltinSection) return;
-    setTab("sections");
-  }, [tab, loading, selectedId, selectedSection, selectedBuiltinSection, setTab]);
 
   const previewSection = useMemo(() => {
     if (!selectedSection || !sectionPreviewValues) return selectedSection;
@@ -284,6 +278,111 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
       JSON.stringify(sectionPreviewValues) !== JSON.stringify(sectionToFormValues(selectedSection))
     );
   }, [selectedSection, sectionPreviewValues]);
+
+  const navigateStudio = useCallback(
+    (nextTab: StudioTab, id?: string) => {
+      const params = new URLSearchParams();
+      params.set("tab", nextTab);
+      if (id) params.set("id", id);
+      router.push(`/admin/studio?${params.toString()}`);
+    },
+    [router]
+  );
+
+  const getDirtyEditor = useCallback((): DirtyEditorKind | null => {
+    if (isProductDirty) return "product";
+    if (isSectionDirty) return "section";
+    if (isBuiltinDirty) return "builtin";
+    return null;
+  }, [isBuiltinDirty, isProductDirty, isSectionDirty]);
+
+  const isEditorDirty = Boolean(getDirtyEditor());
+
+  const setTab = useCallback(
+    (nextTab: StudioTab, id?: string) => {
+      const dirtyEditor = getDirtyEditor();
+      if (!dirtyEditor) {
+        navigateStudio(nextTab, id);
+        return;
+      }
+
+      setUnsavedModal({
+        pending: () => navigateStudio(nextTab, id),
+        supportsDraft: dirtyEditor === "product" || dirtyEditor === "section",
+        editor: dirtyEditor
+      });
+    },
+    [getDirtyEditor, navigateStudio]
+  );
+
+  const guardedNavigate = useCallback(
+    (action: () => void) => {
+      const dirtyEditor = getDirtyEditor();
+      if (!dirtyEditor) {
+        action();
+        return;
+      }
+
+      setUnsavedModal({
+        pending: action,
+        supportsDraft: dirtyEditor === "product" || dirtyEditor === "section",
+        editor: dirtyEditor
+      });
+    },
+    [getDirtyEditor]
+  );
+
+  const editorRefForKind = useCallback((editor: DirtyEditorKind) => {
+    if (editor === "product") return productEditorRef;
+    if (editor === "section") return sectionEditorRef;
+    return builtinEditorRef;
+  }, []);
+
+  const handleUnsavedSave = useCallback(
+    async (published: boolean) => {
+      if (!unsavedModal) return;
+      setUnsavedModalSaving(true);
+      try {
+        const editorRef = editorRefForKind(unsavedModal.editor);
+        const ok = (await editorRef.current?.save(published)) ?? false;
+        if (!ok) return;
+        const pending = unsavedModal.pending;
+        setUnsavedModal(null);
+        pending();
+      } finally {
+        setUnsavedModalSaving(false);
+      }
+    },
+    [editorRefForKind, unsavedModal]
+  );
+
+  const handleUnsavedDiscard = useCallback(() => {
+    if (!unsavedModal) return;
+    const pending = unsavedModal.pending;
+    setUnsavedModal(null);
+    pending();
+  }, [unsavedModal]);
+
+  useEffect(() => {
+    if (tab !== "sections" || loading || !selectedId || selectedSection || selectedBuiltinSection) return;
+    navigateStudio("sections");
+  }, [tab, loading, selectedId, selectedSection, selectedBuiltinSection, navigateStudio]);
+
+  useEffect(() => {
+    if (loading || selectedId || tab !== "products") return;
+    const first = products[0]?.id;
+    if (first) setTab("products", first);
+  }, [loading, selectedId, tab, products, setTab]);
+
+  useEffect(() => {
+    if (!isEditorDirty) return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [isEditorDirty]);
 
   useEffect(() => {
     setProductPreviewValues(null);
@@ -352,7 +451,9 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
       return;
     }
     if (tab === "products" && !selectedProduct) return;
-    await deleteItem(tab, selectedId);
+    guardedNavigate(() => {
+      void deleteItem(tab, selectedId);
+    });
   };
 
   const deleteItem = async (itemTab: StudioTab, id: string) => {
@@ -531,6 +632,7 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
       ) : null}
       {tab === "products" && selectedProduct ? (
         <ProductEditor
+          ref={productEditorRef}
           key={selectedProduct.id}
           initialProduct={selectedProduct}
           cmsSections={sections}
@@ -543,11 +645,13 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
       ) : null}
       {tab === "sections" && selectedBuiltinKey && selectedBuiltinSection ? (
         <BuiltinSectionEditor
+          ref={builtinEditorRef}
           key={selectedBuiltinKey}
           sectionKey={selectedBuiltinKey}
           initialSection={selectedBuiltinSection}
           onValuesChange={handleBuiltinPreviewChange}
           onGalleryUpdated={() => void refreshGalleryPreview()}
+          onNavigate={guardedNavigate}
           onSaved={(section) => {
             setBuiltinSections((prev) => prev.map((entry) => (entry.key === section.key ? section : entry)));
             setBuiltinPreviewValues(section);
@@ -556,6 +660,7 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
       ) : null}
       {tab === "sections" && selectedSection ? (
         <SectionEditor
+          ref={sectionEditorRef}
           key={selectedSection.id}
           initialSection={selectedSection}
           compact
@@ -661,7 +766,15 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
               <span className="rounded-full border border-ivory/10 px-3 py-1 text-mist">
                 7 days: <strong className="text-caramel">{stats.visitsLast7Days}</strong>
               </span>
-              <Link href="/admin/inquiries" className="rounded-full border border-caramel/40 px-3 py-1 text-caramel">
+              <Link
+                href="/admin/inquiries"
+                onClick={(event) => {
+                  if (!isEditorDirty) return;
+                  event.preventDefault();
+                  guardedNavigate(() => router.push("/admin/inquiries"));
+                }}
+                className="rounded-full border border-caramel/40 px-3 py-1 text-caramel"
+              >
                 Inquiries inbox →
               </Link>
             </>
@@ -682,7 +795,7 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
               type="button"
               onClick={() => {
                 if (key === "inquiries") {
-                  router.push("/admin/inquiries");
+                  guardedNavigate(() => router.push("/admin/inquiries"));
                   return;
                 }
                 setTab(key);
@@ -972,7 +1085,11 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
                             </span>
                             <button
                               type="button"
-                              onClick={() => void deleteItem("sections", section.id)}
+                              onClick={() =>
+                                guardedNavigate(() => {
+                                  void deleteItem("sections", section.id);
+                                })
+                              }
                               className="shrink-0 rounded-full border border-red-400/30 px-2 py-0.5 text-[10px] text-red-200 hover:bg-red-950/40"
                               title="Delete section"
                             >
@@ -1065,6 +1182,16 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
           )}
         </div>
       </div>
+
+      <UnsavedChangesDialog
+        open={unsavedModal !== null}
+        supportsDraft={unsavedModal?.supportsDraft ?? false}
+        saving={unsavedModalSaving}
+        onSaveAndPublish={() => void handleUnsavedSave(true)}
+        onSaveDraft={() => void handleUnsavedSave(false)}
+        onDiscard={handleUnsavedDiscard}
+        onCancel={() => setUnsavedModal(null)}
+      />
     </AdminShell>
   );
 }
