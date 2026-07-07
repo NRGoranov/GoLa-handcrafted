@@ -4,6 +4,7 @@ export type ProductKind = "handbag" | "giftBox";
 
 type ProductBase = {
   id: string;
+  categorySlug?: string | null;
   name: string;
   description: string;
   cardSummary?: string;
@@ -33,6 +34,7 @@ export const handbagProducts: HandbagProduct[] = [
   {
     productKind: "handbag",
     id: "model-1",
+    categorySlug: null,
     model: 1,
     name: "Model 1",
     description:
@@ -57,6 +59,7 @@ export const handbagProducts: HandbagProduct[] = [
   {
     productKind: "handbag",
     id: "model-2",
+    categorySlug: null,
     model: 2,
     name: "Model 2",
     description:
@@ -79,6 +82,7 @@ export const handbagProducts: HandbagProduct[] = [
   {
     productKind: "handbag",
     id: "model-3",
+    categorySlug: null,
     model: 3,
     name: "Model 3",
     description:
@@ -102,6 +106,7 @@ export const handbagProducts: HandbagProduct[] = [
   {
     productKind: "handbag",
     id: "model-4",
+    categorySlug: null,
     model: 4,
     name: "Model 4",
     description:
@@ -122,6 +127,7 @@ export const giftBoxProducts: GiftBoxProduct[] = [
   {
     productKind: "giftBox",
     id: "premium-gift-box",
+    categorySlug: null,
     name: "Premium Gift Box for Handbags & Jewelry",
     description:
       "Turn your product into a premium gift experience. Handmade wooden packaging — more than a box, part of the presentation.",

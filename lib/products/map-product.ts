@@ -13,6 +13,7 @@ export function productRecordToProduct(record: ProductRecord, locale: Locale): P
 
   const base = {
     id: record.id,
+    categorySlug: record.categorySlug ?? null,
     name,
     description,
     cardSummary: cardSummary || undefined,

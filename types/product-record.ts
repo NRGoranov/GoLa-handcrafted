@@ -8,6 +8,11 @@ export type LocalizedText = {
 export type ProductRecord = {
   id: string;
   productKind: ProductKind;
+  /**
+   * Optional category anchor. We store the CMS section slug so products can be
+   * grouped/rendered inside dynamic "product grid" CMS sections.
+   */
+  categorySlug: string | null;
   sortOrder: number;
   published: boolean;
   model: number | null;

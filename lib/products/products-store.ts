@@ -9,6 +9,7 @@ const JSON_PATH = path.join(process.cwd(), "data", "products.json");
 type DbRow = {
   id: string;
   product_kind: string;
+  category_slug?: string | null;
   sort_order: number;
   published: boolean;
   model: number | null;
@@ -34,6 +35,7 @@ function rowToRecord(row: DbRow): ProductRecord {
   return {
     id: row.id,
     productKind: row.product_kind as ProductRecord["productKind"],
+    categorySlug: typeof row.category_slug === "string" ? row.category_slug : row.category_slug ?? null,
     sortOrder: row.sort_order,
     published: row.published,
     model: row.model,
@@ -57,6 +59,7 @@ function recordToRow(record: ProductRecord): DbRow {
   return {
     id: record.id,
     product_kind: record.productKind,
+    category_slug: record.categorySlug ?? null,
     sort_order: record.sortOrder,
     published: record.published,
     model: record.model,
@@ -352,6 +355,7 @@ export function createEmptyProductInput(kind: "handbag" | "giftBox", sortOrder: 
   return {
     id: `product-${Date.now()}`,
     productKind: kind,
+    categorySlug: null,
     sortOrder,
     published: false,
     model: kind === "handbag" ? 1 : null,

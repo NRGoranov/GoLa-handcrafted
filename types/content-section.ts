@@ -3,7 +3,8 @@ export const SECTION_LAYOUTS = [
   "split-right",
   "centered",
   "full-bleed",
-  "text-only"
+  "text-only",
+  "product-grid"
 ] as const;
 
 export type SectionLayout = (typeof SECTION_LAYOUTS)[number];
@@ -59,5 +60,9 @@ export const SECTION_LAYOUT_LABELS: Record<
   "text-only": {
     label: "Text only",
     description: "Heading and copy without an image."
+  },
+  "product-grid": {
+    label: "Product grid",
+    description: "Shows products whose Category matches this section slug."
   }
 };

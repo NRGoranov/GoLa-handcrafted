@@ -21,6 +21,7 @@ type HomePageMainProps = {
   craftsmanshipImageUrl: string | null;
   galleryGroups: GalleryImageGroup[];
   dynamicSections: ContentSection[];
+  products: Product[];
   handbagItems: Product[];
   giftBoxItem?: Product;
 };
@@ -32,6 +33,7 @@ export default function HomePageMain({
   craftsmanshipImageUrl,
   galleryGroups,
   dynamicSections,
+  products,
   handbagItems,
   giftBoxItem
 }: HomePageMainProps) {
@@ -89,7 +91,17 @@ export default function HomePageMain({
 
         const section = sectionMap.get(blockId);
         if (!section) return null;
-        return <DynamicContentSection key={blockId} section={section} locale={locale} />;
+        return (
+          <DynamicContentSection
+            key={blockId}
+            section={section}
+            locale={locale}
+            products={products}
+            productModalCopy={copy.product}
+            giftBoxProduct={giftBoxItem ?? null}
+            handbagItems={handbagItems}
+          />
+        );
       })}
     </>
   );

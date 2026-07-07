@@ -2,6 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo, useState, type ComponentProps } from "react";
+import CollectionSection from "@/components/CollectionSection";
+import ProductModal from "@/components/ProductModal";
+import { getLocalizedProductPreview } from "@/lib/i18n";
+import type { Product } from "@/lib/products";
 import SectionHeading from "@/components/SectionHeading";
 import type { ContentSection } from "@/types/content-section";
 import type { Locale } from "@/lib/i18n";
@@ -9,6 +14,11 @@ import type { Locale } from "@/lib/i18n";
 type DynamicContentSectionProps = {
   section: ContentSection;
   locale: Locale;
+  products?: Product[];
+  /** Optional: used when rendering "product-grid" sections. */
+  productModalCopy?: ComponentProps<typeof ProductModal>["copy"];
+  giftBoxProduct?: Product | null;
+  handbagItems?: Product[];
 };
 
 function pickLocalized(section: ContentSection, locale: Locale, field: keyof Pick<
@@ -101,7 +111,14 @@ function CtaLink({ label, href }: { label: string; href: string }) {
   );
 }
 
-export default function DynamicContentSection({ section, locale }: DynamicContentSectionProps) {
+export default function DynamicContentSection({
+  section,
+  locale,
+  products = [],
+  productModalCopy,
+  giftBoxProduct = null,
+  handbagItems = []
+}: DynamicContentSectionProps) {
   const eyebrow = pickLocalized(section, locale, "eyebrow") ?? "";
   const title = pickLocalized(section, locale, "title") ?? "";
   const description = pickLocalized(section, locale, "description") ?? "";
@@ -112,6 +129,37 @@ export default function DynamicContentSection({ section, locale }: DynamicConten
   const highlightBody = pickLocalized(section, locale, "highlightBody");
   const imageUrl = section.imageUrl?.trim() || null;
   const sectionId = section.slug || section.id;
+  const isProductGrid = section.layout === "product-grid";
+
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const productCardCopy = useMemo(
+    () => ({
+      viewDetails: locale === "bg" ? "Виж детайли" : "View details",
+      aria: {
+        viewDetailsFor: locale === "bg" ? "Виж детайли за {name}" : "View details for {name}"
+      }
+    }),
+    [locale]
+  );
+
+  const giftBoxForModal = useMemo(() => {
+    if (!giftBoxProduct) return null;
+    if (!productModalCopy) return giftBoxProduct;
+    const preview = getLocalizedProductPreview(locale, giftBoxProduct);
+    return {
+      ...giftBoxProduct,
+      name: preview.name,
+      description: preview.detailDescription,
+      cardSummary: giftBoxProduct.cardSummary?.trim() || preview.cardSummary
+    };
+  }, [giftBoxProduct, locale, productModalCopy]);
+
+  const filteredProducts = useMemo(() => {
+    if (!isProductGrid) return [];
+    const categoryKey = (section.slug?.trim() ? section.slug.trim() : section.id).toString();
+    return products.filter((product) => (product.categorySlug ?? "").trim() === categoryKey);
+  }, [isProductGrid, products, section.id, section.slug]);
 
   const textBlock = (
     <div>
@@ -128,6 +176,30 @@ export default function DynamicContentSection({ section, locale }: DynamicConten
       <section id={sectionId} className="border-y border-ivory/10 bg-[#0f0f0f] py-20 sm:py-24">
         <div className="container-luxury max-w-4xl">{textBlock}</div>
       </section>
+    );
+  }
+
+  if (section.layout === "product-grid") {
+    return (
+      <>
+        <CollectionSection
+          copy={{ eyebrow, title, description }}
+          locale={locale}
+          productCardCopy={productCardCopy}
+          items={filteredProducts}
+          sectionId={sectionId}
+          onViewProduct={setSelectedProduct}
+        />
+        {productModalCopy ? (
+          <ProductModal
+            product={selectedProduct}
+            giftBoxProduct={giftBoxForModal}
+            handbagItems={handbagItems}
+            onClose={() => setSelectedProduct(null)}
+            copy={productModalCopy}
+          />
+        ) : null}
+      </>
     );
   }
 

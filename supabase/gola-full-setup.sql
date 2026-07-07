@@ -81,6 +81,7 @@ create table if not exists public.builtin_sections (
 create table if not exists public.products (
   id text primary key,
   product_kind text not null check (product_kind in ('handbag', 'giftBox')),
+  category_slug text null,
   sort_order integer not null default 0,
   published boolean not null default false,
   model integer null,

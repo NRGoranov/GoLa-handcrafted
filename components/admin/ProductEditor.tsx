@@ -19,6 +19,13 @@ type ProductEditorProps = {
   onValuesChange?: (product: ProductRecordInput) => void;
 };
 
+type CmsSectionOption = {
+  id: string;
+  slug: string;
+  title?: { en: string; bg: string };
+  published?: boolean;
+};
+
 function localizedField(
   product: ProductRecordInput,
   field: "name" | "description" | "cardSummary",
@@ -41,6 +48,7 @@ export default function ProductEditor({
   const [message, setMessage] = useState("");
   const [imageUrlInput, setImageUrlInput] = useState("");
   const [publishIssues, setPublishIssues] = useState<PublishIssue[]>([]);
+  const [cmsSections, setCmsSections] = useState<CmsSectionOption[]>([]);
   const lastSyncedAtRef = useRef(initialProduct.updatedAt);
   const invalidFields = useMemo(() => publishIssueFieldIds(publishIssues), [publishIssues]);
 
@@ -66,6 +74,24 @@ export default function ProductEditor({
     if (publishIssues.length === 0) return;
     setPublishIssues(validateProductForPublish(values));
   }, [values, publishIssues.length]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch("/api/admin/sections", { method: "GET" });
+        const result = (await response.json()) as { ok: boolean; sections?: CmsSectionOption[] };
+        if (!response.ok || !result.ok || !Array.isArray(result.sections)) return;
+        if (cancelled) return;
+        setCmsSections(result.sections);
+      } catch {
+        // Silent: section dropdown is optional; products can still be edited without it.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const trySetPublished = (nextPublished: boolean) => {
     if (!nextPublished) {
@@ -215,6 +241,37 @@ export default function ProductEditor({
               <option value="handbag" className="bg-ink">Handbag</option>
               <option value="giftBox" className="bg-ink">Gift box</option>
             </select>
+          </label>
+          <label className="block space-y-2">
+            <span className="text-xs uppercase tracking-[0.16em] text-mist">Category (CMS section)</span>
+            <select
+              className="admin-input"
+              value={values.categorySlug ?? ""}
+              onChange={(e) =>
+                patch((prev) => ({
+                  ...prev,
+                  categorySlug: e.target.value ? e.target.value : null
+                }))
+              }
+            >
+              <option value="" className="bg-ink">— None —</option>
+              {values.categorySlug &&
+              values.categorySlug !== "" &&
+              !cmsSections.some((section) => section.slug === values.categorySlug) ? (
+                <option value={values.categorySlug} className="bg-ink">
+                  Missing section: {values.categorySlug}
+                </option>
+              ) : null}
+              {cmsSections.map((section) => (
+                <option key={section.id} value={section.slug} className="bg-ink">
+                  {section.slug}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-mist">
+              This links the product to a dynamic CMS section (e.g. “Обеци”). Use a CMS section layout “Product grid” to
+              display products for that slug on the live site.
+            </p>
           </label>
         </div>
       </section>

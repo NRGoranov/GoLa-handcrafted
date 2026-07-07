@@ -14,6 +14,7 @@ export function getDefaultProductRecords(): ProductRecord[] {
     return {
       id: product.id,
       productKind: "handbag",
+      categorySlug: product.categorySlug ?? null,
       sortOrder: index,
       published: true,
       model: product.model,
@@ -46,6 +47,7 @@ export function getDefaultProductRecords(): ProductRecord[] {
   const giftBox: ProductRecord = {
     id: gift.id,
     productKind: "giftBox",
+    categorySlug: gift.categorySlug ?? null,
     sortOrder: handbags.length,
     published: true,
     model: null,

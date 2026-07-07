@@ -7,7 +7,8 @@ const layoutPreviewClass: Record<SectionLayout, string> = {
   "split-right": "grid grid-cols-2 gap-1",
   centered: "flex flex-col items-center gap-1",
   "full-bleed": "",
-  "text-only": "flex flex-col gap-1"
+  "text-only": "flex flex-col gap-1",
+  "product-grid": "grid grid-cols-3 gap-1"
 };
 
 export default function LayoutPicker({
@@ -68,6 +69,16 @@ export default function LayoutPicker({
                   <div className="h-1.5 w-2/3 rounded bg-caramel/60" />
                   <div className="h-1 w-full rounded bg-ivory/15" />
                   <div className="h-1 w-5/6 rounded bg-ivory/10" />
+                </>
+              ) : null}
+              {layout === "product-grid" ? (
+                <>
+                  <div className="rounded bg-ivory/15" />
+                  <div className="rounded bg-ivory/15" />
+                  <div className="rounded bg-ivory/15" />
+                  <div className="rounded bg-ivory/10" />
+                  <div className="rounded bg-ivory/10" />
+                  <div className="rounded bg-ivory/10" />
                 </>
               ) : null}
             </div>

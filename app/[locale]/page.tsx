@@ -156,6 +156,7 @@ export default async function HomePage({
           craftsmanshipImageUrl={craftsmanshipImageUrl}
           galleryGroups={galleryGroups}
           dynamicSections={dynamicSections}
+          products={products}
           handbagItems={handbagItems}
           giftBoxItem={giftBoxItem}
         />

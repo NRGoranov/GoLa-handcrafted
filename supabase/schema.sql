@@ -32,6 +32,33 @@ create table if not exists public.content_sections (
   updated_at timestamptz not null default now()
 );
 
+-- Product catalog (handbags + gift box cards)
+-- Note: full setup lives in supabase/gola-full-setup.sql; keep schema.sql minimal.
+create table if not exists public.products (
+  id text primary key,
+  product_kind text not null check (product_kind in ('handbag', 'giftBox')),
+  category_slug text null,
+  sort_order integer not null default 0,
+  published boolean not null default false,
+  model integer null,
+  name_en text not null default '',
+  name_bg text not null default '',
+  description_en text not null default '',
+  description_bg text not null default '',
+  card_summary_en text not null default '',
+  card_summary_bg text not null default '',
+  dimensions text not null default '',
+  width_cm text not null default '',
+  height_cm text not null default '',
+  thickness_cm text not null default '',
+  price_eur numeric not null default 0,
+  pockets_add_on_eur numeric null,
+  engraving_add_on_eur numeric null,
+  images text[] not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.inquiries (
   id uuid primary key default gen_random_uuid(),
   name text not null,
