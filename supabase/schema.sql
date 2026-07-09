@@ -54,6 +54,7 @@ create table if not exists public.products (
   price_eur numeric not null default 0,
   pockets_add_on_eur numeric null,
   engraving_add_on_eur numeric null,
+  customization_options jsonb null,
   images text[] not null default '{}',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

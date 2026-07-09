@@ -2,6 +2,8 @@ import { promises as fs } from "fs";
 import path from "path";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/server";
 import type { ProductRecord, ProductRecordInput } from "@/types/product-record";
+import type { ProductCustomizationOption } from "@/types/product-customization";
+import { normalizeCustomizationOptions } from "@/lib/products/customization-options";
 import { getDefaultProductRecords } from "@/lib/products/seed-defaults";
 
 const JSON_PATH = path.join(process.cwd(), "data", "products.json");
@@ -26,6 +28,7 @@ type DbRow = {
   price_eur: number;
   pockets_add_on_eur: number | null;
   engraving_add_on_eur: number | null;
+  customization_options?: ProductCustomizationOption[] | null;
   images: string[];
   created_at: string;
   updated_at: string;
@@ -54,6 +57,9 @@ function rowToRecord(row: DbRow): ProductRecord {
     priceEur: Number(row.price_eur),
     pocketsAddOnEur: row.pockets_add_on_eur,
     engravingAddOnEur: row.engraving_add_on_eur,
+    customizationOptions: normalizeCustomizationOptions(
+      row.customization_options as ProductCustomizationOption[] | null | undefined
+    ),
     images: row.images ?? [],
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -81,6 +87,7 @@ function recordToRow(record: ProductRecord): DbRow {
     price_eur: record.priceEur,
     pockets_add_on_eur: record.pocketsAddOnEur,
     engraving_add_on_eur: record.engravingAddOnEur,
+    customization_options: record.customizationOptions,
     images: record.images,
     created_at: record.createdAt,
     updated_at: record.updatedAt
@@ -99,7 +106,8 @@ async function readJsonProducts(): Promise<ProductRecord[]> {
     if (!Array.isArray(parsed)) return [];
     return parsed.map((product) => ({
       ...product,
-      categorySlug: product.categorySlug ?? null
+      categorySlug: product.categorySlug ?? null,
+      customizationOptions: product.customizationOptions ?? null
     }));
   } catch {
     return [];
@@ -382,6 +390,7 @@ export function createEmptyProductInput(
     priceEur: 0,
     pocketsAddOnEur: kind === "handbag" ? 20 : null,
     engravingAddOnEur: kind === "handbag" ? 20 : null,
+    customizationOptions: null,
     images: []
   };
 }

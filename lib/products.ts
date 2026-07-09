@@ -1,4 +1,6 @@
 import { giftBoxGalleryImages } from "./giftBoxAssets";
+import { mergeCustomizationOptions, resolveCustomizationOptions } from "./products/customization-options";
+import type { ResolvedProductOption } from "@/types/product-customization";
 
 export type ProductKind = "handbag" | "giftBox";
 
@@ -15,6 +17,7 @@ type ProductBase = {
   priceEur: number;
   images: string[];
   customizable: true;
+  customizationOptions: ResolvedProductOption[];
 };
 
 export type HandbagProduct = ProductBase & {
@@ -30,7 +33,17 @@ export type GiftBoxProduct = ProductBase & {
 
 export type Product = HandbagProduct | GiftBoxProduct;
 
-export const handbagProducts: HandbagProduct[] = [
+function resolveStaticOptions(
+  productKind: ProductKind,
+  engravingAddOnEur: number | null = 20
+): ResolvedProductOption[] {
+  return resolveCustomizationOptions(
+    mergeCustomizationOptions(null, productKind, engravingAddOnEur),
+    "en"
+  );
+}
+
+const handbagProductsBase = [
   {
     productKind: "handbag",
     id: "model-1",
@@ -123,7 +136,14 @@ export const handbagProducts: HandbagProduct[] = [
   }
 ];
 
-export const giftBoxProducts: GiftBoxProduct[] = [
+export const handbagProducts: HandbagProduct[] = handbagProductsBase.map((product) => ({
+  ...product,
+  productKind: "handbag" as const,
+  customizable: true as const,
+  customizationOptions: resolveStaticOptions("handbag", product.engravingAddOnEur)
+}));
+
+const giftBoxProductsBase = [
   {
     productKind: "giftBox",
     id: "premium-gift-box",
@@ -140,6 +160,13 @@ export const giftBoxProducts: GiftBoxProduct[] = [
     customizable: true
   }
 ];
+
+export const giftBoxProducts: GiftBoxProduct[] = giftBoxProductsBase.map((product) => ({
+  ...product,
+  productKind: "giftBox" as const,
+  customizable: true as const,
+  customizationOptions: resolveStaticOptions("giftBox")
+}));
 
 export const products: Product[] = [...handbagProducts, ...giftBoxProducts];
 

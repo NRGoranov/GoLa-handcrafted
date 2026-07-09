@@ -41,7 +41,7 @@ function writeJson(key: string, value: unknown): void {
 }
 
 export function loadHandbagConfiguration(handbagId: string): HandbagConfigurationState {
-  const stored = readJson<Partial<HandbagConfigurationState>>(handbagStorageKey(handbagId));
+  const stored = readJson<HandbagConfigurationState>(handbagStorageKey(handbagId));
   return stored ? { ...defaultHandbagConfiguration, ...stored } : { ...defaultHandbagConfiguration };
 }
 
@@ -53,7 +53,7 @@ export function saveHandbagConfiguration(
 }
 
 export function loadGiftBoxConfiguration(): GiftBoxConfigurationState {
-  const stored = readJson<Partial<GiftBoxConfigurationState>>(GIFT_BOX_STORAGE_KEY);
+  const stored = readJson<GiftBoxConfigurationState>(GIFT_BOX_STORAGE_KEY);
   return stored ? { ...defaultGiftBoxConfiguration, ...stored } : { ...defaultGiftBoxConfiguration };
 }
 
@@ -62,7 +62,7 @@ export function saveGiftBoxConfiguration(config: GiftBoxConfigurationState): voi
 }
 
 export function loadModelGiftBoxConfiguration(): GiftBoxConfigurationState {
-  const stored = readJson<Partial<GiftBoxConfigurationState>>(MODEL_GIFT_BOX_STORAGE_KEY);
+  const stored = readJson<GiftBoxConfigurationState>(MODEL_GIFT_BOX_STORAGE_KEY);
   return stored ? { ...defaultGiftBoxConfiguration, ...stored } : { ...defaultGiftBoxConfiguration };
 }
 

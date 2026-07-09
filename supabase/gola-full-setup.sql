@@ -98,6 +98,7 @@ create table if not exists public.products (
   price_eur numeric not null default 0,
   pockets_add_on_eur numeric null,
   engraving_add_on_eur numeric null,
+  customization_options jsonb null,
   images text[] not null default '{}',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -188,6 +189,7 @@ grant select, insert, update, delete on table public.site_visit_daily to service
 grant execute on function public.increment_site_visit() to service_role;
 
 alter table public.products add column if not exists category_slug text null;
+alter table public.products add column if not exists customization_options jsonb null;
 
 alter table public.content_sections drop constraint if exists content_sections_layout_check;
 alter table public.content_sections

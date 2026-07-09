@@ -1,3 +1,5 @@
+import type { ProductCustomizationOption } from "@/types/product-customization";
+
 export type ProductKind = "handbag" | "giftBox";
 
 export type LocalizedText = {
@@ -26,6 +28,7 @@ export type ProductRecord = {
   priceEur: number;
   pocketsAddOnEur: number | null;
   engravingAddOnEur: number | null;
+  customizationOptions: ProductCustomizationOption[] | null;
   images: string[];
   createdAt: string;
   updatedAt: string;

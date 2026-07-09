@@ -1,18 +1,16 @@
 import type { InquiryCart } from "@/lib/inquiry-cart";
+import {
+  getPresetCustomizationOptions,
+  mergeCustomizationOptions,
+  optionConfigTextKey,
+  resolveCustomizationOptions
+} from "@/lib/products/customization-options";
 import { type Product, isGiftBox, isHandbag } from "@/lib/products";
+import type { Locale } from "@/lib/i18n";
+import type { ProductOptionConfig, ResolvedProductOption } from "@/types/product-customization";
 
 type ProductInquiryCopy = {
-  labels: {
-    liningColor: string;
-    woodCoatingColor: string;
-    chainColor: string;
-    insidePockets: string;
-    engraving: string;
-    paperColor: string;
-  };
   prefill: {
-    pocketsYes: string;
-    pocketsNo: string;
     engravingYes: string;
     engravingNo: string;
   };
@@ -20,29 +18,10 @@ type ProductInquiryCopy = {
   handbagAddonHeading: string;
   standaloneGiftBoxHeading: string;
   requestItemHeading: string;
-  options: {
-    colors: string[];
-    woodCoatingColors: string[];
-    chainColors: string[];
-    paperColors: string[];
-  };
 };
 
-export type HandbagConfigurationState = {
-  liningColor: number;
-  woodCoatingColor: number;
-  chainColor: number;
-  insidePockets: boolean;
-  customEngraving: boolean;
-  engravingText: string;
-};
-
-export type GiftBoxConfigurationState = {
-  paperColor: number;
-  woodCoatingColor: number;
-  customEngraving: boolean;
-  engravingText: string;
-};
+export type HandbagConfigurationState = ProductOptionConfig;
+export type GiftBoxConfigurationState = ProductOptionConfig;
 
 export type ProductConfigurationState = {
   handbag: HandbagConfigurationState;
@@ -57,21 +36,8 @@ export type InquiryBundle = {
   giftBox: { name: string; config: GiftBoxConfigurationState } | null;
 };
 
-export const defaultHandbagConfiguration: HandbagConfigurationState = {
-  liningColor: 0,
-  woodCoatingColor: 0,
-  chainColor: 0,
-  insidePockets: false,
-  customEngraving: false,
-  engravingText: ""
-};
-
-export const defaultGiftBoxConfiguration: GiftBoxConfigurationState = {
-  paperColor: 0,
-  woodCoatingColor: 0,
-  customEngraving: false,
-  engravingText: ""
-};
+export const defaultHandbagConfiguration: HandbagConfigurationState = {};
+export const defaultGiftBoxConfiguration: GiftBoxConfigurationState = {};
 
 export const defaultProductConfigurationState: ProductConfigurationState = {
   handbag: defaultHandbagConfiguration,
@@ -98,6 +64,7 @@ type LegacyFlatConfiguration = Partial<{
   selectedHandbagId: string;
   handbag: HandbagConfigurationState;
   giftBox: GiftBoxConfigurationState;
+  options: ProductOptionConfig;
 }>;
 
 export function normalizeProductConfiguration(
@@ -107,8 +74,8 @@ export function normalizeProductConfiguration(
 
   if (parsed.handbag && parsed.giftBox) {
     return {
-      handbag: { ...defaultHandbagConfiguration, ...parsed.handbag, insidePockets: false },
-      giftBox: { ...defaultGiftBoxConfiguration, ...parsed.giftBox },
+      handbag: { ...parsed.handbag },
+      giftBox: { ...parsed.giftBox },
       includeGiftBox: parsed.includeGiftBox ?? false,
       includeHandbag: parsed.includeHandbag ?? false,
       selectedHandbagId: parsed.selectedHandbagId ?? defaultProductConfigurationState.selectedHandbagId
@@ -117,22 +84,17 @@ export function normalizeProductConfiguration(
 
   return {
     handbag: {
-      liningColor: parsed.liningColor ?? defaultHandbagConfiguration.liningColor,
-      woodCoatingColor: parsed.woodCoatingColor ?? defaultHandbagConfiguration.woodCoatingColor,
-      chainColor: parsed.chainColor ?? defaultHandbagConfiguration.chainColor,
-      insidePockets: false,
-      customEngraving: parsed.customEngraving ?? defaultHandbagConfiguration.customEngraving,
-      engravingText: parsed.engravingText ?? defaultHandbagConfiguration.engravingText
+      liningColor: parsed.liningColor ?? 0,
+      woodCoatingColor: parsed.woodCoatingColor ?? 0,
+      chainColor: parsed.chainColor ?? 0,
+      customEngraving: parsed.customEngraving ?? false,
+      engravingText: parsed.engravingText ?? ""
     },
     giftBox: {
-      paperColor: parsed.giftBoxPaperColor ?? parsed.paperColor ?? defaultGiftBoxConfiguration.paperColor,
-      woodCoatingColor:
-        parsed.giftBoxWoodCoatingColor ??
-        parsed.woodCoatingColor ??
-        defaultGiftBoxConfiguration.woodCoatingColor,
-      customEngraving:
-        parsed.giftBoxCustomEngraving ?? parsed.customEngraving ?? defaultGiftBoxConfiguration.customEngraving,
-      engravingText: parsed.giftBoxEngravingText ?? parsed.engravingText ?? defaultGiftBoxConfiguration.engravingText
+      paperColor: parsed.giftBoxPaperColor ?? parsed.paperColor ?? 0,
+      woodCoatingColor: parsed.giftBoxWoodCoatingColor ?? parsed.woodCoatingColor ?? 0,
+      customEngraving: parsed.giftBoxCustomEngraving ?? parsed.customEngraving ?? false,
+      engravingText: parsed.giftBoxEngravingText ?? parsed.engravingText ?? ""
     },
     includeGiftBox: parsed.includeGiftBox ?? false,
     includeHandbag: parsed.includeHandbag ?? false,
@@ -140,64 +102,88 @@ export function normalizeProductConfiguration(
   };
 }
 
-function formatEngravingValue(
-  customEngraving: boolean,
-  engravingText: string,
+function formatCheckboxValue(
+  option: ResolvedProductOption,
+  config: ProductOptionConfig,
   copy: ProductInquiryCopy
 ): string {
-  if (!customEngraving) return copy.prefill.engravingNo;
-  const text = engravingText.trim();
-  return text ? `"${text}"` : copy.prefill.engravingYes;
+  const checked = config[option.id] === true;
+  if (!checked) {
+    return option.id === "customEngraving" ? copy.prefill.engravingNo : "No";
+  }
+
+  const textKey = optionConfigTextKey(option.id);
+  const text = String(config[textKey] ?? "").trim();
+  if (text) return `"${text}"`;
+  return option.id === "customEngraving" ? copy.prefill.engravingYes : "Yes";
+}
+
+export function buildDynamicConfigLines(
+  productName: string,
+  options: ResolvedProductOption[],
+  config: ProductOptionConfig,
+  copy: ProductInquiryCopy
+): string[] {
+  const lines = [productName];
+
+  for (const option of options) {
+    if (option.type === "swatch") {
+      const index = config[option.id];
+      const label =
+        typeof index === "number" ? option.choices?.[index]?.label ?? "" : "";
+      lines.push(`${option.label} - ${label}`);
+      continue;
+    }
+
+    lines.push(`${option.label} - ${formatCheckboxValue(option, config, copy)}`);
+  }
+
+  return lines;
+}
+
+function resolveGiftBoxOptions(locale: Locale = "en"): ResolvedProductOption[] {
+  return resolveCustomizationOptions(
+    mergeCustomizationOptions(null, "giftBox"),
+    locale
+  );
 }
 
 function formatNumberedLines(lines: string[]): string {
   return lines.map((line, index) => `${index + 1}. ${line}`).join("\n");
 }
 
-function buildHandbagConfigLines(
-  handbagName: string,
-  config: HandbagConfigurationState,
-  copy: ProductInquiryCopy
-): string[] {
-  return [
-    handbagName,
-    `${copy.labels.liningColor} - ${copy.options.colors[config.liningColor] ?? ""}`,
-    `${copy.labels.woodCoatingColor} - ${copy.options.woodCoatingColors[config.woodCoatingColor] ?? ""}`,
-    `${copy.labels.chainColor} - ${copy.options.chainColors[config.chainColor] ?? ""}`,
-    `${copy.labels.engraving} - ${formatEngravingValue(config.customEngraving, config.engravingText, copy)}`
-  ];
-}
-
-function buildGiftBoxConfigLines(
-  giftBoxName: string,
-  config: GiftBoxConfigurationState,
-  copy: ProductInquiryCopy
-): string[] {
-  return [
-    giftBoxName,
-    `${copy.labels.paperColor} - ${copy.options.paperColors[config.paperColor] ?? ""}`,
-    `${copy.labels.woodCoatingColor} - ${copy.options.woodCoatingColors[config.woodCoatingColor] ?? ""}`,
-    `${copy.labels.engraving} - ${formatEngravingValue(config.customEngraving, config.engravingText, copy)}`
-  ];
-}
-
-export function buildInquiryCartMessage(cart: InquiryCart, copy: ProductInquiryCopy): string {
+export function buildInquiryCartMessage(
+  cart: InquiryCart,
+  copy: ProductInquiryCopy,
+  products: Product[] = [],
+  locale: Locale = "en"
+): string {
+  const productById = new Map(products.map((product) => [product.id, product]));
+  const defaultGiftBoxOptions = resolveGiftBoxOptions(locale);
   const sections: string[] = [];
 
   cart.handbags.forEach((entry, index) => {
+    const product = productById.get(entry.handbagId);
+    const options = product?.customizationOptions ?? [];
+
     const itemParts: string[] = [
       copy.requestItemHeading
         .replace("{index}", String(index + 1))
         .replace("{name}", entry.handbagName),
       `${copy.handbagAddonHeading}:\n${formatNumberedLines(
-        buildHandbagConfigLines(entry.handbagName, entry.config, copy)
+        buildDynamicConfigLines(entry.handbagName, options, entry.config, copy)
       )}`
     ];
 
     if (entry.giftBox) {
       itemParts.push(
         `${copy.giftBoxAddonHeading}:\n${formatNumberedLines(
-          buildGiftBoxConfigLines(entry.giftBox.name, entry.giftBox.config, copy)
+          buildDynamicConfigLines(
+            entry.giftBox.name,
+            defaultGiftBoxOptions,
+            entry.giftBox.config,
+            copy
+          )
         )}`
       );
     }
@@ -208,8 +194,9 @@ export function buildInquiryCartMessage(cart: InquiryCart, copy: ProductInquiryC
   if (cart.standaloneGiftBox) {
     sections.push(
       `${copy.standaloneGiftBoxHeading}:\n${formatNumberedLines(
-        buildGiftBoxConfigLines(
+        buildDynamicConfigLines(
           cart.standaloneGiftBox.name,
+          defaultGiftBoxOptions,
           cart.standaloneGiftBox.config,
           copy
         )
@@ -220,12 +207,28 @@ export function buildInquiryCartMessage(cart: InquiryCart, copy: ProductInquiryC
   return sections.join("\n\n---\n\n");
 }
 
-export function buildInquiryBundleMessage(bundle: InquiryBundle, copy: ProductInquiryCopy): string {
+export function buildInquiryBundleMessage(
+  bundle: InquiryBundle,
+  copy: ProductInquiryCopy,
+  options: {
+    handbagOptions?: ResolvedProductOption[];
+    giftBoxOptions?: ResolvedProductOption[];
+    locale?: Locale;
+  } = {}
+): string {
+  const locale = options.locale ?? "en";
+  const handbagOptions = options.handbagOptions ?? [];
+  const giftBoxOptions = options.giftBoxOptions ?? resolveGiftBoxOptions(locale);
   const sections: string[] = [];
 
   if (bundle.handbag) {
     const handbagSection = formatNumberedLines(
-      buildHandbagConfigLines(bundle.handbag.name, bundle.handbag.config, copy)
+      buildDynamicConfigLines(
+        bundle.handbag.name,
+        handbagOptions,
+        bundle.handbag.config,
+        copy
+      )
     );
     sections.push(
       bundle.giftBox ? `${copy.handbagAddonHeading}:\n${handbagSection}` : handbagSection
@@ -234,7 +237,7 @@ export function buildInquiryBundleMessage(bundle: InquiryBundle, copy: ProductIn
 
   if (bundle.giftBox) {
     const giftBoxSection = formatNumberedLines(
-      buildGiftBoxConfigLines(bundle.giftBox.name, bundle.giftBox.config, copy)
+      buildDynamicConfigLines(bundle.giftBox.name, giftBoxOptions, bundle.giftBox.config, copy)
     );
     sections.push(
       bundle.handbag ? `${copy.giftBoxAddonHeading}:\n${giftBoxSection}` : giftBoxSection
@@ -251,6 +254,7 @@ export function buildInquiryBundleFromModal(
   options: {
     giftBoxProduct?: Product | null;
     handbagItems?: Product[];
+    locale?: Locale;
   }
 ): InquiryBundle {
   const handbagItems = options.handbagItems ?? [];
@@ -278,4 +282,12 @@ export function buildInquiryBundleFromModal(
   }
 
   return { handbag: null, giftBox: null };
+}
+
+export function getDefaultGiftBoxOptions(locale: Locale = "en"): ResolvedProductOption[] {
+  return resolveGiftBoxOptions(locale);
+}
+
+export function getDefaultHandbagOptions(locale: Locale = "en"): ResolvedProductOption[] {
+  return resolveCustomizationOptions(getPresetCustomizationOptions("handbag"), locale);
 }

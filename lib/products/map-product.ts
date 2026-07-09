@@ -1,4 +1,8 @@
 import type { Locale } from "@/lib/i18n";
+import {
+  mergeCustomizationOptions,
+  resolveCustomizationOptions
+} from "@/lib/products/customization-options";
 import type { GiftBoxProduct, HandbagProduct, Product } from "@/lib/products";
 import type { ProductRecord } from "@/types/product-record";
 
@@ -10,6 +14,11 @@ export function productRecordToProduct(record: ProductRecord, locale: Locale): P
   const name = pickLocalized(record.name, locale);
   const description = pickLocalized(record.description, locale);
   const cardSummary = pickLocalized(record.cardSummary, locale);
+
+  const customizationOptions = resolveCustomizationOptions(
+    mergeCustomizationOptions(record.customizationOptions, record.productKind, record.engravingAddOnEur),
+    locale
+  );
 
   const base = {
     id: record.id,
@@ -23,7 +32,8 @@ export function productRecordToProduct(record: ProductRecord, locale: Locale): P
     thicknessCm: record.thicknessCm,
     priceEur: record.priceEur,
     images: (record.images ?? []).filter((url): url is string => typeof url === "string" && url.trim().length > 0),
-    customizable: true as const
+    customizable: true as const,
+    customizationOptions
   };
 
   if (record.productKind === "giftBox") {

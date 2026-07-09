@@ -1,8 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { giftBoxImageForPaperColor } from "@/lib/giftBoxAssets";
+import {
+  calculateOptionAddOnTotal,
+  migrateLegacyConfig
+} from "@/lib/products/customization-options";
 import {
   dispatchInquiryPrefill,
   scrollToInquirySection
@@ -37,7 +41,9 @@ import {
   type HandbagConfigurationState
 } from "@/lib/product-inquiry-prefill";
 import { type Product, isGiftBox, isHandbag } from "@/lib/products";
+import ProductOptionsPanel from "@/components/ProductOptionsPanel";
 import ProductViewer from "./ProductViewer";
+import type { ProductOptionConfig } from "@/types/product-customization";
 
 type ProductModalCopy = {
   close: string;
@@ -111,29 +117,12 @@ type ProductModalProps = {
   copy: ProductModalCopy;
 };
 
-const paperSwatches = [
-  "#faf8f5",
-  "#f5ead8",
-  "#c4a574",
-  "#0b0b0b",
-  "#e8c4c8",
-  "#1e2a4a"
-] as const;
-
-const liningSwatches = [
-  "#d8c3a5",
-  "#556b2f",
-  "#6b1f2b",
-  "#0f766e",
-  "#d8a7b1",
-  "#0b0b0b",
-  "#36454f",
-  "#ff7f50",
-  "#8b5a2b"
-] as const;
-
-const woodCoatingSwatches = ["#d6b88f", "#6b4a2f", "#5a2a27", "#111111"] as const;
-const chainSwatches = ["#d4af37", "#c0c0c0", "#cd7f32", "#0b0b0b"] as const;
+function hydrateOptionConfig(
+  stored: ProductOptionConfig,
+  options: Product["customizationOptions"]
+): ProductOptionConfig {
+  return migrateLegacyConfig(stored as Record<string, unknown>, options);
+}
 
 export default function ProductModal({
   product,
@@ -164,30 +153,28 @@ export default function ProductModal({
   const selectedHandbag =
     handbagItems.find((item) => item.id === meta.selectedHandbagId) ?? handbagItems[0] ?? null;
 
-  const updateHandbagField = useCallback(
-    <K extends keyof HandbagConfigurationState>(key: K, value: HandbagConfigurationState[K]) => {
-      setHandbagConfig((prev) => ({ ...prev, [key]: value }));
-    },
-    []
-  );
+  const inquiryProducts = useMemo(() => {
+    const entries = [...handbagItems];
+    if (product) entries.push(product);
+    if (effectiveGiftBoxProduct) entries.push(effectiveGiftBoxProduct);
+    return Array.from(new Map(entries.map((entry) => [entry.id, entry])).values());
+  }, [handbagItems, product, effectiveGiftBoxProduct]);
 
-  const updateGiftBoxField = useCallback(
-    <K extends keyof GiftBoxConfigurationState>(key: K, value: GiftBoxConfigurationState[K]) => {
-      setGiftBoxConfig((prev) => ({ ...prev, [key]: value }));
-    },
-    []
-  );
+  const updateHandbagConfig = useCallback((next: ProductOptionConfig) => {
+    setHandbagConfig(next);
+  }, []);
+
+  const updateGiftBoxConfig = useCallback((next: ProductOptionConfig) => {
+    setGiftBoxConfig(next);
+  }, []);
+
+  const updateModelGiftBoxConfig = useCallback((next: ProductOptionConfig) => {
+    setModelGiftBoxConfig(next);
+  }, []);
 
   const updateMeta = useCallback(<K extends keyof InquiryMetaState>(key: K, value: InquiryMetaState[K]) => {
     setMeta((prev) => ({ ...prev, [key]: value }));
   }, []);
-
-  const updateModelGiftBoxField = useCallback(
-    <K extends keyof GiftBoxConfigurationState>(key: K, value: GiftBoxConfigurationState[K]) => {
-      setModelGiftBoxConfig((prev) => ({ ...prev, [key]: value }));
-    },
-    []
-  );
 
   const refreshCart = useCallback(() => {
     setCart(loadInquiryCart());
@@ -217,9 +204,22 @@ export default function ProductModal({
       product.productKind,
       defaultHandbagIdRef.current
     );
-    setHandbagConfig(loaded.handbag);
-    setGiftBoxConfig(loaded.giftBox);
-    setModelGiftBoxConfig(loadModelGiftBoxConfiguration());
+    const initialHandbag =
+      product.productKind === "handbag"
+        ? product
+        : handbagItems.find((item) => item.id === loaded.meta.selectedHandbagId) ?? handbagItems[0] ?? null;
+    const giftBoxOptions =
+      product.productKind === "giftBox"
+        ? product.customizationOptions
+        : giftBoxProduct?.customizationOptions ?? [];
+
+    setHandbagConfig(
+      hydrateOptionConfig(loaded.handbag, initialHandbag?.customizationOptions ?? [])
+    );
+    setGiftBoxConfig(hydrateOptionConfig(loaded.giftBox, giftBoxOptions));
+    setModelGiftBoxConfig(
+      hydrateOptionConfig(loadModelGiftBoxConfiguration(), giftBoxProduct?.customizationOptions ?? giftBoxOptions)
+    );
     setMeta(loaded.meta);
     hydratedRef.current = true;
 
@@ -253,13 +253,18 @@ export default function ProductModal({
       window.removeEventListener("keydown", onKeyDown);
       hydratedRef.current = false;
     };
-  }, [product?.id, product?.productKind, onClose]);
+  }, [product?.id, product?.productKind, onClose, handbagItems, giftBoxProduct]);
 
   useEffect(() => {
     if (!product || !isGiftBox(product) || !meta.includeHandbag) return;
     if (!hydratedRef.current) return;
-    setHandbagConfig(loadHandbagConfiguration(meta.selectedHandbagId));
-  }, [product?.id, meta.selectedHandbagId, meta.includeHandbag]);
+    const handbag =
+      handbagItems.find((item) => item.id === meta.selectedHandbagId) ?? handbagItems[0] ?? null;
+    if (!handbag) return;
+    setHandbagConfig(
+      hydrateOptionConfig(loadHandbagConfiguration(meta.selectedHandbagId), handbag.customizationOptions)
+    );
+  }, [product, meta.selectedHandbagId, meta.includeHandbag, handbagItems]);
 
   useEffect(() => {
     if (!hydratedRef.current || !activeHandbagId) return;
@@ -327,7 +332,7 @@ export default function ProductModal({
             })
           : baseCart;
 
-    const message = buildInquiryCartMessage(cartForMessage, copy);
+    const message = buildInquiryCartMessage(cartForMessage, copy, inquiryProducts);
     if (!message.trim()) return;
 
     dispatchInquiryPrefill({ message, inquiryType: "customRequest" });
@@ -347,7 +352,8 @@ export default function ProductModal({
 
   const handbagAddonPrice =
     selectedHandbag && isHandbag(selectedHandbag)
-      ? selectedHandbag.priceEur + (handbagConfig.customEngraving ? selectedHandbag.engravingAddOnEur : 0)
+      ? selectedHandbag.priceEur +
+        calculateOptionAddOnTotal(selectedHandbag.customizationOptions, handbagConfig)
       : 0;
 
   const displayPrice =
@@ -355,9 +361,12 @@ export default function ProductModal({
       ? product.priceEur + (meta.includeHandbag ? handbagAddonPrice : 0)
       : product && isHandbag(product)
         ? product.priceEur +
-          (handbagConfig.customEngraving ? product.engravingAddOnEur : 0) +
+          calculateOptionAddOnTotal(product.customizationOptions, handbagConfig) +
           (meta.includeGiftBox && effectiveGiftBoxProduct ? effectiveGiftBoxProduct.priceEur : 0)
         : 0;
+
+  const giftBoxPaperIndex =
+    typeof giftBoxConfig.paperColor === "number" ? giftBoxConfig.paperColor : 0;
 
   return (
     <AnimatePresence>
@@ -399,7 +408,7 @@ export default function ProductModal({
                 images={product.images}
                 copy={{ aria: copy.aria }}
                 syncActiveSrc={
-                  isGiftBox(product) ? giftBoxImageForPaperColor(giftBoxConfig.paperColor) : undefined
+                  isGiftBox(product) ? giftBoxImageForPaperColor(giftBoxPaperIndex) : undefined
                 }
               />
               <div className="space-y-5">
@@ -449,12 +458,14 @@ export default function ProductModal({
                       <p className="mb-4 text-xs uppercase tracking-[0.16em] text-caramel">
                         {copy.handbagAddonHeading}
                       </p>
-                      <HandbagOptionsPanel
+                      <ProductOptionsPanel
                         groupId={`${optionsGroupId}-model`}
-                        copy={copy}
+                        options={product.customizationOptions}
                         config={handbagConfig}
-                        engravingAddOnEur={product.engravingAddOnEur}
-                        onUpdate={updateHandbagField}
+                        engravingAddsLabel={copy.options.engravingAdds}
+                        engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
+                        engravingTextPlaceholder={copy.placeholders.engravingText}
+                        onUpdate={updateHandbagConfig}
                       />
                     </section>
 
@@ -488,12 +499,14 @@ export default function ProductModal({
                             <p className="mb-4 text-xs uppercase tracking-[0.16em] text-caramel">
                               {copy.giftBoxAddonHeading}
                             </p>
-                            <GiftBoxOptionsPanel
+                            <ProductOptionsPanel
                               groupId={`${optionsGroupId}-box`}
-                              copy={copy}
+                              options={effectiveGiftBoxProduct.customizationOptions}
                               config={giftBoxConfig}
-                              engravingSurchargeLabel={copy.options.engravingNoSurcharge}
-                              onUpdate={updateGiftBoxField}
+                              engravingAddsLabel={copy.options.engravingAdds}
+                              engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
+                              engravingTextPlaceholder={copy.placeholders.engravingText}
+                              onUpdate={updateGiftBoxConfig}
                             />
                           </div>
                         ) : null}
@@ -509,12 +522,14 @@ export default function ProductModal({
                       <p className="mb-4 text-xs uppercase tracking-[0.16em] text-caramel">
                         {copy.giftBoxAddonHeading}
                       </p>
-                      <GiftBoxOptionsPanel
+                      <ProductOptionsPanel
                         groupId={`${optionsGroupId}-box`}
-                        copy={copy}
+                        options={product.customizationOptions}
                         config={giftBoxConfig}
-                        engravingSurchargeLabel={copy.options.engravingNoSurcharge}
-                        onUpdate={updateGiftBoxField}
+                        engravingAddsLabel={copy.options.engravingAdds}
+                        engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
+                        engravingTextPlaceholder={copy.placeholders.engravingText}
+                        onUpdate={updateGiftBoxConfig}
                       />
                     </section>
 
@@ -562,12 +577,14 @@ export default function ProductModal({
 
                             {selectedHandbag && isHandbag(selectedHandbag) ? (
                               <>
-                                <HandbagOptionsPanel
+                                <ProductOptionsPanel
                                   groupId={`${optionsGroupId}-model-addon`}
-                                  copy={copy}
+                                  options={selectedHandbag.customizationOptions}
                                   config={handbagConfig}
-                                  engravingAddOnEur={selectedHandbag.engravingAddOnEur}
-                                  onUpdate={updateHandbagField}
+                                  engravingAddsLabel={copy.options.engravingAdds}
+                                  engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
+                                  engravingTextPlaceholder={copy.placeholders.engravingText}
+                                  onUpdate={updateHandbagConfig}
                                 />
 
                                 {effectiveGiftBoxProduct ? (
@@ -601,12 +618,14 @@ export default function ProductModal({
                                         <p className="mb-4 text-xs uppercase tracking-[0.16em] text-caramel">
                                           {copy.giftBoxAddonHeading}
                                         </p>
-                                        <GiftBoxOptionsPanel
+                                        <ProductOptionsPanel
                                           groupId={`${optionsGroupId}-model-box`}
-                                          copy={copy}
+                                          options={effectiveGiftBoxProduct.customizationOptions}
                                           config={modelGiftBoxConfig}
-                                          engravingSurchargeLabel={copy.options.engravingNoSurcharge}
-                                          onUpdate={updateModelGiftBoxField}
+                                          engravingAddsLabel={copy.options.engravingAdds}
+                                          engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
+                                          engravingTextPlaceholder={copy.placeholders.engravingText}
+                                          onUpdate={updateModelGiftBoxConfig}
                                         />
                                       </div>
                                     ) : null}
@@ -714,201 +733,5 @@ function InquiryCartSummary({
         ) : null}
       </ul>
     </div>
-  );
-}
-
-function HandbagOptionsPanel({
-  groupId,
-  copy,
-  config,
-  engravingAddOnEur,
-  onUpdate
-}: {
-  groupId: string;
-  copy: ProductModalCopy;
-  config: HandbagConfigurationState;
-  engravingAddOnEur: number;
-  onUpdate: <K extends keyof HandbagConfigurationState>(
-    key: K,
-    value: HandbagConfigurationState[K]
-  ) => void;
-}) {
-  return (
-    <>
-      <SwatchOptionFieldset
-        legend={copy.labels.liningColor}
-        labels={copy.options.colors}
-        swatches={liningSwatches}
-        activeIndex={config.liningColor}
-        groupId={`${groupId}-lining`}
-        onSelect={(index) => onUpdate("liningColor", index)}
-      />
-
-      <SwatchOptionFieldset
-        legend={copy.labels.woodCoatingColor}
-        labels={copy.options.woodCoatingColors}
-        swatches={woodCoatingSwatches}
-        activeIndex={config.woodCoatingColor}
-        groupId={`${groupId}-wood`}
-        onSelect={(index) => onUpdate("woodCoatingColor", index)}
-        className="mt-4"
-      />
-
-      <SwatchOptionFieldset
-        legend={copy.labels.chainColor}
-        labels={copy.options.chainColors}
-        swatches={chainSwatches}
-        activeIndex={config.chainColor}
-        groupId={`${groupId}-chain`}
-        onSelect={(index) => onUpdate("chainColor", index)}
-        className="mt-4"
-      />
-
-      <label className="mt-4 flex cursor-pointer items-start gap-3">
-        <input
-          type="checkbox"
-          className="mt-1 h-4 w-4 accent-[#b78b5a]"
-          checked={config.customEngraving}
-          onChange={(event) => onUpdate("customEngraving", event.target.checked)}
-        />
-        <span className="text-sm text-ivory/90">
-          <span className="font-medium text-caramel">{copy.labels.engraving}</span>{" "}
-          <span className="text-mist">
-            ({copy.options.engravingAdds.replace("{amount}", String(engravingAddOnEur))})
-          </span>
-        </span>
-      </label>
-
-      {config.customEngraving ? (
-        <input
-          type="text"
-          value={config.engravingText}
-          onChange={(event) => onUpdate("engravingText", event.target.value)}
-          placeholder={copy.placeholders.engravingText}
-          className="focus-ring mt-3 w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-2.5 text-sm text-ivory"
-        />
-      ) : null}
-    </>
-  );
-}
-
-function GiftBoxOptionsPanel({
-  groupId,
-  copy,
-  config,
-  engravingSurchargeLabel,
-  onUpdate
-}: {
-  groupId: string;
-  copy: ProductModalCopy;
-  config: GiftBoxConfigurationState;
-  engravingSurchargeLabel: string;
-  onUpdate: <K extends keyof GiftBoxConfigurationState>(
-    key: K,
-    value: GiftBoxConfigurationState[K]
-  ) => void;
-}) {
-  return (
-    <>
-      <SwatchOptionFieldset
-        legend={copy.labels.paperColor}
-        labels={copy.options.paperColors}
-        swatches={paperSwatches}
-        activeIndex={config.paperColor}
-        groupId={`${groupId}-paper`}
-        onSelect={(index) => onUpdate("paperColor", index)}
-      />
-
-      <SwatchOptionFieldset
-        legend={copy.labels.woodCoatingColor}
-        labels={copy.options.woodCoatingColors}
-        swatches={woodCoatingSwatches}
-        activeIndex={config.woodCoatingColor}
-        groupId={`${groupId}-wood`}
-        onSelect={(index) => onUpdate("woodCoatingColor", index)}
-        className="mt-4"
-      />
-
-      <label className="mt-4 flex cursor-pointer items-start gap-3">
-        <input
-          type="checkbox"
-          className="mt-1 h-4 w-4 accent-[#b78b5a]"
-          checked={config.customEngraving}
-          onChange={(event) => onUpdate("customEngraving", event.target.checked)}
-        />
-        <span className="text-sm text-ivory/90">
-          <span className="font-medium text-caramel">{copy.labels.engraving}</span>{" "}
-          <span className="text-mist">({engravingSurchargeLabel})</span>
-        </span>
-      </label>
-
-      {config.customEngraving ? (
-        <input
-          type="text"
-          value={config.engravingText}
-          onChange={(event) => onUpdate("engravingText", event.target.value)}
-          placeholder={copy.placeholders.engravingText}
-          className="focus-ring mt-3 w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-2.5 text-sm text-ivory"
-        />
-      ) : null}
-    </>
-  );
-}
-
-function SwatchOptionFieldset({
-  legend,
-  labels,
-  swatches,
-  activeIndex,
-  groupId,
-  onSelect,
-  className = ""
-}: {
-  legend: string;
-  labels: string[];
-  swatches: readonly string[];
-  activeIndex: number;
-  groupId: string;
-  onSelect: (index: number) => void;
-  className?: string;
-}) {
-  return (
-    <fieldset className={`space-y-3 ${className}`.trim()}>
-      <legend className="text-xs uppercase tracking-[0.16em] text-mist">{legend}</legend>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {labels.map((label, index) => {
-          const isActive = activeIndex === index;
-          return (
-            <button
-              key={`${groupId}-${index}`}
-              type="button"
-              role="radio"
-              aria-checked={isActive}
-              onClick={() => onSelect(index)}
-              className={`focus-ring grid min-h-11 grid-cols-[1fr_auto_auto] items-center gap-3 rounded-xl border px-4 py-2 text-sm ${
-                isActive
-                  ? "border-caramel bg-caramel/10 text-ivory"
-                  : "border-ivory/15 bg-transparent text-ivory/85 hover:border-ivory/30"
-              }`}
-            >
-              <span className="min-w-0 truncate text-left">{label}</span>
-              <span
-                aria-hidden="true"
-                className="h-4 w-4 rounded-full border border-ivory/25"
-                style={{ backgroundColor: swatches[index] ?? "#808080" }}
-              />
-              <span
-                aria-hidden="true"
-                className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${
-                  isActive ? "border-caramel bg-caramel text-ink" : "border-ivory/30"
-                }`}
-              >
-                {isActive ? "✓" : ""}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </fieldset>
   );
 }

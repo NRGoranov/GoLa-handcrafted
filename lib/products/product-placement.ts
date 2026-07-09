@@ -1,5 +1,6 @@
 import type { ContentSection } from "@/types/content-section";
 import type { ProductRecordInput } from "@/types/product-record";
+import { normalizeCustomizationOptions } from "@/lib/products/customization-options";
 
 export const PLACEMENT_HAND_BAG = "__handbag_collection__";
 export const PLACEMENT_GIFT_BOX = "__gift_box__";
@@ -133,7 +134,8 @@ export function mergeCategoryReorder(
 export function normalizeProductRecordInput(product: ProductRecordInput): ProductRecordInput {
   return {
     ...product,
-    categorySlug: product.categorySlug ?? null
+    categorySlug: product.categorySlug ?? null,
+    customizationOptions: normalizeCustomizationOptions(product.customizationOptions)
   };
 }
 

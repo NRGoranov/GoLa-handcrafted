@@ -1,4 +1,5 @@
 import { getCopy } from "@/lib/i18n";
+import { mergeCustomizationOptions } from "@/lib/products/customization-options";
 import { giftBoxProducts, handbagProducts } from "@/lib/products";
 import type { ProductRecord } from "@/types/product-record";
 
@@ -34,6 +35,7 @@ export function getDefaultProductRecords(): ProductRecord[] {
       priceEur: product.priceEur,
       pocketsAddOnEur: product.pocketsAddOnEur,
       engravingAddOnEur: product.engravingAddOnEur,
+      customizationOptions: mergeCustomizationOptions(null, "handbag", product.engravingAddOnEur),
       images: [...product.images],
       createdAt: now,
       updatedAt: now
@@ -67,6 +69,7 @@ export function getDefaultProductRecords(): ProductRecord[] {
     priceEur: gift.priceEur,
     pocketsAddOnEur: null,
     engravingAddOnEur: null,
+    customizationOptions: mergeCustomizationOptions(null, "giftBox"),
     images: [...gift.images],
     createdAt: now,
     updatedAt: now

@@ -5,6 +5,7 @@ import AdminImage from "@/components/admin/AdminImage";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import PublishField from "@/components/admin/PublishField";
 import PublishActionsFooter from "@/components/admin/PublishActionsFooter";
+import ProductCustomizationEditor from "@/components/admin/ProductCustomizationEditor";
 import {
   publishIssueFieldIds,
   scrollToPublishField,
@@ -24,6 +25,7 @@ import {
   PLACEMENT_GIFT_BOX,
   PLACEMENT_HAND_BAG
 } from "@/lib/products/product-placement";
+import { mergeCustomizationOptions } from "@/lib/products/customization-options";
 
 type ProductEditorProps = {
   initialProduct: ProductRecord;
@@ -207,13 +209,29 @@ export default forwardRef<AdminEditorSaveHandle, ProductEditorProps>(function Pr
       }
 
       setStatus("saving");
-      setValues(payload);
+      const customizationOptions = mergeCustomizationOptions(
+        values.customizationOptions,
+        values.productKind,
+        values.productKind === "handbag" ? payload.engravingAddOnEur ?? 20 : null
+      ).map((option) =>
+        option.id === "customEngraving"
+          ? {
+              ...option,
+              addOnEur:
+                values.productKind === "handbag"
+                  ? payload.engravingAddOnEur ?? 20
+                  : option.addOnEur ?? null
+            }
+          : option
+      );
+      const payloadWithOptions: ProductRecordInput = { ...payload, customizationOptions };
+      setValues(payloadWithOptions);
 
       try {
         const response = await fetch(`/api/admin/products/${initialProduct.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payloadWithOptions)
         });
         const result = (await response.json()) as {
           ok: boolean;
@@ -356,12 +374,19 @@ export default forwardRef<AdminEditorSaveHandle, ProductEditorProps>(function Pr
         </section>
       ))}
 
+      <ProductCustomizationEditor
+        productKind={values.productKind}
+        engravingAddOnEur={values.engravingAddOnEur}
+        options={values.customizationOptions}
+        onChange={(customizationOptions) => patch((prev) => ({ ...prev, customizationOptions }))}
+      />
+
       <section className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
         <h2 className="font-serif text-xl text-ivory">Pricing & dimensions</h2>
         {values.productKind === "handbag" ? (
-          <p className="mt-2 rounded-xl border border-caramel/25 bg-caramel/10 px-3 py-2 text-xs text-ivory/90">
-            Опцията „Вътрешни джобове“ е премахната от конфигуратора за клиентите. Не се управлява отделно от
-            админа — след публикуване на последната версия на сайта няма да се показва при поръчка.
+          <p className="mt-2 text-xs text-mist">
+            Engraving add-on price is also used for the preset &quot;Custom engraving&quot; checkbox when enabled
+            above.
           </p>
         ) : null}
         <div className="mt-4 grid gap-3 md:grid-cols-2">
