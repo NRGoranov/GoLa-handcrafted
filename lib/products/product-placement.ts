@@ -148,6 +148,13 @@ export function isMainCollectionHandbag(product: {
   return product.productKind === "handbag" && !(product.categorySlug ?? "").trim();
 }
 
+export function isCmsCatalogProduct(product: {
+  productKind: ProductRecordInput["productKind"];
+  categorySlug?: string | null;
+}): boolean {
+  return product.productKind === "handbag" && Boolean((product.categorySlug ?? "").trim());
+}
+
 export function productsForSection<T extends { categorySlug?: string | null }>(
   section: Pick<ContentSection, "id" | "slug">,
   products: T[]

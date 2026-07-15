@@ -12,7 +12,7 @@ import { getCopy, isLocale, type Locale } from "@/lib/i18n";
 import { isGiftBox } from "@/lib/products";
 import { productRecordToProduct } from "@/lib/products/map-product";
 import { listProducts } from "@/lib/products/products-store";
-import { isMainCollectionHandbag } from "@/lib/products/product-placement";
+import { isMainCollectionHandbag, isCmsCatalogProduct } from "@/lib/products/product-placement";
 
 const siteUrl = "https://www.gola-handcrafted.eu";
 
@@ -80,6 +80,7 @@ export default async function HomePage({
   const productRecords = await listProducts({ publishedOnly: true });
   const products = productRecords.map((record) => productRecordToProduct(record, locale));
   const handbagItems = products.filter(isMainCollectionHandbag);
+  const earringItems = products.filter(isCmsCatalogProduct);
   const giftBoxItem = products.find((product) => product.productKind === "giftBox");
   const navLinks = buildHomepageNavLinks({
     locale,
@@ -162,6 +163,7 @@ export default async function HomePage({
           dynamicSections={dynamicSections}
           products={products}
           handbagItems={handbagItems}
+          earringItems={earringItems}
           giftBoxItem={giftBoxItem}
         />
       </main>

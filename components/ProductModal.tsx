@@ -5,7 +5,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { giftBoxImageForPaperColor } from "@/lib/giftBoxAssets";
 import {
   calculateOptionAddOnTotal,
-  migrateLegacyConfig
+  migrateLegacyConfig,
+  resolveGiftBoxDimensions,
+  resolveGiftBoxPrice
 } from "@/lib/products/customization-options";
 import {
   dispatchInquiryPrefill,
@@ -16,6 +18,8 @@ import {
   loadHandbagConfiguration,
   loadModalConfiguration,
   loadModelGiftBoxConfiguration,
+  loadAddonConfiguration,
+  saveAddonConfiguration,
   saveGiftBoxConfiguration,
   saveHandbagConfiguration,
   saveInquiryMeta,
@@ -80,11 +84,15 @@ type ProductModalCopy = {
   };
   giftBoxAddonHeading: string;
   handbagAddonHeading: string;
+  earringAddonHeading: string;
   standaloneGiftBoxHeading: string;
   requestItemHeading: string;
   includeGiftBox: string;
   includeHandbag: string;
+  includeEarrings: string;
   selectHandbag: string;
+  selectEarring: string;
+  priceFrom: string;
   giftBoxAddonAdds: string;
   addToRequest: string;
   addBoxOnly: string;
@@ -113,6 +121,7 @@ type ProductModalProps = {
   product: Product | null;
   giftBoxProduct?: Product | null;
   handbagItems?: Product[];
+  earringItems?: Product[];
   onClose: () => void;
   copy: ProductModalCopy;
 };
@@ -128,6 +137,7 @@ export default function ProductModal({
   product,
   giftBoxProduct,
   handbagItems = [],
+  earringItems = [],
   onClose,
   copy
 }: ProductModalProps) {
@@ -135,8 +145,10 @@ export default function ProductModal({
   const optionsGroupId = useId();
   const hydratedRef = useRef(false);
   const defaultHandbagIdRef = useRef(handbagItems[0]?.id);
+  const defaultEarringIdRef = useRef(earringItems[0]?.id);
 
   const [handbagConfig, setHandbagConfig] = useState<HandbagConfigurationState>(defaultHandbagConfiguration);
+  const [earringConfig, setEarringConfig] = useState<HandbagConfigurationState>(defaultHandbagConfiguration);
   const [giftBoxConfig, setGiftBoxConfig] = useState<GiftBoxConfigurationState>(defaultGiftBoxConfiguration);
   const [modelGiftBoxConfig, setModelGiftBoxConfig] = useState<GiftBoxConfigurationState>(
     defaultGiftBoxConfiguration
@@ -153,15 +165,22 @@ export default function ProductModal({
   const selectedHandbag =
     handbagItems.find((item) => item.id === meta.selectedHandbagId) ?? handbagItems[0] ?? null;
 
+  const selectedEarring =
+    earringItems.find((item) => item.id === meta.selectedEarringId) ?? earringItems[0] ?? null;
+
   const inquiryProducts = useMemo(() => {
-    const entries = [...handbagItems];
+    const entries = [...handbagItems, ...earringItems];
     if (product) entries.push(product);
     if (effectiveGiftBoxProduct) entries.push(effectiveGiftBoxProduct);
     return Array.from(new Map(entries.map((entry) => [entry.id, entry])).values());
-  }, [handbagItems, product, effectiveGiftBoxProduct]);
+  }, [handbagItems, earringItems, product, effectiveGiftBoxProduct]);
 
   const updateHandbagConfig = useCallback((next: ProductOptionConfig) => {
     setHandbagConfig(next);
+  }, []);
+
+  const updateEarringConfig = useCallback((next: ProductOptionConfig) => {
+    setEarringConfig(next);
   }, []);
 
   const updateGiftBoxConfig = useCallback((next: ProductOptionConfig) => {
@@ -194,6 +213,12 @@ export default function ProductModal({
   }, [handbagItems]);
 
   useEffect(() => {
+    if (earringItems[0]?.id) {
+      defaultEarringIdRef.current = earringItems[0].id;
+    }
+  }, [earringItems]);
+
+  useEffect(() => {
     if (!product) {
       hydratedRef.current = false;
       return;
@@ -202,12 +227,15 @@ export default function ProductModal({
     const loaded = loadModalConfiguration(
       product.id,
       product.productKind,
-      defaultHandbagIdRef.current
+      defaultHandbagIdRef.current,
+      defaultEarringIdRef.current
     );
     const initialHandbag =
       product.productKind === "handbag"
         ? product
         : handbagItems.find((item) => item.id === loaded.meta.selectedHandbagId) ?? handbagItems[0] ?? null;
+    const initialEarring =
+      earringItems.find((item) => item.id === loaded.meta.selectedEarringId) ?? earringItems[0] ?? null;
     const giftBoxOptions =
       product.productKind === "giftBox"
         ? product.customizationOptions
@@ -215,6 +243,12 @@ export default function ProductModal({
 
     setHandbagConfig(
       hydrateOptionConfig(loaded.handbag, initialHandbag?.customizationOptions ?? [])
+    );
+    setEarringConfig(
+      hydrateOptionConfig(
+        loadAddonConfiguration(initialEarring?.id ?? loaded.meta.selectedEarringId),
+        initialEarring?.customizationOptions ?? []
+      )
     );
     setGiftBoxConfig(hydrateOptionConfig(loaded.giftBox, giftBoxOptions));
     setModelGiftBoxConfig(
@@ -253,7 +287,7 @@ export default function ProductModal({
       window.removeEventListener("keydown", onKeyDown);
       hydratedRef.current = false;
     };
-  }, [product?.id, product?.productKind, onClose, handbagItems, giftBoxProduct]);
+  }, [product?.id, product?.productKind, onClose, handbagItems, earringItems, giftBoxProduct]);
 
   useEffect(() => {
     if (!product || !isGiftBox(product) || !meta.includeHandbag) return;
@@ -267,6 +301,17 @@ export default function ProductModal({
   }, [product, meta.selectedHandbagId, meta.includeHandbag, handbagItems]);
 
   useEffect(() => {
+    if (!product || !isGiftBox(product) || !meta.includeEarrings) return;
+    if (!hydratedRef.current) return;
+    const earring =
+      earringItems.find((item) => item.id === meta.selectedEarringId) ?? earringItems[0] ?? null;
+    if (!earring) return;
+    setEarringConfig(
+      hydrateOptionConfig(loadAddonConfiguration(meta.selectedEarringId), earring.customizationOptions)
+    );
+  }, [product, meta.selectedEarringId, meta.includeEarrings, earringItems]);
+
+  useEffect(() => {
     if (!hydratedRef.current || !activeHandbagId) return;
     saveHandbagConfiguration(activeHandbagId, handbagConfig);
   }, [handbagConfig, activeHandbagId]);
@@ -275,6 +320,11 @@ export default function ProductModal({
     if (!hydratedRef.current) return;
     saveGiftBoxConfiguration(giftBoxConfig);
   }, [giftBoxConfig]);
+
+  useEffect(() => {
+    if (!hydratedRef.current || !meta.selectedEarringId) return;
+    saveAddonConfiguration(meta.selectedEarringId, earringConfig);
+  }, [earringConfig, meta.selectedEarringId]);
 
   useEffect(() => {
     if (!hydratedRef.current) return;
@@ -294,9 +344,11 @@ export default function ProductModal({
       handbagConfig,
       giftBoxConfig,
       modelGiftBoxConfig,
+      earringConfig,
       meta,
       giftBoxProduct: effectiveGiftBoxProduct,
-      selectedHandbag
+      selectedHandbag,
+      selectedEarring
     });
     saveInquiryCart(nextCart);
     setCart(nextCart);
@@ -306,9 +358,11 @@ export default function ProductModal({
     handbagConfig,
     giftBoxConfig,
     modelGiftBoxConfig,
+    earringConfig,
     meta,
     effectiveGiftBoxProduct,
-    selectedHandbag
+    selectedHandbag,
+    selectedEarring
   ]);
 
   const handleAddToRequest = () => {
@@ -326,9 +380,11 @@ export default function ProductModal({
               handbagConfig,
               giftBoxConfig,
               modelGiftBoxConfig,
+              earringConfig,
               meta,
               giftBoxProduct: effectiveGiftBoxProduct,
-              selectedHandbag
+              selectedHandbag,
+              selectedEarring
             })
           : baseCart;
 
@@ -356,23 +412,44 @@ export default function ProductModal({
         calculateOptionAddOnTotal(selectedHandbag.customizationOptions, handbagConfig)
       : 0;
 
+  const earringAddonPrice =
+    selectedEarring && isHandbag(selectedEarring)
+      ? selectedEarring.priceEur +
+        calculateOptionAddOnTotal(selectedEarring.customizationOptions, earringConfig)
+      : 0;
+
+  const giftBoxBasePrice = effectiveGiftBoxProduct
+    ? resolveGiftBoxPrice(effectiveGiftBoxProduct, giftBoxConfig) +
+      calculateOptionAddOnTotal(effectiveGiftBoxProduct.customizationOptions, giftBoxConfig)
+    : 0;
+
   const displayPrice =
     product && isGiftBox(product)
-      ? product.priceEur + (meta.includeHandbag ? handbagAddonPrice : 0)
+      ? resolveGiftBoxPrice(product, giftBoxConfig) +
+        calculateOptionAddOnTotal(product.customizationOptions, giftBoxConfig) +
+        (meta.includeHandbag ? handbagAddonPrice : 0) +
+        (meta.includeEarrings ? earringAddonPrice : 0)
       : product && isHandbag(product)
         ? product.priceEur +
           calculateOptionAddOnTotal(product.customizationOptions, handbagConfig) +
-          (product.offerGiftBoxUpsell &&
-          meta.includeGiftBox &&
-          effectiveGiftBoxProduct
-            ? effectiveGiftBoxProduct.priceEur
+          (product.offerGiftBoxUpsell && meta.includeGiftBox && effectiveGiftBoxProduct
+            ? giftBoxBasePrice
             : 0)
         : 0;
+
+  const displayDimensions =
+    product && isGiftBox(product)
+      ? resolveGiftBoxDimensions(product, giftBoxConfig)
+      : product?.dimensions ?? "";
 
   const showGiftBoxUpsell = Boolean(
     product && isHandbag(product) && product.offerGiftBoxUpsell && effectiveGiftBoxProduct
   );
   const giftBoxUpsellProduct = showGiftBoxUpsell ? effectiveGiftBoxProduct : null;
+  const giftBoxUpsellPrice = giftBoxUpsellProduct
+    ? resolveGiftBoxPrice(giftBoxUpsellProduct, giftBoxConfig) +
+      calculateOptionAddOnTotal(giftBoxUpsellProduct.customizationOptions, giftBoxConfig)
+    : 0;
 
   const giftBoxPaperIndex =
     typeof giftBoxConfig.paperColor === "number" ? giftBoxConfig.paperColor : 0;
@@ -435,7 +512,7 @@ export default function ProductModal({
                       <span className="block text-xs uppercase tracking-[0.14em] text-mist">
                         {copy.labels.dimensionsHint}
                       </span>
-                      {product.dimensions}
+                      {displayDimensions}
                     </dd>
                   </div>
                   <div>
@@ -496,7 +573,7 @@ export default function ProductModal({
                               (
                               {copy.giftBoxAddonAdds.replace(
                                 "{amount}",
-                                String(giftBoxUpsellProduct!.priceEur)
+                                String(giftBoxUpsellPrice)
                               )}
                               )
                             </span>
@@ -615,7 +692,16 @@ export default function ProductModal({
                                           (
                                           {copy.giftBoxAddonAdds.replace(
                                             "{amount}",
-                                            String(effectiveGiftBoxProduct.priceEur)
+                                            String(
+                                              resolveGiftBoxPrice(
+                                                effectiveGiftBoxProduct,
+                                                modelGiftBoxConfig
+                                              ) +
+                                                calculateOptionAddOnTotal(
+                                                  effectiveGiftBoxProduct.customizationOptions,
+                                                  modelGiftBoxConfig
+                                                )
+                                            )
                                           )}
                                           )
                                         </span>
@@ -641,6 +727,64 @@ export default function ProductModal({
                                   </div>
                                 ) : null}
                               </>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </section>
+                    ) : null}
+
+                    {earringItems.length > 0 ? (
+                      <section
+                        aria-label={copy.earringAddonHeading}
+                        className="rounded-2xl border border-ivory/10 bg-black/20 p-4"
+                      >
+                        <label className="flex cursor-pointer items-start gap-3">
+                          <input
+                            type="checkbox"
+                            className="mt-1 h-4 w-4 accent-[#b78b5a]"
+                            checked={meta.includeEarrings}
+                            onChange={(event) => updateMeta("includeEarrings", event.target.checked)}
+                          />
+                          <span className="text-sm text-ivory/90">
+                            <span className="font-medium text-caramel">{copy.includeEarrings}</span>
+                          </span>
+                        </label>
+
+                        {meta.includeEarrings ? (
+                          <div className="mt-4 border-t border-ivory/10 pt-4">
+                            <p className="mb-4 text-xs uppercase tracking-[0.16em] text-caramel">
+                              {copy.earringAddonHeading}
+                            </p>
+
+                            <label className="mb-4 block space-y-1.5">
+                              <span className="text-xs uppercase tracking-[0.16em] text-mist">
+                                {copy.selectEarring}
+                              </span>
+                              <select
+                                className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
+                                value={meta.selectedEarringId}
+                                onChange={(event) =>
+                                  updateMeta("selectedEarringId", event.target.value)
+                                }
+                              >
+                                {earringItems.map((item) => (
+                                  <option key={item.id} value={item.id} className="bg-ink text-ivory">
+                                    {item.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+
+                            {selectedEarring && isHandbag(selectedEarring) ? (
+                              <ProductOptionsPanel
+                                groupId={`${optionsGroupId}-earring-addon`}
+                                options={selectedEarring.customizationOptions}
+                                config={earringConfig}
+                                engravingAddsLabel={copy.options.engravingAdds}
+                                engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
+                                engravingTextPlaceholder={copy.placeholders.engravingText}
+                                onUpdate={updateEarringConfig}
+                              />
                             ) : null}
                           </div>
                         ) : null}
@@ -718,6 +862,7 @@ function InquiryCartSummary({
             <span>
               {index + 1}. {entry.handbagName}
               {entry.giftBox ? ` + ${entry.giftBox.name}` : ""}
+              {entry.earring ? ` + ${entry.earring.name}` : ""}
             </span>
             <button
               type="button"
@@ -730,7 +875,10 @@ function InquiryCartSummary({
         ))}
         {cart.standaloneGiftBox ? (
           <li className="flex items-start justify-between gap-3 rounded-xl border border-ivory/10 bg-black/20 px-3 py-2">
-            <span>{cart.standaloneGiftBox.name}</span>
+            <span>
+              {cart.standaloneGiftBox.name}
+              {cart.standaloneGiftBox.earring ? ` + ${cart.standaloneGiftBox.earring.name}` : ""}
+            </span>
             <button
               type="button"
               onClick={onRemoveStandaloneBox}

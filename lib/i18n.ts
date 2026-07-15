@@ -162,11 +162,15 @@ type SiteCopy = {
     };
     giftBoxAddonHeading: string;
     handbagAddonHeading: string;
+    earringAddonHeading: string;
     standaloneGiftBoxHeading: string;
     requestItemHeading: string;
     includeGiftBox: string;
     includeHandbag: string;
+    includeEarrings: string;
     selectHandbag: string;
+    selectEarring: string;
+    priceFrom: string;
     giftBoxAddonAdds: string;
     addToRequest: string;
     addBoxOnly: string;
@@ -244,11 +248,11 @@ const dictionary: Record<Locale, SiteCopy> = {
       eyebrow: "Packaging",
       title: "Premium gift box",
       description:
-        "Handmade wooden packaging for handbags, jewelry, and artisan pieces. Fixed price—€25—with paper color options and optional engraving.",
+        "Handmade wooden packaging for handbags, jewelry, and artisan pieces. Three sizes (S, M, L) with paper color options and optional engraving.",
       bullets: [
         "High-quality plywood with precise finger joints and a refined walnut finish.",
-        "Choose the paper lining color—pricing stays at €25 regardless of options.",
-        "Optional custom engraving for branding or gifts, included at the same fixed price."
+        "Choose your size and paper lining color — each size has its own price.",
+        "Optional custom engraving for branding or gifts; pair with earrings or a handbag."
       ],
       imageAlt: "Premium handcrafted wooden gift box with walnut finish"
     },
@@ -387,11 +391,15 @@ const dictionary: Record<Locale, SiteCopy> = {
       },
       giftBoxAddonHeading: "Box details",
       handbagAddonHeading: "Model details",
+      earringAddonHeading: "Earring details",
       standaloneGiftBoxHeading: "Standalone gift box",
       requestItemHeading: "Item {index} — {name}",
       includeGiftBox: "Add premium gift box",
       includeHandbag: "Add a handbag",
+      includeEarrings: "Add earrings",
       selectHandbag: "Choose model",
+      selectEarring: "Choose earrings",
+      priceFrom: "From EUR {amount}",
       giftBoxAddonAdds: "adds +EUR {amount}",
       addToRequest: "Add to request",
       addBoxOnly: "Add box to request",
@@ -503,11 +511,11 @@ const dictionary: Record<Locale, SiteCopy> = {
       eyebrow: "Обвивка",
       title: "Премиум подаръчна кутия",
       description:
-        "Ръчно изработена дървена обвивка за чанти, бижута и артистични изделия. Фиксирана цена — 25 € — с избор на цвят на хартия и възможност за гравиране.",
+        "Ръчно изработена дървена обвивка за чанти, бижута и артистични изделия. Три размера (S, M, L) с избор на цвят на хартия и възможност за гравиране.",
       bullets: [
         "Висококачествен шперплат с прецизни пръстови фуги и фин орехов завършек.",
-        "Избор на цвят на хартията отвътре — цената остава 25 € независимо от опциите.",
-        "По желание персонално гравиране за бранд или подарък — без допълнително оскъпяване."
+        "Изберете размер и цвят на хартията — всеки размер има своя цена.",
+        "По желание персонално гравиране; комбинирайте с обеци или чанта."
       ],
       imageAlt: "Премиум ръчно изработена дървена подаръчна кутия с орехов финиш"
     },
@@ -649,11 +657,15 @@ const dictionary: Record<Locale, SiteCopy> = {
       },
       giftBoxAddonHeading: "Детайли за кутията",
       handbagAddonHeading: "Детайли за модела",
+      earringAddonHeading: "Детайли за обеците",
       standaloneGiftBoxHeading: "Отделна кутия",
       requestItemHeading: "Позиция {index} — {name}",
       includeGiftBox: "Добави премиум подаръчна кутия",
       includeHandbag: "Добави чанта",
+      includeEarrings: "Добави обеци",
       selectHandbag: "Избери модел",
+      selectEarring: "Избери обеци",
+      priceFrom: "От EUR {amount}",
       giftBoxAddonAdds: "+EUR {amount}",
       addToRequest: "Добави към запитването",
       addBoxOnly: "Добави кутията към запитването",

@@ -16,6 +16,7 @@ type ProductInquiryCopy = {
   };
   giftBoxAddonHeading: string;
   handbagAddonHeading: string;
+  earringAddonHeading: string;
   standaloneGiftBoxHeading: string;
   requestItemHeading: string;
 };
@@ -129,9 +130,11 @@ export function buildDynamicConfigLines(
   for (const option of options) {
     if (option.type === "swatch") {
       const index = config[option.id];
-      const label =
-        typeof index === "number" ? option.choices?.[index]?.label ?? "" : "";
-      lines.push(`${option.label} - ${label}`);
+      const choice = typeof index === "number" ? option.choices?.[index] : undefined;
+      const label = choice?.label ?? "";
+      const priceSuffix =
+        choice?.priceEur != null && choice.priceEur >= 0 ? ` (EUR ${choice.priceEur})` : "";
+      lines.push(`${option.label} - ${label}${priceSuffix}`);
       continue;
     }
 
@@ -141,11 +144,14 @@ export function buildDynamicConfigLines(
   return lines;
 }
 
-function resolveGiftBoxOptions(locale: Locale = "en"): ResolvedProductOption[] {
-  return resolveCustomizationOptions(
-    mergeCustomizationOptions(null, "giftBox"),
-    locale
-  );
+function resolveGiftBoxOptions(
+  giftBoxProduct: Product | null | undefined,
+  locale: Locale = "en"
+): ResolvedProductOption[] {
+  if (giftBoxProduct && isGiftBox(giftBoxProduct)) {
+    return giftBoxProduct.customizationOptions;
+  }
+  return resolveCustomizationOptions(mergeCustomizationOptions(null, "giftBox"), locale);
 }
 
 function formatNumberedLines(lines: string[]): string {
@@ -159,7 +165,8 @@ export function buildInquiryCartMessage(
   locale: Locale = "en"
 ): string {
   const productById = new Map(products.map((product) => [product.id, product]));
-  const defaultGiftBoxOptions = resolveGiftBoxOptions(locale);
+  const giftBoxProduct = products.find((product) => isGiftBox(product)) ?? null;
+  const defaultGiftBoxOptions = resolveGiftBoxOptions(giftBoxProduct, locale);
   const sections: string[] = [];
 
   cart.handbags.forEach((entry, index) => {
@@ -188,11 +195,21 @@ export function buildInquiryCartMessage(
       );
     }
 
+    if (entry.earring) {
+      const earringProduct = productById.get(entry.earring.id);
+      const earringOptions = earringProduct?.customizationOptions ?? [];
+      itemParts.push(
+        `${copy.earringAddonHeading}:\n${formatNumberedLines(
+          buildDynamicConfigLines(entry.earring.name, earringOptions, entry.earring.config, copy)
+        )}`
+      );
+    }
+
     sections.push(itemParts.join("\n\n"));
   });
 
   if (cart.standaloneGiftBox) {
-    sections.push(
+    const boxParts = [
       `${copy.standaloneGiftBoxHeading}:\n${formatNumberedLines(
         buildDynamicConfigLines(
           cart.standaloneGiftBox.name,
@@ -201,7 +218,24 @@ export function buildInquiryCartMessage(
           copy
         )
       )}`
-    );
+    ];
+
+    if (cart.standaloneGiftBox.earring) {
+      const earringProduct = productById.get(cart.standaloneGiftBox.earring.id);
+      const earringOptions = earringProduct?.customizationOptions ?? [];
+      boxParts.push(
+        `${copy.earringAddonHeading}:\n${formatNumberedLines(
+          buildDynamicConfigLines(
+            cart.standaloneGiftBox.earring.name,
+            earringOptions,
+            cart.standaloneGiftBox.earring.config,
+            copy
+          )
+        )}`
+      );
+    }
+
+    sections.push(boxParts.join("\n\n"));
   }
 
   return sections.join("\n\n---\n\n");
@@ -213,12 +247,13 @@ export function buildInquiryBundleMessage(
   options: {
     handbagOptions?: ResolvedProductOption[];
     giftBoxOptions?: ResolvedProductOption[];
+    giftBoxProduct?: Product | null;
     locale?: Locale;
   } = {}
 ): string {
   const locale = options.locale ?? "en";
   const handbagOptions = options.handbagOptions ?? [];
-  const giftBoxOptions = options.giftBoxOptions ?? resolveGiftBoxOptions(locale);
+  const giftBoxOptions = options.giftBoxOptions ?? resolveGiftBoxOptions(options.giftBoxProduct, locale);
   const sections: string[] = [];
 
   if (bundle.handbag) {
@@ -284,8 +319,11 @@ export function buildInquiryBundleFromModal(
   return { handbag: null, giftBox: null };
 }
 
-export function getDefaultGiftBoxOptions(locale: Locale = "en"): ResolvedProductOption[] {
-  return resolveGiftBoxOptions(locale);
+export function getDefaultGiftBoxOptions(
+  giftBoxProduct?: Product | null,
+  locale: Locale = "en"
+): ResolvedProductOption[] {
+  return resolveGiftBoxOptions(giftBoxProduct, locale);
 }
 
 export function getDefaultHandbagOptions(locale: Locale = "en"): ResolvedProductOption[] {

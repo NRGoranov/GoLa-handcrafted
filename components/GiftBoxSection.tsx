@@ -5,6 +5,7 @@ import { useMemo, useState, type ComponentProps } from "react";
 import { GIFT_BOX_HERO_IMAGE } from "@/lib/giftBoxAssets";
 import { intrinsicContainMaxStyle, intrinsicSizesHalfWidthGrid } from "@/lib/intrinsicImages";
 import { type Product } from "@/lib/products";
+import { getGiftBoxStartingPrice } from "@/lib/products/customization-options";
 import { getLocalizedProductPreview, type Locale } from "@/lib/i18n";
 import SectionHeading from "./SectionHeading";
 import ProductModal from "./ProductModal";
@@ -17,12 +18,14 @@ export default function GiftBoxSection({
   productCopy,
   product,
   handbagItems = [],
+  earringItems = [],
   viewDetailsLabel,
   viewDetailsAriaTemplate
 }: {
   locale: Locale;
   product: Product;
   handbagItems?: Product[];
+  earringItems?: Product[];
   sectionCopy: {
     eyebrow: string;
     title: string;
@@ -55,6 +58,20 @@ export default function GiftBoxSection({
       }),
     [handbagItems, locale]
   );
+  const localizedEarrings = useMemo(
+    () =>
+      earringItems.map((item) => {
+        const itemPreview = getLocalizedProductPreview(locale, item);
+        return {
+          ...item,
+          name: itemPreview.name,
+          description: itemPreview.detailDescription,
+          cardSummary: item.cardSummary?.trim() || itemPreview.cardSummary
+        };
+      }),
+    [earringItems, locale]
+  );
+  const startingPrice = getGiftBoxStartingPrice(productForModal);
   const heroImage = product.images[0] ?? GIFT_BOX_HERO_IMAGE;
 
   const openDetails = () => setSelectedProduct(productForModal);
@@ -92,7 +109,9 @@ export default function GiftBoxSection({
               <li>{sectionCopy.bullets[1]}</li>
               <li>{sectionCopy.bullets[2]}</li>
             </ul>
-            <p className="mt-6 text-xs uppercase tracking-[0.18em] text-caramel/90">EUR {product.priceEur}</p>
+            <p className="mt-6 text-xs uppercase tracking-[0.18em] text-caramel/90">
+              {productCopy.priceFrom.replace("{amount}", String(startingPrice))}
+            </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <button
                 type="button"
@@ -116,6 +135,7 @@ export default function GiftBoxSection({
         product={selectedProduct}
         giftBoxProduct={productForModal}
         handbagItems={localizedHandbags}
+        earringItems={localizedEarrings}
         onClose={() => setSelectedProduct(null)}
         copy={productCopy}
       />

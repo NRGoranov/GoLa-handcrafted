@@ -37,7 +37,12 @@ export default function ProductOptionsPanel({
       {options.map((option) => {
         if (option.type === "swatch" && option.choices?.length) {
           const swatches = option.choices.map((choice) => choice.swatch ?? "#888888");
-          const labels = option.choices.map((choice) => choice.label);
+          const labels = option.choices.map((choice) => {
+            if (choice.priceEur != null && choice.priceEur >= 0) {
+              return `${choice.label} — EUR ${choice.priceEur}`;
+            }
+            return choice.label;
+          });
           const activeIndex = typeof config[option.id] === "number" ? (config[option.id] as number) : 0;
 
           return (
@@ -46,6 +51,7 @@ export default function ProductOptionsPanel({
               legend={option.label}
               labels={labels}
               swatches={swatches}
+              showSwatches={option.id !== "boxSize"}
               activeIndex={activeIndex}
               groupId={`${groupId}-${option.id}`}
               onSelect={(index) => patch({ [option.id]: index })}
@@ -100,6 +106,7 @@ function SwatchOptionFieldset({
   legend,
   labels,
   swatches,
+  showSwatches = true,
   activeIndex,
   groupId,
   onSelect,
@@ -108,6 +115,7 @@ function SwatchOptionFieldset({
   legend: string;
   labels: string[];
   swatches: string[];
+  showSwatches?: boolean;
   activeIndex: number;
   groupId: string;
   onSelect: (index: number) => void;
@@ -134,11 +142,13 @@ function SwatchOptionFieldset({
             >
               <span>{label}</span>
               <span className="flex items-center gap-2">
-                <span
-                  className="h-5 w-5 rounded-full border border-ivory/20"
-                  style={{ backgroundColor: swatches[index] }}
-                  aria-hidden
-                />
+                {showSwatches ? (
+                  <span
+                    className="h-5 w-5 rounded-full border border-ivory/20"
+                    style={{ backgroundColor: swatches[index] }}
+                    aria-hidden
+                  />
+                ) : null}
                 <span className="w-4 text-center text-caramel">{isActive ? "✓" : ""}</span>
               </span>
             </button>

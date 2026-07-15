@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   createCustomCheckboxOption,
+  createCustomSizeChoice,
   createCustomSwatchChoice,
   mergeCustomizationOptions
 } from "@/lib/products/customization-options";
@@ -128,7 +129,13 @@ export default function ProductCustomizationEditor({
     commit(
       localOptions.map((option) =>
         option.id === optionId && option.type === "swatch"
-          ? { ...option, choices: [...(option.choices ?? []), createCustomSwatchChoice()] }
+          ? {
+              ...option,
+              choices: [
+                ...(option.choices ?? []),
+                option.id === "boxSize" ? createCustomSizeChoice() : createCustomSwatchChoice()
+              ]
+            }
           : option
       )
     );
@@ -195,7 +202,11 @@ export default function ProductCustomizationEditor({
                   onChange={(event) => patchOption(option.id, { enabled: event.target.checked })}
                 />
                 <span className="font-medium">
-                  {option.type === "swatch" ? "Color swatches" : "Checkbox"}
+                  {option.type === "swatch"
+                    ? option.id === "boxSize"
+                      ? "Box sizes"
+                      : "Color swatches"
+                    : "Checkbox"}
                   {option.preset ? (
                     <span className="ml-2 text-[10px] uppercase tracking-[0.14em] text-mist">Preset</span>
                   ) : null}
@@ -257,20 +268,24 @@ export default function ProductCustomizationEditor({
               <div className="mt-4 space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs uppercase tracking-[0.14em] text-mist">
-                    Colors for this product ({option.choices?.length ?? 0})
+                    {option.id === "boxSize"
+                      ? `Sizes for this product (${option.choices?.length ?? 0})`
+                      : `Colors for this product (${option.choices?.length ?? 0})`}
                   </p>
                   <button
                     type="button"
                     onClick={() => addColorChoice(option.id)}
                     className="rounded-full border border-ivory/15 px-3 py-1 text-xs text-ivory hover:border-caramel/40"
                   >
-                    + Add color
+                    {option.id === "boxSize" ? "+ Add size" : "+ Add color"}
                   </button>
                 </div>
 
                 {(option.choices ?? []).length === 0 ? (
                   <p className="rounded-xl border border-dashed border-ivory/15 px-3 py-4 text-sm text-mist">
-                    No colors yet. Add at least one color or disable this option.
+                    {option.id === "boxSize"
+                      ? "No sizes yet. Add at least one size or disable this option."
+                      : "No colors yet. Add at least one color or disable this option."}
                   </p>
                 ) : (
                   (option.choices ?? []).map((choice) => (
@@ -280,11 +295,13 @@ export default function ProductCustomizationEditor({
                     >
                       <div className="mb-3 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
-                          <span
-                            className="h-6 w-6 rounded-full border border-ivory/20"
-                            style={{ backgroundColor: choice.swatch ?? "#888888" }}
-                            aria-hidden
-                          />
+                          {option.id !== "boxSize" ? (
+                            <span
+                              className="h-6 w-6 rounded-full border border-ivory/20"
+                              style={{ backgroundColor: choice.swatch ?? "#888888" }}
+                              aria-hidden
+                            />
+                          ) : null}
                           <span className="text-xs text-mist">{choice.id}</span>
                         </div>
                         <button
@@ -292,13 +309,13 @@ export default function ProductCustomizationEditor({
                           onClick={() => removeColorChoice(option.id, choice.id)}
                           className="text-xs text-red-200 underline decoration-red-200/30 underline-offset-2 hover:text-red-100"
                         >
-                          Remove color
+                          {option.id === "boxSize" ? "Remove size" : "Remove color"}
                         </button>
                       </div>
                       <div className="grid gap-3 md:grid-cols-2">
                         <input
                           className="admin-input"
-                          placeholder="Color name (English)"
+                          placeholder={option.id === "boxSize" ? "Size name (English)" : "Color name (English)"}
                           value={choice.label.en}
                           onChange={(event) =>
                             patchChoiceLabel(option.id, choice.id, "en", event.target.value)
@@ -306,44 +323,78 @@ export default function ProductCustomizationEditor({
                         />
                         <input
                           className="admin-input"
-                          placeholder="Color name (Bulgarian)"
+                          placeholder={option.id === "boxSize" ? "Size name (Bulgarian)" : "Color name (Bulgarian)"}
                           value={choice.label.bg}
                           onChange={(event) =>
                             patchChoiceLabel(option.id, choice.id, "bg", event.target.value)
                           }
                         />
-                        <div className="flex items-center gap-2 md:col-span-2">
-                          <label className="flex shrink-0 flex-col items-center gap-1 text-[10px] uppercase tracking-[0.12em] text-mist">
-                            Palette
+                        {option.id === "boxSize" ? (
+                          <>
+                            <label className="flex items-center gap-2 text-sm text-mist">
+                              Price (EUR)
+                              <input
+                                className="admin-input w-24"
+                                type="number"
+                                min={0}
+                                value={choice.priceEur ?? ""}
+                                onChange={(event) =>
+                                  patchChoice(option.id, choice.id, {
+                                    priceEur:
+                                      event.target.value === ""
+                                        ? null
+                                        : Number(event.target.value) || 0
+                                  })
+                                }
+                              />
+                            </label>
                             <input
-                              type="color"
-                              className="h-10 w-12 cursor-pointer rounded border border-ivory/15 bg-transparent p-0.5"
-                              value={normalizeHexForPicker(choice.swatch)}
+                              className="admin-input"
+                              placeholder="Dimensions (e.g. 23 × 15 × 8 cm)"
+                              value={choice.dimensions ?? ""}
                               onChange={(event) =>
-                                patchChoice(option.id, choice.id, { swatch: event.target.value })
+                                patchChoice(option.id, choice.id, {
+                                  dimensions: event.target.value
+                                })
                               }
-                              aria-label={`Pick color for ${choice.label.en || choice.id}`}
                             />
-                          </label>
-                          <input
-                            className="admin-input min-w-0 flex-1"
-                            placeholder="Swatch hex (#b78b5a)"
-                            value={choice.swatch ?? ""}
-                            onChange={(event) =>
-                              patchChoice(option.id, choice.id, { swatch: event.target.value })
-                            }
-                          />
-                        </div>
-                        <input
-                          className="admin-input"
-                          placeholder="Image URL (optional, gift box paper)"
-                          value={choice.imageUrl ?? ""}
-                          onChange={(event) =>
-                            patchChoice(option.id, choice.id, {
-                              imageUrl: event.target.value.trim() || undefined
-                            })
-                          }
-                        />
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2 md:col-span-2">
+                              <label className="flex shrink-0 flex-col items-center gap-1 text-[10px] uppercase tracking-[0.12em] text-mist">
+                                Palette
+                                <input
+                                  type="color"
+                                  className="h-10 w-12 cursor-pointer rounded border border-ivory/15 bg-transparent p-0.5"
+                                  value={normalizeHexForPicker(choice.swatch)}
+                                  onChange={(event) =>
+                                    patchChoice(option.id, choice.id, { swatch: event.target.value })
+                                  }
+                                  aria-label={`Pick color for ${choice.label.en || choice.id}`}
+                                />
+                              </label>
+                              <input
+                                className="admin-input min-w-0 flex-1"
+                                placeholder="Swatch hex (#b78b5a)"
+                                value={choice.swatch ?? ""}
+                                onChange={(event) =>
+                                  patchChoice(option.id, choice.id, { swatch: event.target.value })
+                                }
+                              />
+                            </div>
+                            <input
+                              className="admin-input md:col-span-2"
+                              placeholder="Image URL (optional, gift box paper)"
+                              value={choice.imageUrl ?? ""}
+                              onChange={(event) =>
+                                patchChoice(option.id, choice.id, {
+                                  imageUrl: event.target.value.trim() || undefined
+                                })
+                              }
+                            />
+                          </>
+                        )}
                       </div>
                     </div>
                   ))

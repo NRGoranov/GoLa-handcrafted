@@ -23,6 +23,7 @@ type HomePageMainProps = {
   dynamicSections: ContentSection[];
   products: Product[];
   handbagItems: Product[];
+  earringItems?: Product[];
   giftBoxItem?: Product;
 };
 
@@ -35,6 +36,7 @@ export default function HomePageMain({
   dynamicSections,
   products,
   handbagItems,
+  earringItems = [],
   giftBoxItem
 }: HomePageMainProps) {
   const sectionMap = new Map(dynamicSections.map((section) => [section.id, section]));
@@ -64,6 +66,7 @@ export default function HomePageMain({
                   locale={locale}
                   product={giftBoxItem}
                   handbagItems={handbagItems}
+                  earringItems={earringItems}
                   sectionCopy={copy.giftBox}
                   productCopy={copy.product}
                   viewDetailsLabel={copy.product.viewDetails}

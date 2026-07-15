@@ -5,6 +5,10 @@ export type ProductCustomizationChoice = {
   label: LocalizedText;
   swatch?: string;
   imageUrl?: string;
+  /** Per-choice price (e.g. gift box S/M/L sizes). */
+  priceEur?: number | null;
+  /** Optional dimensions label shown when this choice is selected. */
+  dimensions?: string;
 };
 
 export type ProductCustomizationOption = {
@@ -23,7 +27,13 @@ export type ResolvedProductOption = {
   id: string;
   type: "swatch" | "checkbox";
   label: string;
-  choices?: { label: string; swatch?: string; imageUrl?: string }[];
+  choices?: {
+    label: string;
+    swatch?: string;
+    imageUrl?: string;
+    priceEur?: number;
+    dimensions?: string;
+  }[];
   addOnEur?: number;
   showTextField?: boolean;
 };

@@ -28,9 +28,11 @@ function choice(
   en: string,
   bg: string,
   swatch?: string,
-  imageUrl?: string
+  imageUrl?: string,
+  priceEur?: number | null,
+  dimensions?: string
 ): ProductCustomizationChoice {
-  return { id, label: { en, bg }, swatch, imageUrl };
+  return { id, label: { en, bg }, swatch, imageUrl, priceEur, dimensions };
 }
 
 function swatchOption(
@@ -79,6 +81,12 @@ export function getPresetCustomizationOptions(
   ];
 
   if (productKind === "giftBox") {
+    const sizeChoices = [
+      choice("s", "S — Small", "S — Малък", "#d6d0c8", undefined, 20, "18 × 12 × 6 cm"),
+      choice("m", "M — Medium", "M — Среден", "#b78b5a", undefined, 25, "23 × 15 × 8 cm"),
+      choice("l", "L — Large", "L — Голям", "#6b4a2f", undefined, 32, "28 × 20 × 10 cm")
+    ];
+
     const paperChoices = [
       choice("ivory", "Ivory", "Айвори", PAPER_SWATCHES[0], GIFT_BOX_PAPER_IMAGE_BY_INDEX[0]),
       choice("cream", "Cream", "Крем", PAPER_SWATCHES[1], GIFT_BOX_PAPER_IMAGE_BY_INDEX[1]),
@@ -89,6 +97,7 @@ export function getPresetCustomizationOptions(
     ];
 
     return [
+      swatchOption("boxSize", "Box size", "Размер на кутията", sizeChoices),
       swatchOption("paperColor", "Paper color", "Цвят на хартията", paperChoices),
       swatchOption("woodCoatingColor", "Wood coating color", "Цвят на покритието", woodChoices),
       checkboxOption("customEngraving", "Custom engraving", "Персонално гравиране", engravingAddOnEur, true)
@@ -177,7 +186,9 @@ export function resolveCustomizationOptions(
       choices: option.choices?.map((choice) => ({
         label: pickLocalized(choice.label, locale),
         swatch: choice.swatch,
-        imageUrl: choice.imageUrl
+        imageUrl: choice.imageUrl,
+        priceEur: choice.priceEur ?? undefined,
+        dimensions: choice.dimensions
       })),
       addOnEur: option.addOnEur ?? undefined,
       showTextField: option.showTextField
@@ -205,6 +216,7 @@ const LEGACY_HAND_BAG_MAP: Record<string, keyof ProductOptionConfig> = {
 };
 
 const LEGACY_GIFT_BOX_MAP: Record<string, keyof ProductOptionConfig | string> = {
+  boxSize: "boxSize",
   paperColor: "paperColor",
   woodCoatingColor: "woodCoatingColor",
   customEngraving: "customEngraving",
@@ -258,6 +270,49 @@ export function calculateOptionAddOnTotal(
   }, 0);
 }
 
+export function resolveGiftBoxPrice(
+  product: { priceEur: number; customizationOptions: ResolvedProductOption[] },
+  config: ProductOptionConfig
+): number {
+  const sizeOption = product.customizationOptions.find((option) => option.id === "boxSize");
+  if (sizeOption?.type === "swatch") {
+    const index = config.boxSize;
+    if (typeof index === "number") {
+      const choicePrice = sizeOption.choices?.[index]?.priceEur;
+      if (choicePrice != null) return choicePrice;
+    }
+  }
+  return product.priceEur;
+}
+
+export function resolveGiftBoxDimensions(
+  product: { dimensions: string; customizationOptions: ResolvedProductOption[] },
+  config: ProductOptionConfig
+): string {
+  const sizeOption = product.customizationOptions.find((option) => option.id === "boxSize");
+  if (sizeOption?.type === "swatch") {
+    const index = config.boxSize;
+    if (typeof index === "number") {
+      const choiceDimensions = sizeOption.choices?.[index]?.dimensions?.trim();
+      if (choiceDimensions) return choiceDimensions;
+    }
+  }
+  return product.dimensions;
+}
+
+export function getGiftBoxStartingPrice(product: {
+  priceEur: number;
+  customizationOptions: ResolvedProductOption[];
+}): number {
+  const sizeOption = product.customizationOptions.find((option) => option.id === "boxSize");
+  const prices =
+    sizeOption?.choices
+      ?.map((choice) => choice.priceEur)
+      .filter((price): price is number => price != null && price >= 0) ?? [];
+  if (prices.length > 0) return Math.min(...prices);
+  return product.priceEur;
+}
+
 export function normalizeCustomizationOptions(
   options: ProductCustomizationOption[] | null | undefined
 ): ProductCustomizationOption[] | null {
@@ -280,7 +335,9 @@ export function normalizeCustomizationOptions(
           bg: choice.label?.bg?.trim() ?? ""
         },
         swatch: choice.swatch,
-        imageUrl: choice.imageUrl
+        imageUrl: choice.imageUrl,
+        priceEur: choice.priceEur ?? null,
+        dimensions: choice.dimensions?.trim() || undefined
       })),
       addOnEur: option.addOnEur ?? null,
       showTextField: option.showTextField === true,
@@ -307,5 +364,16 @@ export function createCustomSwatchChoice(): ProductCustomizationChoice {
     id,
     label: { en: "New color", bg: "Нов цвят" },
     swatch: "#b78b5a"
+  };
+}
+
+export function createCustomSizeChoice(): ProductCustomizationChoice {
+  const id = `size-${Date.now().toString(36)}`;
+  return {
+    id,
+    label: { en: "New size", bg: "Нов размер" },
+    swatch: "#b78b5a",
+    priceEur: null,
+    dimensions: ""
   };
 }

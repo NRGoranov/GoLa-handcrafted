@@ -16,12 +16,16 @@ export type InquiryMetaState = {
   includeGiftBox: boolean;
   includeHandbag: boolean;
   selectedHandbagId: string;
+  includeEarrings: boolean;
+  selectedEarringId: string;
 };
 
 export const defaultInquiryMeta: InquiryMetaState = {
   includeGiftBox: false,
   includeHandbag: false,
-  selectedHandbagId: defaultProductConfigurationState.selectedHandbagId
+  selectedHandbagId: defaultProductConfigurationState.selectedHandbagId,
+  includeEarrings: false,
+  selectedEarringId: ""
 };
 
 function readJson<T>(key: string): T | null {
@@ -70,13 +74,16 @@ export function saveModelGiftBoxConfiguration(config: GiftBoxConfigurationState)
   writeJson(MODEL_GIFT_BOX_STORAGE_KEY, config);
 }
 
-export function loadInquiryMeta(fallbackHandbagId?: string): InquiryMetaState {
+export function loadInquiryMeta(fallbackHandbagId?: string, fallbackEarringId?: string): InquiryMetaState {
   const stored = readJson<Partial<InquiryMetaState>>(META_STORAGE_KEY);
   return {
     includeGiftBox: stored?.includeGiftBox ?? defaultInquiryMeta.includeGiftBox,
     includeHandbag: stored?.includeHandbag ?? defaultInquiryMeta.includeHandbag,
     selectedHandbagId:
-      stored?.selectedHandbagId ?? fallbackHandbagId ?? defaultInquiryMeta.selectedHandbagId
+      stored?.selectedHandbagId ?? fallbackHandbagId ?? defaultInquiryMeta.selectedHandbagId,
+    includeEarrings: stored?.includeEarrings ?? defaultInquiryMeta.includeEarrings,
+    selectedEarringId:
+      stored?.selectedEarringId ?? fallbackEarringId ?? defaultInquiryMeta.selectedEarringId
   };
 }
 
@@ -88,13 +95,14 @@ export function saveInquiryMeta(meta: InquiryMetaState): void {
 export function loadModalConfiguration(
   productId: string,
   productKind: "handbag" | "giftBox",
-  fallbackHandbagId?: string
+  fallbackHandbagId?: string,
+  fallbackEarringId?: string
 ): {
   handbag: HandbagConfigurationState;
   giftBox: GiftBoxConfigurationState;
   meta: InquiryMetaState;
 } {
-  const meta = loadInquiryMeta(fallbackHandbagId);
+  const meta = loadInquiryMeta(fallbackHandbagId, fallbackEarringId);
   const handbagId = productKind === "handbag" ? productId : meta.selectedHandbagId;
 
   return {
@@ -127,4 +135,12 @@ export function toProductConfigurationState(
     includeHandbag: meta.includeHandbag,
     selectedHandbagId: meta.selectedHandbagId
   };
+}
+
+export function loadAddonConfiguration(productId: string): HandbagConfigurationState {
+  return loadHandbagConfiguration(productId);
+}
+
+export function saveAddonConfiguration(productId: string, config: HandbagConfigurationState): void {
+  saveHandbagConfiguration(productId, config);
 }

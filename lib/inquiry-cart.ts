@@ -16,6 +16,17 @@ export type InquiryCartHandbagEntry = {
     name: string;
     config: GiftBoxConfigurationState;
   } | null;
+  earring: {
+    id: string;
+    name: string;
+    config: HandbagConfigurationState;
+  } | null;
+};
+
+export type InquiryCartAddon = {
+  id: string;
+  name: string;
+  config: HandbagConfigurationState;
 };
 
 export type InquiryCart = {
@@ -23,6 +34,7 @@ export type InquiryCart = {
   standaloneGiftBox: {
     name: string;
     config: GiftBoxConfigurationState;
+    earring: InquiryCartAddon | null;
   } | null;
 };
 
@@ -49,8 +61,18 @@ export function loadInquiryCart(): InquiryCart {
   const stored = readCart();
   if (!stored) return emptyInquiryCart();
   return {
-    handbags: Array.isArray(stored.handbags) ? stored.handbags : [],
-    standaloneGiftBox: stored.standaloneGiftBox ?? null
+    handbags: Array.isArray(stored.handbags)
+      ? stored.handbags.map((entry) => ({
+          ...entry,
+          earring: entry.earring ?? null
+        }))
+      : [],
+    standaloneGiftBox: stored.standaloneGiftBox
+      ? {
+          ...stored.standaloneGiftBox,
+          earring: stored.standaloneGiftBox.earring ?? null
+        }
+      : null
   };
 }
 
@@ -75,6 +97,7 @@ export function addHandbagToCart(
     handbagName: string;
     config: HandbagConfigurationState;
     giftBox: InquiryCartHandbagEntry["giftBox"];
+    earring?: InquiryCartHandbagEntry["earring"];
   }
 ): InquiryCart {
   return {
@@ -86,7 +109,8 @@ export function addHandbagToCart(
         handbagId: entry.handbagId,
         handbagName: entry.handbagName,
         config: entry.config,
-        giftBox: entry.giftBox
+        giftBox: entry.giftBox,
+        earring: entry.earring ?? null
       }
     ]
   };
