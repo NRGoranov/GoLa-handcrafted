@@ -155,9 +155,6 @@ export default function ProductModal({
   );
   const [meta, setMeta] = useState<InquiryMetaState>(defaultInquiryMeta);
   const [cart, setCart] = useState<InquiryCart>(() => loadInquiryCart());
-  const [giftBoxPreviewTarget, setGiftBoxPreviewTarget] = useState<"giftBox" | "handbag" | "earring">(
-    "giftBox"
-  );
 
   const effectiveGiftBoxProduct =
     giftBoxProduct ?? (product && isGiftBox(product) ? product : null);
@@ -258,7 +255,6 @@ export default function ProductModal({
       hydrateOptionConfig(loadModelGiftBoxConfiguration(), giftBoxProduct?.customizationOptions ?? giftBoxOptions)
     );
     setMeta(loaded.meta);
-    setGiftBoxPreviewTarget("giftBox");
     hydratedRef.current = true;
 
     const previousOverflow = document.body.style.overflow;
@@ -458,28 +454,10 @@ export default function ProductModal({
   const giftBoxPaperIndex =
     typeof giftBoxConfig.paperColor === "number" ? giftBoxConfig.paperColor : 0;
 
-  const viewerProduct = useMemo(() => {
-    if (!product || !isGiftBox(product)) return product;
-    if (giftBoxPreviewTarget === "handbag" && meta.includeHandbag && selectedHandbag) {
-      return selectedHandbag;
-    }
-    if (giftBoxPreviewTarget === "earring" && meta.includeEarrings && selectedEarring) {
-      return selectedEarring;
-    }
-    return product;
-  }, [
-    product,
-    giftBoxPreviewTarget,
-    meta.includeHandbag,
-    meta.includeEarrings,
-    selectedHandbag,
-    selectedEarring
-  ]);
-
-  const viewerImages =
-    viewerProduct?.images?.length ? viewerProduct.images : product?.images ?? [];
-  const viewerUsesGiftBoxPaperSync =
-    Boolean(product && isGiftBox(product) && viewerProduct === product);
+  const showHandbagAddonGallery =
+    Boolean(product && isGiftBox(product) && meta.includeHandbag && selectedHandbag);
+  const showEarringAddonGallery =
+    Boolean(product && isGiftBox(product) && meta.includeEarrings && selectedEarring);
 
   return (
     <AnimatePresence>
@@ -514,58 +492,53 @@ export default function ProductModal({
               </button>
             </div>
 
-            <div className="grid gap-7 md:grid-cols-2">
-              <ProductViewer
-                key={viewerProduct?.id ?? product.id}
-                name={viewerProduct?.name ?? product.name}
-                images={viewerImages}
-                copy={{ aria: copy.aria }}
-                syncActiveSrc={
-                  viewerUsesGiftBoxPaperSync
-                    ? giftBoxImageForPaperColor(giftBoxPaperIndex)
-                    : undefined
-                }
-              />
-              <div className="space-y-5">
-                <p className="whitespace-pre-line text-mist">{product.description}</p>
-                <dl className="space-y-2 text-sm text-ivory/90">
-                  {isHandbag(product) ? (
-                    <div>
-                      <dt className="font-medium text-caramel">{copy.labels.model}</dt>
-                      <dd>{product.model}</dd>
-                    </div>
-                  ) : null}
-                  <div>
-                    <dt className="font-medium text-caramel">{copy.labels.dimensions}</dt>
-                    <dd>
-                      <span className="block text-xs uppercase tracking-[0.14em] text-mist">
-                        {copy.labels.dimensionsHint}
-                      </span>
-                      {displayDimensions}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium text-caramel">{copy.labels.price}</dt>
-                    <dd>EUR {displayPrice}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium text-caramel">{copy.labels.availability}</dt>
-                    <dd>{copy.values.availabilityByInquiry}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium text-caramel">{copy.labels.customization}</dt>
-                    <dd>{product.customizable ? copy.values.customizationYes : copy.values.customizationNo}</dd>
-                  </div>
-                  {isHandbag(product) ? (
-                    <div>
-                      <dt className="font-medium text-caramel">{copy.labels.inside}</dt>
-                      <dd>{copy.values.insideLeather}</dd>
-                    </div>
-                  ) : null}
-                </dl>
+            <div className="space-y-7">
+              {isHandbag(product) ? (
+                <div className="grid gap-7 md:grid-cols-2">
+                  <ProductViewer
+                    key={product.id}
+                    name={product.name}
+                    images={product.images}
+                    copy={{ aria: copy.aria }}
+                  />
+                  <div className="space-y-5">
+                    <p className="whitespace-pre-line text-mist">{product.description}</p>
+                    <dl className="space-y-2 text-sm text-ivory/90">
+                      <div>
+                        <dt className="font-medium text-caramel">{copy.labels.model}</dt>
+                        <dd>{product.model}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-caramel">{copy.labels.dimensions}</dt>
+                        <dd>
+                          <span className="block text-xs uppercase tracking-[0.14em] text-mist">
+                            {copy.labels.dimensionsHint}
+                          </span>
+                          {displayDimensions}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-caramel">{copy.labels.price}</dt>
+                        <dd>EUR {displayPrice}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-caramel">{copy.labels.availability}</dt>
+                        <dd>{copy.values.availabilityByInquiry}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-caramel">{copy.labels.customization}</dt>
+                        <dd>
+                          {product.customizable
+                            ? copy.values.customizationYes
+                            : copy.values.customizationNo}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-caramel">{copy.labels.inside}</dt>
+                        <dd>{copy.values.insideLeather}</dd>
+                      </div>
+                    </dl>
 
-                {isHandbag(product) ? (
-                  <>
                     <section
                       aria-label={copy.handbagAddonHeading}
                       className="rounded-2xl border border-ivory/10 bg-black/20 p-4"
@@ -627,247 +600,279 @@ export default function ProductModal({
                         ) : null}
                       </section>
                     ) : null}
-                  </>
-                ) : (
-                  <>
-                    <section
-                      aria-label={copy.giftBoxAddonHeading}
-                      className="rounded-2xl border border-ivory/10 bg-black/20 p-4"
-                    >
-                      <p className="mb-4 text-xs uppercase tracking-[0.16em] text-caramel">
-                        {copy.giftBoxAddonHeading}
-                      </p>
-                      <ProductOptionsPanel
-                        groupId={`${optionsGroupId}-box`}
-                        options={product.customizationOptions}
-                        config={giftBoxConfig}
-                        engravingAddsLabel={copy.options.engravingAdds}
-                        engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
-                        engravingTextPlaceholder={copy.placeholders.engravingText}
-                        onUpdate={updateGiftBoxConfig}
-                      />
-                    </section>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="grid gap-7 md:grid-cols-2">
+                    <ProductViewer
+                      key={product.id}
+                      name={product.name}
+                      images={product.images}
+                      copy={{ aria: copy.aria }}
+                      syncActiveSrc={giftBoxImageForPaperColor(giftBoxPaperIndex)}
+                    />
+                    <div className="space-y-5">
+                      <p className="whitespace-pre-line text-mist">{product.description}</p>
+                      <dl className="space-y-2 text-sm text-ivory/90">
+                        <div>
+                          <dt className="font-medium text-caramel">{copy.labels.dimensions}</dt>
+                          <dd>
+                            <span className="block text-xs uppercase tracking-[0.14em] text-mist">
+                              {copy.labels.dimensionsHint}
+                            </span>
+                            {displayDimensions}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="font-medium text-caramel">{copy.labels.price}</dt>
+                          <dd>EUR {displayPrice}</dd>
+                        </div>
+                        <div>
+                          <dt className="font-medium text-caramel">{copy.labels.availability}</dt>
+                          <dd>{copy.values.availabilityByInquiry}</dd>
+                        </div>
+                        <div>
+                          <dt className="font-medium text-caramel">{copy.labels.customization}</dt>
+                          <dd>
+                            {product.customizable
+                              ? copy.values.customizationYes
+                              : copy.values.customizationNo}
+                          </dd>
+                        </div>
+                      </dl>
 
-                    {handbagItems.length > 0 ? (
                       <section
-                        aria-label={copy.handbagAddonHeading}
+                        aria-label={copy.giftBoxAddonHeading}
                         className="rounded-2xl border border-ivory/10 bg-black/20 p-4"
                       >
-                        <label className="flex cursor-pointer items-start gap-3">
+                        <p className="mb-4 text-xs uppercase tracking-[0.16em] text-caramel">
+                          {copy.giftBoxAddonHeading}
+                        </p>
+                        <ProductOptionsPanel
+                          groupId={`${optionsGroupId}-box`}
+                          options={product.customizationOptions}
+                          config={giftBoxConfig}
+                          engravingAddsLabel={copy.options.engravingAdds}
+                          engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
+                          engravingTextPlaceholder={copy.placeholders.engravingText}
+                          onUpdate={updateGiftBoxConfig}
+                        />
+                      </section>
+
+                      {handbagItems.length > 0 ? (
+                        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-ivory/10 bg-black/20 p-4">
                           <input
                             type="checkbox"
                             className="mt-1 h-4 w-4 accent-[#b78b5a]"
                             checked={meta.includeHandbag}
-                            onChange={(event) => {
-                              const checked = event.target.checked;
-                              updateMeta("includeHandbag", checked);
-                              setGiftBoxPreviewTarget(
-                                checked ? "handbag" : meta.includeEarrings ? "earring" : "giftBox"
-                              );
-                            }}
+                            onChange={(event) => updateMeta("includeHandbag", event.target.checked)}
                           />
                           <span className="text-sm text-ivory/90">
                             <span className="font-medium text-caramel">{copy.includeHandbag}</span>
                           </span>
                         </label>
+                      ) : null}
 
-                        {meta.includeHandbag ? (
-                          <div className="mt-4 border-t border-ivory/10 pt-4">
-                            <p className="mb-4 text-xs uppercase tracking-[0.16em] text-caramel">
-                              {copy.handbagAddonHeading}
-                            </p>
-
-                            <label className="mb-4 block space-y-1.5">
-                              <span className="text-xs uppercase tracking-[0.16em] text-mist">
-                                {copy.selectHandbag}
-                              </span>
-                              <select
-                                className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
-                                value={meta.selectedHandbagId}
-                                onChange={(event) => {
-                                  updateMeta("selectedHandbagId", event.target.value);
-                                  setGiftBoxPreviewTarget("handbag");
-                                }}
-                              >
-                                {handbagItems.map((item) => (
-                                  <option key={item.id} value={item.id} className="bg-ink text-ivory">
-                                    {item.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-
-                            {selectedHandbag && isHandbag(selectedHandbag) ? (
-                              <>
-                                <ProductOptionsPanel
-                                  groupId={`${optionsGroupId}-model-addon`}
-                                  options={selectedHandbag.customizationOptions}
-                                  config={handbagConfig}
-                                  engravingAddsLabel={copy.options.engravingAdds}
-                                  engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
-                                  engravingTextPlaceholder={copy.placeholders.engravingText}
-                                  onUpdate={updateHandbagConfig}
-                                />
-
-                                {selectedHandbag.offerGiftBoxUpsell && effectiveGiftBoxProduct ? (
-                                  <div className="mt-4 border-t border-ivory/10 pt-4">
-                                    <label className="flex cursor-pointer items-start gap-3">
-                                      <input
-                                        type="checkbox"
-                                        className="mt-1 h-4 w-4 accent-[#b78b5a]"
-                                        checked={meta.includeGiftBox}
-                                        onChange={(event) =>
-                                          updateMeta("includeGiftBox", event.target.checked)
-                                        }
-                                      />
-                                      <span className="text-sm text-ivory/90">
-                                        <span className="font-medium text-caramel">
-                                          {copy.includeGiftBox}
-                                        </span>{" "}
-                                        <span className="text-mist">
-                                          (
-                                          {copy.giftBoxAddonAdds.replace(
-                                            "{amount}",
-                                            String(
-                                              resolveGiftBoxPrice(
-                                                effectiveGiftBoxProduct,
-                                                modelGiftBoxConfig
-                                              ) +
-                                                calculateOptionAddOnTotal(
-                                                  effectiveGiftBoxProduct.customizationOptions,
-                                                  modelGiftBoxConfig
-                                                )
-                                            )
-                                          )}
-                                          )
-                                        </span>
-                                      </span>
-                                    </label>
-
-                                    {meta.includeGiftBox ? (
-                                      <div className="mt-4">
-                                        <p className="mb-4 text-xs uppercase tracking-[0.16em] text-caramel">
-                                          {copy.giftBoxAddonHeading}
-                                        </p>
-                                        <ProductOptionsPanel
-                                          groupId={`${optionsGroupId}-model-box`}
-                                          options={effectiveGiftBoxProduct.customizationOptions}
-                                          config={modelGiftBoxConfig}
-                                          engravingAddsLabel={copy.options.engravingAdds}
-                                          engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
-                                          engravingTextPlaceholder={copy.placeholders.engravingText}
-                                          onUpdate={updateModelGiftBoxConfig}
-                                        />
-                                      </div>
-                                    ) : null}
-                                  </div>
-                                ) : null}
-                              </>
-                            ) : null}
-                          </div>
-                        ) : null}
-                      </section>
-                    ) : null}
-
-                    {earringItems.length > 0 ? (
-                      <section
-                        aria-label={copy.earringAddonHeading}
-                        className="rounded-2xl border border-ivory/10 bg-black/20 p-4"
-                      >
-                        <label className="flex cursor-pointer items-start gap-3">
+                      {earringItems.length > 0 ? (
+                        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-ivory/10 bg-black/20 p-4">
                           <input
                             type="checkbox"
                             className="mt-1 h-4 w-4 accent-[#b78b5a]"
                             checked={meta.includeEarrings}
-                            onChange={(event) => {
-                              const checked = event.target.checked;
-                              updateMeta("includeEarrings", checked);
-                              setGiftBoxPreviewTarget(
-                                checked ? "earring" : meta.includeHandbag ? "handbag" : "giftBox"
-                              );
-                            }}
+                            onChange={(event) => updateMeta("includeEarrings", event.target.checked)}
                           />
                           <span className="text-sm text-ivory/90">
                             <span className="font-medium text-caramel">{copy.includeEarrings}</span>
                           </span>
                         </label>
+                      ) : null}
+                    </div>
+                  </div>
 
-                        {meta.includeEarrings ? (
+                  {showHandbagAddonGallery && selectedHandbag && isHandbag(selectedHandbag) ? (
+                    <div className="grid gap-7 border-t border-ivory/10 pt-7 md:grid-cols-2">
+                      <ProductViewer
+                        key={`addon-handbag-${selectedHandbag.id}`}
+                        name={selectedHandbag.name}
+                        images={selectedHandbag.images}
+                        copy={{ aria: copy.aria }}
+                      />
+                      <section
+                        aria-label={copy.handbagAddonHeading}
+                        className="rounded-2xl border border-ivory/10 bg-black/20 p-4"
+                      >
+                        <p className="mb-4 text-xs uppercase tracking-[0.16em] text-caramel">
+                          {copy.handbagAddonHeading}
+                        </p>
+
+                        <label className="mb-4 block space-y-1.5">
+                          <span className="text-xs uppercase tracking-[0.16em] text-mist">
+                            {copy.selectHandbag}
+                          </span>
+                          <select
+                            className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
+                            value={meta.selectedHandbagId}
+                            onChange={(event) =>
+                              updateMeta("selectedHandbagId", event.target.value)
+                            }
+                          >
+                            {handbagItems.map((item) => (
+                              <option key={item.id} value={item.id} className="bg-ink text-ivory">
+                                {item.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <ProductOptionsPanel
+                          groupId={`${optionsGroupId}-model-addon`}
+                          options={selectedHandbag.customizationOptions}
+                          config={handbagConfig}
+                          engravingAddsLabel={copy.options.engravingAdds}
+                          engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
+                          engravingTextPlaceholder={copy.placeholders.engravingText}
+                          onUpdate={updateHandbagConfig}
+                        />
+
+                        {selectedHandbag.offerGiftBoxUpsell && effectiveGiftBoxProduct ? (
                           <div className="mt-4 border-t border-ivory/10 pt-4">
-                            <p className="mb-4 text-xs uppercase tracking-[0.16em] text-caramel">
-                              {copy.earringAddonHeading}
-                            </p>
-
-                            <label className="mb-4 block space-y-1.5">
-                              <span className="text-xs uppercase tracking-[0.16em] text-mist">
-                                {copy.selectEarring}
+                            <label className="flex cursor-pointer items-start gap-3">
+                              <input
+                                type="checkbox"
+                                className="mt-1 h-4 w-4 accent-[#b78b5a]"
+                                checked={meta.includeGiftBox}
+                                onChange={(event) =>
+                                  updateMeta("includeGiftBox", event.target.checked)
+                                }
+                              />
+                              <span className="text-sm text-ivory/90">
+                                <span className="font-medium text-caramel">
+                                  {copy.includeGiftBox}
+                                </span>{" "}
+                                <span className="text-mist">
+                                  (
+                                  {copy.giftBoxAddonAdds.replace(
+                                    "{amount}",
+                                    String(
+                                      resolveGiftBoxPrice(
+                                        effectiveGiftBoxProduct,
+                                        modelGiftBoxConfig
+                                      ) +
+                                        calculateOptionAddOnTotal(
+                                          effectiveGiftBoxProduct.customizationOptions,
+                                          modelGiftBoxConfig
+                                        )
+                                    )
+                                  )}
+                                  )
+                                </span>
                               </span>
-                              <select
-                                className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
-                                value={meta.selectedEarringId}
-                                onChange={(event) => {
-                                  updateMeta("selectedEarringId", event.target.value);
-                                  setGiftBoxPreviewTarget("earring");
-                                }}
-                              >
-                                {earringItems.map((item) => (
-                                  <option key={item.id} value={item.id} className="bg-ink text-ivory">
-                                    {item.name}
-                                  </option>
-                                ))}
-                              </select>
                             </label>
 
-                            {selectedEarring && isHandbag(selectedEarring) ? (
-                              <ProductOptionsPanel
-                                groupId={`${optionsGroupId}-earring-addon`}
-                                options={selectedEarring.customizationOptions}
-                                config={earringConfig}
-                                engravingAddsLabel={copy.options.engravingAdds}
-                                engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
-                                engravingTextPlaceholder={copy.placeholders.engravingText}
-                                onUpdate={updateEarringConfig}
-                              />
+                            {meta.includeGiftBox ? (
+                              <div className="mt-4">
+                                <p className="mb-4 text-xs uppercase tracking-[0.16em] text-caramel">
+                                  {copy.giftBoxAddonHeading}
+                                </p>
+                                <ProductOptionsPanel
+                                  groupId={`${optionsGroupId}-model-box`}
+                                  options={effectiveGiftBoxProduct.customizationOptions}
+                                  config={modelGiftBoxConfig}
+                                  engravingAddsLabel={copy.options.engravingAdds}
+                                  engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
+                                  engravingTextPlaceholder={copy.placeholders.engravingText}
+                                  onUpdate={updateModelGiftBoxConfig}
+                                />
+                              </div>
                             ) : null}
                           </div>
                         ) : null}
                       </section>
-                    ) : null}
-                  </>
-                )}
+                    </div>
+                  ) : null}
 
-                <InquiryCartSummary
-                  cart={cart}
-                  copy={copy}
-                  onRemoveHandbag={(entryId) => {
-                    const nextCart = removeHandbagFromCart(cart, entryId);
-                    saveInquiryCart(nextCart);
-                    setCart(nextCart);
-                  }}
-                  onRemoveStandaloneBox={() => {
-                    const nextCart = removeStandaloneGiftBoxFromCart(cart);
-                    saveInquiryCart(nextCart);
-                    setCart(nextCart);
-                  }}
-                />
+                  {showEarringAddonGallery && selectedEarring && isHandbag(selectedEarring) ? (
+                    <div className="grid gap-7 border-t border-ivory/10 pt-7 md:grid-cols-2">
+                      <ProductViewer
+                        key={`addon-earring-${selectedEarring.id}`}
+                        name={selectedEarring.name}
+                        images={selectedEarring.images}
+                        copy={{ aria: copy.aria }}
+                      />
+                      <section
+                        aria-label={copy.earringAddonHeading}
+                        className="rounded-2xl border border-ivory/10 bg-black/20 p-4"
+                      >
+                        <p className="mb-4 text-xs uppercase tracking-[0.16em] text-caramel">
+                          {copy.earringAddonHeading}
+                        </p>
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                  <button
-                    type="button"
-                    onClick={handleAddToRequest}
-                    className="focus-ring inline-flex min-h-11 items-center justify-center rounded-full border border-caramel px-5 py-2.5 text-sm font-medium text-caramel transition hover:bg-caramel hover:text-ink"
-                  >
-                    {addButtonLabel}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSendInquiry}
-                    className="focus-ring inline-flex min-h-11 items-center justify-center rounded-full bg-caramel px-5 py-2.5 text-sm font-medium text-ink"
-                  >
-                    {copy.sendInquiry}
-                    {cartCount > 0 ? ` (${cartCount})` : ""}
-                  </button>
-                </div>
+                        <label className="mb-4 block space-y-1.5">
+                          <span className="text-xs uppercase tracking-[0.16em] text-mist">
+                            {copy.selectEarring}
+                          </span>
+                          <select
+                            className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
+                            value={meta.selectedEarringId}
+                            onChange={(event) =>
+                              updateMeta("selectedEarringId", event.target.value)
+                            }
+                          >
+                            {earringItems.map((item) => (
+                              <option key={item.id} value={item.id} className="bg-ink text-ivory">
+                                {item.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <ProductOptionsPanel
+                          groupId={`${optionsGroupId}-earring-addon`}
+                          options={selectedEarring.customizationOptions}
+                          config={earringConfig}
+                          engravingAddsLabel={copy.options.engravingAdds}
+                          engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
+                          engravingTextPlaceholder={copy.placeholders.engravingText}
+                          onUpdate={updateEarringConfig}
+                        />
+                      </section>
+                    </div>
+                  ) : null}
+                </>
+              )}
+
+              <InquiryCartSummary
+                cart={cart}
+                copy={copy}
+                onRemoveHandbag={(entryId) => {
+                  const nextCart = removeHandbagFromCart(cart, entryId);
+                  saveInquiryCart(nextCart);
+                  setCart(nextCart);
+                }}
+                onRemoveStandaloneBox={() => {
+                  const nextCart = removeStandaloneGiftBoxFromCart(cart);
+                  saveInquiryCart(nextCart);
+                  setCart(nextCart);
+                }}
+              />
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleAddToRequest}
+                  className="focus-ring inline-flex min-h-11 items-center justify-center rounded-full border border-caramel px-5 py-2.5 text-sm font-medium text-caramel transition hover:bg-caramel hover:text-ink"
+                >
+                  {addButtonLabel}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendInquiry}
+                  className="focus-ring inline-flex min-h-11 items-center justify-center rounded-full bg-caramel px-5 py-2.5 text-sm font-medium text-ink"
+                >
+                  {copy.sendInquiry}
+                  {cartCount > 0 ? ` (${cartCount})` : ""}
+                </button>
               </div>
             </div>
           </motion.div>
