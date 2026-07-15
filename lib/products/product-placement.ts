@@ -135,6 +135,8 @@ export function normalizeProductRecordInput(product: ProductRecordInput): Produc
   return {
     ...product,
     categorySlug: product.categorySlug ?? null,
+    offerGiftBoxUpsell:
+      product.productKind === "handbag" ? product.offerGiftBoxUpsell !== false : false,
     customizationOptions: normalizeCustomizationOptions(product.customizationOptions)
   };
 }

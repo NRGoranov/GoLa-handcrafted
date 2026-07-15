@@ -17,6 +17,8 @@ type ProductCustomizationEditorProps = {
   syncKey: string;
   productKind: ProductKind;
   engravingAddOnEur: number | null;
+  offerGiftBoxUpsell?: boolean;
+  onOfferGiftBoxUpsellChange?: (enabled: boolean) => void;
   options: ProductCustomizationOption[] | null;
   onChange: (options: ProductCustomizationOption[]) => void;
 };
@@ -45,6 +47,8 @@ export default function ProductCustomizationEditor({
   syncKey,
   productKind,
   engravingAddOnEur,
+  offerGiftBoxUpsell = true,
+  onOfferGiftBoxUpsellChange,
   options,
   onChange
 }: ProductCustomizationEditorProps) {
@@ -160,6 +164,24 @@ export default function ProductCustomizationEditor({
           + Checkbox option
         </button>
       </div>
+
+      {productKind === "handbag" && onOfferGiftBoxUpsellChange ? (
+        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-ivory/10 bg-black/20 p-4">
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4 accent-[#b78b5a]"
+            checked={offerGiftBoxUpsell}
+            onChange={(event) => onOfferGiftBoxUpsellChange(event.target.checked)}
+          />
+          <span className="text-sm text-ivory/90">
+            <span className="font-medium text-caramel">Premium gift box add-on</span>
+            <span className="mt-1 block text-mist">
+              When enabled, customers see an &quot;Add premium gift box&quot; checkbox on this product&apos;s
+              details page. Turn off for items like earrings that should not offer gift packaging.
+            </span>
+          </span>
+        </label>
+      ) : null}
 
       <div className="mt-5 space-y-3">
         {localOptions.map((option) => (

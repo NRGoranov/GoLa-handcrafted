@@ -45,7 +45,8 @@ export function productRecordToProduct(record: ProductRecord, locale: Locale): P
     productKind: "handbag",
     model: record.model ?? 0,
     pocketsAddOnEur: record.pocketsAddOnEur ?? 20,
-    engravingAddOnEur: record.engravingAddOnEur ?? 20
+    engravingAddOnEur: record.engravingAddOnEur ?? 20,
+    offerGiftBoxUpsell: record.offerGiftBoxUpsell !== false
   } satisfies HandbagProduct;
 }
 

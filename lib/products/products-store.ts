@@ -28,6 +28,7 @@ type DbRow = {
   price_eur: number;
   pockets_add_on_eur: number | null;
   engraving_add_on_eur: number | null;
+  offer_gift_box_upsell?: boolean | null;
   customization_options?: ProductCustomizationOption[] | null;
   images: string[];
   created_at: string;
@@ -57,6 +58,8 @@ function rowToRecord(row: DbRow): ProductRecord {
     priceEur: Number(row.price_eur),
     pocketsAddOnEur: row.pockets_add_on_eur,
     engravingAddOnEur: row.engraving_add_on_eur,
+    offerGiftBoxUpsell:
+      row.product_kind === "handbag" ? row.offer_gift_box_upsell !== false : false,
     customizationOptions: normalizeCustomizationOptions(
       row.customization_options as ProductCustomizationOption[] | null | undefined
     ),
@@ -87,6 +90,7 @@ function recordToRow(record: ProductRecord): DbRow {
     price_eur: record.priceEur,
     pockets_add_on_eur: record.pocketsAddOnEur,
     engraving_add_on_eur: record.engravingAddOnEur,
+    offer_gift_box_upsell: record.productKind === "handbag" ? record.offerGiftBoxUpsell : false,
     customization_options: record.customizationOptions,
     images: record.images,
     created_at: record.createdAt,
@@ -107,6 +111,8 @@ async function readJsonProducts(): Promise<ProductRecord[]> {
     return parsed.map((product) => ({
       ...product,
       categorySlug: product.categorySlug ?? null,
+      offerGiftBoxUpsell:
+        product.productKind === "handbag" ? product.offerGiftBoxUpsell !== false : false,
       customizationOptions: product.customizationOptions ?? null
     }));
   } catch {
@@ -390,6 +396,7 @@ export function createEmptyProductInput(
     priceEur: 0,
     pocketsAddOnEur: kind === "handbag" ? 20 : null,
     engravingAddOnEur: kind === "handbag" ? 20 : null,
+    offerGiftBoxUpsell: kind === "handbag",
     customizationOptions: null,
     images: []
   };

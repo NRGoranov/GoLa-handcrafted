@@ -25,6 +25,7 @@ export type HandbagProduct = ProductBase & {
   model: number;
   pocketsAddOnEur: number;
   engravingAddOnEur: number;
+  offerGiftBoxUpsell: boolean;
 };
 
 export type GiftBoxProduct = ProductBase & {
@@ -140,6 +141,7 @@ export const handbagProducts: HandbagProduct[] = handbagProductsBase.map((produc
   ...product,
   productKind: "handbag" as const,
   customizable: true as const,
+  offerGiftBoxUpsell: true,
   customizationOptions: resolveStaticOptions("handbag", product.engravingAddOnEur)
 }));
 

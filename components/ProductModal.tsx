@@ -362,8 +362,17 @@ export default function ProductModal({
       : product && isHandbag(product)
         ? product.priceEur +
           calculateOptionAddOnTotal(product.customizationOptions, handbagConfig) +
-          (meta.includeGiftBox && effectiveGiftBoxProduct ? effectiveGiftBoxProduct.priceEur : 0)
+          (product.offerGiftBoxUpsell &&
+          meta.includeGiftBox &&
+          effectiveGiftBoxProduct
+            ? effectiveGiftBoxProduct.priceEur
+            : 0)
         : 0;
+
+  const showGiftBoxUpsell = Boolean(
+    product && isHandbag(product) && product.offerGiftBoxUpsell && effectiveGiftBoxProduct
+  );
+  const giftBoxUpsellProduct = showGiftBoxUpsell ? effectiveGiftBoxProduct : null;
 
   const giftBoxPaperIndex =
     typeof giftBoxConfig.paperColor === "number" ? giftBoxConfig.paperColor : 0;
@@ -469,7 +478,7 @@ export default function ProductModal({
                       />
                     </section>
 
-                    {effectiveGiftBoxProduct ? (
+                    {showGiftBoxUpsell ? (
                       <section
                         aria-label={copy.giftBoxAddonHeading}
                         className="rounded-2xl border border-ivory/10 bg-black/20 p-4"
@@ -487,7 +496,7 @@ export default function ProductModal({
                               (
                               {copy.giftBoxAddonAdds.replace(
                                 "{amount}",
-                                String(effectiveGiftBoxProduct.priceEur)
+                                String(giftBoxUpsellProduct!.priceEur)
                               )}
                               )
                             </span>
@@ -501,7 +510,7 @@ export default function ProductModal({
                             </p>
                             <ProductOptionsPanel
                               groupId={`${optionsGroupId}-box`}
-                              options={effectiveGiftBoxProduct.customizationOptions}
+                              options={giftBoxUpsellProduct!.customizationOptions}
                               config={giftBoxConfig}
                               engravingAddsLabel={copy.options.engravingAdds}
                               engravingNoSurchargeLabel={copy.options.engravingNoSurcharge}
@@ -587,7 +596,7 @@ export default function ProductModal({
                                   onUpdate={updateHandbagConfig}
                                 />
 
-                                {effectiveGiftBoxProduct ? (
+                                {selectedHandbag.offerGiftBoxUpsell && effectiveGiftBoxProduct ? (
                                   <div className="mt-4 border-t border-ivory/10 pt-4">
                                     <label className="flex cursor-pointer items-start gap-3">
                                       <input

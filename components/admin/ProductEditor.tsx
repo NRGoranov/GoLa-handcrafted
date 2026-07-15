@@ -375,6 +375,12 @@ export default forwardRef<AdminEditorSaveHandle, ProductEditorProps>(function Pr
         syncKey={initialProduct.updatedAt}
         productKind={values.productKind}
         engravingAddOnEur={values.engravingAddOnEur}
+        offerGiftBoxUpsell={values.productKind === "handbag" ? values.offerGiftBoxUpsell : false}
+        onOfferGiftBoxUpsellChange={
+          values.productKind === "handbag"
+            ? (offerGiftBoxUpsell) => patch((prev) => ({ ...prev, offerGiftBoxUpsell }))
+            : undefined
+        }
         options={values.customizationOptions}
         onChange={(customizationOptions) =>
           patch((prev) => {

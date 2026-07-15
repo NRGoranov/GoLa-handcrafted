@@ -28,6 +28,8 @@ export type ProductRecord = {
   priceEur: number;
   pocketsAddOnEur: number | null;
   engravingAddOnEur: number | null;
+  /** Handbags only: show the premium gift box add-on on the product details modal. */
+  offerGiftBoxUpsell: boolean;
   customizationOptions: ProductCustomizationOption[] | null;
   images: string[];
   createdAt: string;

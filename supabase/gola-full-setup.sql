@@ -98,6 +98,7 @@ create table if not exists public.products (
   price_eur numeric not null default 0,
   pockets_add_on_eur numeric null,
   engraving_add_on_eur numeric null,
+  offer_gift_box_upsell boolean null,
   customization_options jsonb null,
   images text[] not null default '{}',
   created_at timestamptz not null default now(),
@@ -190,6 +191,7 @@ grant execute on function public.increment_site_visit() to service_role;
 
 alter table public.products add column if not exists category_slug text null;
 alter table public.products add column if not exists customization_options jsonb null;
+alter table public.products add column if not exists offer_gift_box_upsell boolean null;
 
 alter table public.content_sections drop constraint if exists content_sections_layout_check;
 alter table public.content_sections
