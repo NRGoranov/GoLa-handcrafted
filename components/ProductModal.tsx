@@ -155,6 +155,9 @@ export default function ProductModal({
   );
   const [meta, setMeta] = useState<InquiryMetaState>(defaultInquiryMeta);
   const [cart, setCart] = useState<InquiryCart>(() => loadInquiryCart());
+  const [giftBoxPreviewTarget, setGiftBoxPreviewTarget] = useState<"giftBox" | "handbag" | "earring">(
+    "giftBox"
+  );
 
   const effectiveGiftBoxProduct =
     giftBoxProduct ?? (product && isGiftBox(product) ? product : null);
@@ -255,6 +258,7 @@ export default function ProductModal({
       hydrateOptionConfig(loadModelGiftBoxConfiguration(), giftBoxProduct?.customizationOptions ?? giftBoxOptions)
     );
     setMeta(loaded.meta);
+    setGiftBoxPreviewTarget("giftBox");
     hydratedRef.current = true;
 
     const previousOverflow = document.body.style.overflow;
@@ -454,6 +458,29 @@ export default function ProductModal({
   const giftBoxPaperIndex =
     typeof giftBoxConfig.paperColor === "number" ? giftBoxConfig.paperColor : 0;
 
+  const viewerProduct = useMemo(() => {
+    if (!product || !isGiftBox(product)) return product;
+    if (giftBoxPreviewTarget === "handbag" && meta.includeHandbag && selectedHandbag) {
+      return selectedHandbag;
+    }
+    if (giftBoxPreviewTarget === "earring" && meta.includeEarrings && selectedEarring) {
+      return selectedEarring;
+    }
+    return product;
+  }, [
+    product,
+    giftBoxPreviewTarget,
+    meta.includeHandbag,
+    meta.includeEarrings,
+    selectedHandbag,
+    selectedEarring
+  ]);
+
+  const viewerImages =
+    viewerProduct?.images?.length ? viewerProduct.images : product?.images ?? [];
+  const viewerUsesGiftBoxPaperSync =
+    Boolean(product && isGiftBox(product) && viewerProduct === product);
+
   return (
     <AnimatePresence>
       {product ? (
@@ -489,12 +516,14 @@ export default function ProductModal({
 
             <div className="grid gap-7 md:grid-cols-2">
               <ProductViewer
-                key={product.id}
-                name={product.name}
-                images={product.images}
+                key={viewerProduct?.id ?? product.id}
+                name={viewerProduct?.name ?? product.name}
+                images={viewerImages}
                 copy={{ aria: copy.aria }}
                 syncActiveSrc={
-                  isGiftBox(product) ? giftBoxImageForPaperColor(giftBoxPaperIndex) : undefined
+                  viewerUsesGiftBoxPaperSync
+                    ? giftBoxImageForPaperColor(giftBoxPaperIndex)
+                    : undefined
                 }
               />
               <div className="space-y-5">
@@ -629,7 +658,13 @@ export default function ProductModal({
                             type="checkbox"
                             className="mt-1 h-4 w-4 accent-[#b78b5a]"
                             checked={meta.includeHandbag}
-                            onChange={(event) => updateMeta("includeHandbag", event.target.checked)}
+                            onChange={(event) => {
+                              const checked = event.target.checked;
+                              updateMeta("includeHandbag", checked);
+                              setGiftBoxPreviewTarget(
+                                checked ? "handbag" : meta.includeEarrings ? "earring" : "giftBox"
+                              );
+                            }}
                           />
                           <span className="text-sm text-ivory/90">
                             <span className="font-medium text-caramel">{copy.includeHandbag}</span>
@@ -649,9 +684,10 @@ export default function ProductModal({
                               <select
                                 className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
                                 value={meta.selectedHandbagId}
-                                onChange={(event) =>
-                                  updateMeta("selectedHandbagId", event.target.value)
-                                }
+                                onChange={(event) => {
+                                  updateMeta("selectedHandbagId", event.target.value);
+                                  setGiftBoxPreviewTarget("handbag");
+                                }}
                               >
                                 {handbagItems.map((item) => (
                                   <option key={item.id} value={item.id} className="bg-ink text-ivory">
@@ -743,7 +779,13 @@ export default function ProductModal({
                             type="checkbox"
                             className="mt-1 h-4 w-4 accent-[#b78b5a]"
                             checked={meta.includeEarrings}
-                            onChange={(event) => updateMeta("includeEarrings", event.target.checked)}
+                            onChange={(event) => {
+                              const checked = event.target.checked;
+                              updateMeta("includeEarrings", checked);
+                              setGiftBoxPreviewTarget(
+                                checked ? "earring" : meta.includeHandbag ? "handbag" : "giftBox"
+                              );
+                            }}
                           />
                           <span className="text-sm text-ivory/90">
                             <span className="font-medium text-caramel">{copy.includeEarrings}</span>
@@ -763,9 +805,10 @@ export default function ProductModal({
                               <select
                                 className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
                                 value={meta.selectedEarringId}
-                                onChange={(event) =>
-                                  updateMeta("selectedEarringId", event.target.value)
-                                }
+                                onChange={(event) => {
+                                  updateMeta("selectedEarringId", event.target.value);
+                                  setGiftBoxPreviewTarget("earring");
+                                }}
                               >
                                 {earringItems.map((item) => (
                                   <option key={item.id} value={item.id} className="bg-ink text-ivory">
