@@ -120,6 +120,12 @@ type SiteCopy = {
     submitDisabled: string;
     errors: { submitFailed: string; generic: string };
     success: string;
+    successPopup: {
+      title: string;
+      message: string;
+      messageNoEmail: string;
+      close: string;
+    };
   };
   footer: {
     brandLine: string;
@@ -348,7 +354,14 @@ const dictionary: Record<Locale, SiteCopy> = {
       submit: "Send inquiry",
       submitDisabled: "Form temporarily unavailable",
       errors: { submitFailed: "Unable to submit inquiry.", generic: "Something went wrong." },
-      success: "Thank you—your inquiry has been received."
+      success: "Thank you—your inquiry has been received.",
+      successPopup: {
+        title: "Request sent",
+        message:
+          "Thank you—we've received your inquiry. A copy has been sent to your email with the details you submitted.",
+        messageNoEmail: "Thank you—we've received your inquiry. We'll be in touch soon.",
+        close: "Close"
+      }
     },
     footer: {
       brandLine: "GoLa Handcrafted - Wooden & Leather Handbags",
@@ -614,7 +627,14 @@ const dictionary: Record<Locale, SiteCopy> = {
         submitFailed: "Не успяхме да изпратим запитването.",
         generic: "Възникна проблем. Опитай отново."
       },
-      success: "Благодарим — получихме запитването ти."
+      success: "Благодарим — получихме запитването ти.",
+      successPopup: {
+        title: "Запитването е изпратено",
+        message:
+          "Благодарим — получихме запитването ти. Изпратихме копие на посочения от теб имейл с подробностите, които изпрати.",
+        messageNoEmail: "Благодарим — получихме запитването ти. Ще се свържем с теб скоро.",
+        close: "Затвори"
+      }
     },
     footer: {
       brandLine: "GoLa Handcrafted — чанти от дърво и кожа",

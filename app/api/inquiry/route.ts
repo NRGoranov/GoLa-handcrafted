@@ -41,7 +41,8 @@ export async function POST(req: Request) {
         inquiryType: inquiryTypeLabel,
         message: validated.message,
         location: validated.location,
-        preferredSize: validated.preferredSize
+        preferredSize: validated.preferredSize,
+        locale: validated.locale
       });
       emailed = true;
     } else if (process.env.NODE_ENV === "production") {
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
+      emailed,
       message: emailed
         ? "Inquiry sent successfully."
         : "Inquiry received. Email will be enabled once SMTP is configured."
@@ -102,7 +104,7 @@ function validatePayload(payload: Partial<InquiryPayload & { inquiryType: string
   }
 
   const inquiryTypeKey = payload.inquiryType!.trim() as InquiryTypeKey;
-  const locale = payload.locale === "bg" ? "bg" : "en";
+  const locale: "en" | "bg" = payload.locale === "bg" ? "bg" : "en";
 
   return {
     name: payload.name!.trim(),

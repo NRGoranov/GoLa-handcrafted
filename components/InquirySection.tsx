@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import SectionHeading from "./SectionHeading";
+import InquirySuccessDialog from "./InquirySuccessDialog";
 import {
   consumeInquiryPrefill,
   INQUIRY_PREFILL_EVENT,
@@ -43,6 +44,12 @@ type InquiryCopy = {
   submitDisabled: string;
   errors: { submitFailed: string; generic: string };
   success: string;
+  successPopup: {
+    title: string;
+    message: string;
+    messageNoEmail: string;
+    close: string;
+  };
 };
 
 const defaultForm = {
@@ -66,6 +73,8 @@ export default function InquirySection({
   const [form, setForm] = useState(defaultForm);
   const [status, setStatus] = useState<InquiryState>("idle");
   const [feedback, setFeedback] = useState("");
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successDialogMessage, setSuccessDialogMessage] = useState("");
   const messageRef = useRef<HTMLTextAreaElement>(null);
 
   const applyPrefill = (detail: InquiryPrefillDetail) => {
@@ -112,13 +121,20 @@ export default function InquirySection({
         })
       });
 
-      const result = (await response.json()) as { ok: boolean; message: string };
+      const result = (await response.json()) as {
+        ok: boolean;
+        message: string;
+        emailed?: boolean;
+      };
       if (!response.ok || !result.ok) {
         throw new Error(result.message || copy.errors.submitFailed);
       }
 
       setStatus("success");
-      setFeedback(copy.success);
+      setSuccessDialogMessage(
+        result.emailed ? copy.successPopup.message : copy.successPopup.messageNoEmail
+      );
+      setShowSuccessDialog(true);
       setForm(defaultForm);
       clearInquiryCart();
     } catch (error) {
@@ -272,17 +288,25 @@ export default function InquirySection({
             {status === "loading" ? `${copy.submit}…` : copy.submit}
           </button>
 
-          {feedback ? (
-            <p
-              role="status"
-              aria-live="polite"
-              className={`text-sm ${status === "error" ? "text-red-300" : "text-caramel"}`}
-            >
+          {feedback && status === "error" ? (
+            <p role="alert" className="text-sm text-red-300">
               {feedback}
             </p>
           ) : null}
         </form>
       </div>
+
+      <InquirySuccessDialog
+        open={showSuccessDialog}
+        onClose={() => {
+          setShowSuccessDialog(false);
+          setStatus("idle");
+        }}
+        copy={{
+          ...copy.successPopup,
+          message: successDialogMessage || copy.successPopup.message
+        }}
+      />
     </section>
   );
 }
