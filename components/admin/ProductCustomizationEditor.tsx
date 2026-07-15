@@ -5,7 +5,6 @@ import {
   createCustomCheckboxOption,
   createCustomSizeChoice,
   createCustomSwatchChoice,
-  createCustomSwatchOption,
   mergeCustomizationOptions
 } from "@/lib/products/customization-options";
 import type { ProductKind } from "@/types/product-record";
@@ -126,10 +125,6 @@ export default function ProductCustomizationEditor({
     commit([...localOptions, createCustomCheckboxOption()]);
   };
 
-  const addColorOption = () => {
-    commit([...localOptions, createCustomSwatchOption()]);
-  };
-
   const addColorChoice = (optionId: string) => {
     commit(
       localOptions.map((option) =>
@@ -164,27 +159,18 @@ export default function ProductCustomizationEditor({
         <div>
           <h2 className="font-serif text-xl text-ivory">Customer options</h2>
           <p className="mt-2 text-sm text-mist">
-            Configure options for this product only. Add color groups or individual colors, disable options
-            that do not apply (for example chain color on earrings), and use checkboxes for add-ons like
-            engraving. Changes here do not affect other products.
+            Configure options for this product only. Use + Add color inside a preset group (for example
+            chain/hooks color or wood coating) to add swatches there. Disable whole groups that do not apply.
+            Changes here do not affect other products.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={addColorOption}
-            className="rounded-full border border-caramel/40 px-4 py-2 text-sm text-caramel hover:bg-caramel/10"
-          >
-            + Color option
-          </button>
-          <button
-            type="button"
-            onClick={addCheckboxOption}
-            className="rounded-full border border-caramel/40 px-4 py-2 text-sm text-caramel hover:bg-caramel/10"
-          >
-            + Checkbox option
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={addCheckboxOption}
+          className="rounded-full border border-caramel/40 px-4 py-2 text-sm text-caramel hover:bg-caramel/10"
+        >
+          + Checkbox option
+        </button>
       </div>
 
       {productKind === "handbag" && onOfferGiftBoxUpsellChange ? (
@@ -220,7 +206,7 @@ export default function ProductCustomizationEditor({
                   {option.type === "swatch"
                     ? option.id === "boxSize"
                       ? "Box sizes"
-                      : "Color swatches"
+                      : option.label.en || option.label.bg || "Colors"
                     : "Checkbox"}
                   {option.preset ? (
                     <span className="ml-2 text-[10px] uppercase tracking-[0.14em] text-mist">Preset</span>
@@ -284,13 +270,13 @@ export default function ProductCustomizationEditor({
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs uppercase tracking-[0.14em] text-mist">
                     {option.id === "boxSize"
-                      ? `Sizes for this product (${option.choices?.length ?? 0})`
-                      : `Colors for this product (${option.choices?.length ?? 0})`}
+                      ? `Sizes (${option.choices?.length ?? 0})`
+                      : `Colors in “${option.label.en || option.label.bg || option.id}” (${option.choices?.length ?? 0})`}
                   </p>
                   <button
                     type="button"
                     onClick={() => addColorChoice(option.id)}
-                    className="rounded-full border border-ivory/15 px-3 py-1 text-xs text-ivory hover:border-caramel/40"
+                    className="rounded-full border border-caramel/40 px-3 py-1 text-xs text-caramel hover:bg-caramel/10"
                   >
                     {option.id === "boxSize" ? "+ Add size" : "+ Add color"}
                   </button>

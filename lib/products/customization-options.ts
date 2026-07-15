@@ -167,7 +167,9 @@ export function mergeCustomizationOptions(
   const presetIds = new Set(presets.map((option) => option.id));
 
   const mergedPresets = presets.map((preset) => mergePresetOption(preset, storedById.get(preset.id)));
-  const custom = storedList.filter((option) => !presetIds.has(option.id));
+  const custom = storedList.filter(
+    (option) => !presetIds.has(option.id) && option.type === "checkbox"
+  );
 
   return [...mergedPresets, ...custom.map((option) => ({ ...option, preset: false }))];
 }
@@ -354,18 +356,6 @@ export function createCustomCheckboxOption(): ProductCustomizationOption {
     enabled: true,
     addOnEur: null,
     showTextField: true,
-    preset: false
-  };
-}
-
-export function createCustomSwatchOption(): ProductCustomizationOption {
-  const id = `colors-${Date.now().toString(36)}`;
-  return {
-    id,
-    type: "swatch",
-    label: { en: "Color", bg: "Цвят" },
-    enabled: true,
-    choices: [createCustomSwatchChoice()],
     preset: false
   };
 }
