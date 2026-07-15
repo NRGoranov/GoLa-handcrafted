@@ -38,6 +38,8 @@ import {
 import { SECTION_LAYOUT_LABELS, type ContentSection } from "@/types/content-section";
 import type { AdminEditorSaveHandle } from "@/types/admin-editor-save";
 import type { ProductRecord, ProductRecordInput } from "@/types/product-record";
+import { productRecordToProduct } from "@/lib/products/map-product";
+import type { Product } from "@/lib/products";
 
 type StudioTab = "products" | "sections" | "inquiries";
 
@@ -278,6 +280,19 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
       JSON.stringify(sectionPreviewValues) !== JSON.stringify(sectionToFormValues(selectedSection))
     );
   }, [selectedSection, sectionPreviewValues]);
+
+  const adminHandbagProducts = useMemo(
+    () =>
+      products
+        .filter((product) => product.productKind === "handbag")
+        .map((product) => productRecordToProduct(product, "en")),
+    [products]
+  );
+
+  const adminGiftBoxProduct = useMemo((): Product | null => {
+    const giftBox = products.find((product) => product.productKind === "giftBox");
+    return giftBox ? productRecordToProduct(giftBox, "en") : null;
+  }, [products]);
 
   const navigateStudio = useCallback(
     (nextTab: StudioTab, id?: string) => {
@@ -678,6 +693,7 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
     productPreviewValues || selectedProduct ? (
       <StudioPreviewFrame
         variant="card"
+        interactive
         label={
           (productPreviewValues ?? selectedProduct)!.name.en ||
           (productPreviewValues ?? selectedProduct)!.name.bg ||
@@ -685,7 +701,11 @@ export default function ContentStudio({ storageMode }: { storageMode: string }) 
         }
         isDraft={isProductDirty}
       >
-        <ProductLivePreview product={productPreviewValues ?? selectedProduct!} />
+        <ProductLivePreview
+          product={productPreviewValues ?? selectedProduct!}
+          giftBoxProduct={adminGiftBoxProduct}
+          handbagItems={adminHandbagProducts}
+        />
       </StudioPreviewFrame>
     ) : (
       <div className="flex h-full items-center justify-center p-6 text-center text-sm text-mist">

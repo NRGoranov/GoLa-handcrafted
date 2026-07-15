@@ -29,6 +29,17 @@ function mergeOptions(
   return mergeCustomizationOptions(options, productKind, engravingAddOnEur);
 }
 
+function normalizeHexForPicker(value?: string): string {
+  const hex = (value ?? "").trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(hex)) return hex.toLowerCase();
+  if (/^#[0-9a-fA-F]{3}$/.test(hex)) {
+    const [, r, g, b] = hex;
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+  if (/^[0-9a-fA-F]{6}$/.test(hex)) return `#${hex}`.toLowerCase();
+  return "#b78b5a";
+}
+
 export default function ProductCustomizationEditor({
   productId,
   syncKey,
@@ -279,14 +290,28 @@ export default function ProductCustomizationEditor({
                             patchChoiceLabel(option.id, choice.id, "bg", event.target.value)
                           }
                         />
-                        <input
-                          className="admin-input"
-                          placeholder="Swatch hex (#b78b5a)"
-                          value={choice.swatch ?? ""}
-                          onChange={(event) =>
-                            patchChoice(option.id, choice.id, { swatch: event.target.value })
-                          }
-                        />
+                        <div className="flex items-center gap-2 md:col-span-2">
+                          <label className="flex shrink-0 flex-col items-center gap-1 text-[10px] uppercase tracking-[0.12em] text-mist">
+                            Palette
+                            <input
+                              type="color"
+                              className="h-10 w-12 cursor-pointer rounded border border-ivory/15 bg-transparent p-0.5"
+                              value={normalizeHexForPicker(choice.swatch)}
+                              onChange={(event) =>
+                                patchChoice(option.id, choice.id, { swatch: event.target.value })
+                              }
+                              aria-label={`Pick color for ${choice.label.en || choice.id}`}
+                            />
+                          </label>
+                          <input
+                            className="admin-input min-w-0 flex-1"
+                            placeholder="Swatch hex (#b78b5a)"
+                            value={choice.swatch ?? ""}
+                            onChange={(event) =>
+                              patchChoice(option.id, choice.id, { swatch: event.target.value })
+                            }
+                          />
+                        </div>
                         <input
                           className="admin-input"
                           placeholder="Image URL (optional, gift box paper)"
