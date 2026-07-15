@@ -1,47 +1,134 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   createCustomCheckboxOption,
+  createCustomSwatchChoice,
   mergeCustomizationOptions
 } from "@/lib/products/customization-options";
 import type { ProductKind } from "@/types/product-record";
-import type { ProductCustomizationOption } from "@/types/product-customization";
+import type {
+  ProductCustomizationChoice,
+  ProductCustomizationOption
+} from "@/types/product-customization";
 
 type ProductCustomizationEditorProps = {
+  productId: string;
+  syncKey: string;
   productKind: ProductKind;
   engravingAddOnEur: number | null;
   options: ProductCustomizationOption[] | null;
   onChange: (options: ProductCustomizationOption[]) => void;
 };
 
+function mergeOptions(
+  options: ProductCustomizationOption[] | null,
+  productKind: ProductKind,
+  engravingAddOnEur: number | null
+): ProductCustomizationOption[] {
+  return mergeCustomizationOptions(options, productKind, engravingAddOnEur);
+}
+
 export default function ProductCustomizationEditor({
+  productId,
+  syncKey,
   productKind,
   engravingAddOnEur,
   options,
   onChange
 }: ProductCustomizationEditorProps) {
-  const merged = mergeCustomizationOptions(options, productKind, engravingAddOnEur);
+  const [localOptions, setLocalOptions] = useState(() =>
+    mergeOptions(options, productKind, engravingAddOnEur)
+  );
+
+  useEffect(() => {
+    setLocalOptions(mergeOptions(options, productKind, engravingAddOnEur));
+  }, [productId, syncKey]);
+
+  const commit = (next: ProductCustomizationOption[]) => {
+    setLocalOptions(next);
+    onChange(next);
+  };
 
   const patchOption = (id: string, patch: Partial<ProductCustomizationOption>) => {
-    onChange(merged.map((option) => (option.id === id ? { ...option, ...patch } : option)));
+    commit(localOptions.map((option) => (option.id === id ? { ...option, ...patch } : option)));
   };
 
   const patchOptionLabel = (id: string, locale: "en" | "bg", value: string) => {
-    onChange(
-      merged.map((option) =>
-        option.id === id
-          ? { ...option, label: { ...option.label, [locale]: value } }
+    commit(
+      localOptions.map((option) =>
+        option.id === id ? { ...option, label: { ...option.label, [locale]: value } } : option
+      )
+    );
+  };
+
+  const patchChoice = (
+    optionId: string,
+    choiceId: string,
+    patch: Partial<ProductCustomizationChoice>
+  ) => {
+    commit(
+      localOptions.map((option) => {
+        if (option.id !== optionId || option.type !== "swatch") return option;
+        return {
+          ...option,
+          choices: (option.choices ?? []).map((choice) =>
+            choice.id === choiceId ? { ...choice, ...patch } : choice
+          )
+        };
+      })
+    );
+  };
+
+  const patchChoiceLabel = (
+    optionId: string,
+    choiceId: string,
+    locale: "en" | "bg",
+    value: string
+  ) => {
+    commit(
+      localOptions.map((option) => {
+        if (option.id !== optionId || option.type !== "swatch") return option;
+        return {
+          ...option,
+          choices: (option.choices ?? []).map((choice) =>
+            choice.id === choiceId
+              ? { ...choice, label: { ...choice.label, [locale]: value } }
+              : choice
+          )
+        };
+      })
+    );
+  };
+
+  const removeOption = (id: string) => {
+    commit(localOptions.filter((option) => option.id !== id));
+  };
+
+  const addCheckboxOption = () => {
+    commit([...localOptions, createCustomCheckboxOption()]);
+  };
+
+  const addColorChoice = (optionId: string) => {
+    commit(
+      localOptions.map((option) =>
+        option.id === optionId && option.type === "swatch"
+          ? { ...option, choices: [...(option.choices ?? []), createCustomSwatchChoice()] }
           : option
       )
     );
   };
 
-  const removeOption = (id: string) => {
-    onChange(merged.filter((option) => option.id !== id));
-  };
-
-  const addCheckboxOption = () => {
-    onChange([...merged, createCustomCheckboxOption()]);
+  const removeColorChoice = (optionId: string, choiceId: string) => {
+    commit(
+      localOptions.map((option) => {
+        if (option.id !== optionId || option.type !== "swatch") return option;
+        return {
+          ...option,
+          choices: (option.choices ?? []).filter((choice) => choice.id !== choiceId)
+        };
+      })
+    );
   };
 
   return (
@@ -50,8 +137,8 @@ export default function ProductCustomizationEditor({
         <div>
           <h2 className="font-serif text-xl text-ivory">Customer options</h2>
           <p className="mt-2 text-sm text-mist">
-            Choose which options appear in the product configurator. Disable options this product does not need
-            (for example chain color on earrings). Add checkbox add-ons such as custom engraving.
+            Configure options for this product only. Disable or remove colors and add-ons that do not apply
+            (for example chain color on earrings). Changes here do not affect other products.
           </p>
         </div>
         <button
@@ -64,11 +151,8 @@ export default function ProductCustomizationEditor({
       </div>
 
       <div className="mt-5 space-y-3">
-        {merged.map((option) => (
-          <div
-            key={option.id}
-            className="rounded-xl border border-ivory/10 bg-black/20 p-4"
-          >
+        {localOptions.map((option) => (
+          <div key={option.id} className="rounded-xl border border-ivory/10 bg-black/20 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <label className="flex items-center gap-2 text-sm text-ivory">
                 <input
@@ -90,7 +174,7 @@ export default function ProductCustomizationEditor({
                   onClick={() => removeOption(option.id)}
                   className="text-xs text-red-200 underline decoration-red-200/30 underline-offset-2 hover:text-red-100"
                 >
-                  Remove
+                  Remove option
                 </button>
               ) : null}
             </div>
@@ -137,9 +221,87 @@ export default function ProductCustomizationEditor({
                 </label>
               </div>
             ) : (
-              <p className="mt-3 text-xs text-mist">
-                {option.choices?.length ?? 0} color choices · shown as swatches on the live site.
-              </p>
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs uppercase tracking-[0.14em] text-mist">
+                    Colors for this product ({option.choices?.length ?? 0})
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => addColorChoice(option.id)}
+                    className="rounded-full border border-ivory/15 px-3 py-1 text-xs text-ivory hover:border-caramel/40"
+                  >
+                    + Add color
+                  </button>
+                </div>
+
+                {(option.choices ?? []).length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-ivory/15 px-3 py-4 text-sm text-mist">
+                    No colors yet. Add at least one color or disable this option.
+                  </p>
+                ) : (
+                  (option.choices ?? []).map((choice) => (
+                    <div
+                      key={choice.id}
+                      className="rounded-xl border border-ivory/10 bg-[#111] p-3"
+                    >
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="h-6 w-6 rounded-full border border-ivory/20"
+                            style={{ backgroundColor: choice.swatch ?? "#888888" }}
+                            aria-hidden
+                          />
+                          <span className="text-xs text-mist">{choice.id}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeColorChoice(option.id, choice.id)}
+                          className="text-xs text-red-200 underline decoration-red-200/30 underline-offset-2 hover:text-red-100"
+                        >
+                          Remove color
+                        </button>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <input
+                          className="admin-input"
+                          placeholder="Color name (English)"
+                          value={choice.label.en}
+                          onChange={(event) =>
+                            patchChoiceLabel(option.id, choice.id, "en", event.target.value)
+                          }
+                        />
+                        <input
+                          className="admin-input"
+                          placeholder="Color name (Bulgarian)"
+                          value={choice.label.bg}
+                          onChange={(event) =>
+                            patchChoiceLabel(option.id, choice.id, "bg", event.target.value)
+                          }
+                        />
+                        <input
+                          className="admin-input"
+                          placeholder="Swatch hex (#b78b5a)"
+                          value={choice.swatch ?? ""}
+                          onChange={(event) =>
+                            patchChoice(option.id, choice.id, { swatch: event.target.value })
+                          }
+                        />
+                        <input
+                          className="admin-input"
+                          placeholder="Image URL (optional, gift box paper)"
+                          value={choice.imageUrl ?? ""}
+                          onChange={(event) =>
+                            patchChoice(option.id, choice.id, {
+                              imageUrl: event.target.value.trim() || undefined
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             )}
           </div>
         ))}

@@ -213,17 +213,13 @@ export default forwardRef<AdminEditorSaveHandle, ProductEditorProps>(function Pr
         values.customizationOptions,
         values.productKind,
         values.productKind === "handbag" ? payload.engravingAddOnEur ?? 20 : null
-      ).map((option) =>
-        option.id === "customEngraving"
-          ? {
-              ...option,
-              addOnEur:
-                values.productKind === "handbag"
-                  ? payload.engravingAddOnEur ?? 20
-                  : option.addOnEur ?? null
-            }
-          : option
-      );
+      ).map((option) => {
+        if (option.id !== "customEngraving") return option;
+        if (values.productKind === "handbag") {
+          return { ...option, addOnEur: payload.engravingAddOnEur ?? 20 };
+        }
+        return option;
+      });
       const payloadWithOptions: ProductRecordInput = { ...payload, customizationOptions };
       setValues(payloadWithOptions);
 
@@ -375,10 +371,24 @@ export default forwardRef<AdminEditorSaveHandle, ProductEditorProps>(function Pr
       ))}
 
       <ProductCustomizationEditor
+        productId={values.id}
+        syncKey={initialProduct.updatedAt}
         productKind={values.productKind}
         engravingAddOnEur={values.engravingAddOnEur}
         options={values.customizationOptions}
-        onChange={(customizationOptions) => patch((prev) => ({ ...prev, customizationOptions }))}
+        onChange={(customizationOptions) =>
+          patch((prev) => {
+            const engravingOption = customizationOptions.find((option) => option.id === "customEngraving");
+            return {
+              ...prev,
+              customizationOptions,
+              engravingAddOnEur:
+                prev.productKind === "handbag" && engravingOption && "addOnEur" in engravingOption
+                  ? engravingOption.addOnEur ?? prev.engravingAddOnEur ?? 20
+                  : prev.engravingAddOnEur
+            };
+          })
+        }
       />
 
       <section className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
@@ -417,9 +427,19 @@ export default forwardRef<AdminEditorSaveHandle, ProductEditorProps>(function Pr
               type="number"
               placeholder="Engraving add-on EUR"
               value={values.engravingAddOnEur ?? 20}
-              onChange={(e) =>
-                patch((prev) => ({ ...prev, engravingAddOnEur: Number(e.target.value) || 0 }))
-              }
+              onChange={(e) => {
+                const engravingAddOnEur = Number(e.target.value) || 0;
+                patch((prev) => {
+                  const customizationOptions = mergeCustomizationOptions(
+                    prev.customizationOptions,
+                    prev.productKind,
+                    engravingAddOnEur
+                  ).map((option) =>
+                    option.id === "customEngraving" ? { ...option, addOnEur: engravingAddOnEur } : option
+                  );
+                  return { ...prev, engravingAddOnEur, customizationOptions };
+                });
+              }}
             />
           ) : null}
         </div>

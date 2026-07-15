@@ -141,9 +141,9 @@ function mergePresetOption(
     ...preset,
     enabled: stored.enabled,
     label: stored.label?.en || stored.label?.bg ? stored.label : preset.label,
-    addOnEur: stored.addOnEur ?? preset.addOnEur,
-    showTextField: stored.showTextField ?? preset.showTextField,
-    choices: stored.choices?.length ? stored.choices : preset.choices
+    addOnEur: "addOnEur" in stored ? stored.addOnEur ?? null : preset.addOnEur,
+    showTextField: "showTextField" in stored ? stored.showTextField === true : preset.showTextField,
+    choices: stored.choices !== undefined ? stored.choices : preset.choices
   };
 }
 
@@ -169,6 +169,7 @@ export function resolveCustomizationOptions(
 ): ResolvedProductOption[] {
   return options
     .filter((option) => option.enabled)
+    .filter((option) => option.type !== "swatch" || (option.choices?.length ?? 0) > 0)
     .map((option) => ({
       id: option.id,
       type: option.type,
@@ -297,5 +298,14 @@ export function createCustomCheckboxOption(): ProductCustomizationOption {
     addOnEur: null,
     showTextField: true,
     preset: false
+  };
+}
+
+export function createCustomSwatchChoice(): ProductCustomizationChoice {
+  const id = `color-${Date.now().toString(36)}`;
+  return {
+    id,
+    label: { en: "New color", bg: "Нов цвят" },
+    swatch: "#b78b5a"
   };
 }
