@@ -358,6 +358,18 @@ export function createCustomCheckboxOption(): ProductCustomizationOption {
   };
 }
 
+export function createCustomSwatchOption(): ProductCustomizationOption {
+  const id = `colors-${Date.now().toString(36)}`;
+  return {
+    id,
+    type: "swatch",
+    label: { en: "Color", bg: "Цвят" },
+    enabled: true,
+    choices: [createCustomSwatchChoice()],
+    preset: false
+  };
+}
+
 export function createCustomSwatchChoice(): ProductCustomizationChoice {
   const id = `color-${Date.now().toString(36)}`;
   return {

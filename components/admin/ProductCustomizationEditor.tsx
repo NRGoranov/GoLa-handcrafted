@@ -5,6 +5,7 @@ import {
   createCustomCheckboxOption,
   createCustomSizeChoice,
   createCustomSwatchChoice,
+  createCustomSwatchOption,
   mergeCustomizationOptions
 } from "@/lib/products/customization-options";
 import type { ProductKind } from "@/types/product-record";
@@ -125,6 +126,10 @@ export default function ProductCustomizationEditor({
     commit([...localOptions, createCustomCheckboxOption()]);
   };
 
+  const addColorOption = () => {
+    commit([...localOptions, createCustomSwatchOption()]);
+  };
+
   const addColorChoice = (optionId: string) => {
     commit(
       localOptions.map((option) =>
@@ -159,17 +164,27 @@ export default function ProductCustomizationEditor({
         <div>
           <h2 className="font-serif text-xl text-ivory">Customer options</h2>
           <p className="mt-2 text-sm text-mist">
-            Configure options for this product only. Disable or remove colors and add-ons that do not apply
-            (for example chain color on earrings). Changes here do not affect other products.
+            Configure options for this product only. Add color groups or individual colors, disable options
+            that do not apply (for example chain color on earrings), and use checkboxes for add-ons like
+            engraving. Changes here do not affect other products.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={addCheckboxOption}
-          className="rounded-full border border-caramel/40 px-4 py-2 text-sm text-caramel hover:bg-caramel/10"
-        >
-          + Checkbox option
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={addColorOption}
+            className="rounded-full border border-caramel/40 px-4 py-2 text-sm text-caramel hover:bg-caramel/10"
+          >
+            + Color option
+          </button>
+          <button
+            type="button"
+            onClick={addCheckboxOption}
+            className="rounded-full border border-caramel/40 px-4 py-2 text-sm text-caramel hover:bg-caramel/10"
+          >
+            + Checkbox option
+          </button>
+        </div>
       </div>
 
       {productKind === "handbag" && onOfferGiftBoxUpsellChange ? (
