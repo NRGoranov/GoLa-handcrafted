@@ -22,15 +22,30 @@ type ProductViewerProps = {
 };
 
 export default function ProductViewer({ name, images, copy, syncActiveSrc }: ProductViewerProps) {
-  const [activeImage, setActiveImage] = useState(() =>
-    syncActiveSrc && images.includes(syncActiveSrc) ? syncActiveSrc : images[0]
+  const [activeImage, setActiveImage] = useState(
+    () => (syncActiveSrc && images.includes(syncActiveSrc) ? syncActiveSrc : images[0]) ?? ""
   );
 
   useEffect(() => {
-    if (syncActiveSrc && images.includes(syncActiveSrc)) {
-      setActiveImage(syncActiveSrc);
-    }
+    if (!syncActiveSrc || !images.includes(syncActiveSrc)) return;
+    setActiveImage((current) => (current === syncActiveSrc ? current : syncActiveSrc));
   }, [syncActiveSrc, images]);
+
+  useEffect(() => {
+    if (!images.length) {
+      setActiveImage((current) => (current === "" ? current : ""));
+      return;
+    }
+    setActiveImage((current) => (images.includes(current) ? current : images[0]));
+  }, [images]);
+
+  if (!images.length || !activeImage) {
+    return (
+      <div className="flex aspect-[4/5] w-full items-center justify-center rounded-2xl bg-black/40 text-sm text-mist">
+        No image
+      </div>
+    );
+  }
 
   const mainMax = intrinsicContainMaxStyle(activeImage);
 
@@ -50,9 +65,9 @@ export default function ProductViewer({ name, images, copy, syncActiveSrc }: Pro
         />
       </div>
       <div className="grid grid-cols-3 gap-2">
-        {images.map((image) => (
+        {images.map((image, index) => (
           <button
-            key={image}
+            key={`${image}-${index}`}
             type="button"
             className={`focus-ring relative aspect-square overflow-hidden rounded-lg border ${
               activeImage === image ? "border-caramel" : "border-ivory/20"

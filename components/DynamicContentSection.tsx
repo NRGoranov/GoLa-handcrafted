@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, type ComponentProps } from "react";
+import { useCallback, useMemo, useState, type ComponentProps } from "react";
 import CollectionSection from "@/components/CollectionSection";
 import ProductModal from "@/components/ProductModal";
 import { getLocalizedProductPreview } from "@/lib/i18n";
@@ -132,6 +132,7 @@ export default function DynamicContentSection({
   const sectionId = section.slug || section.id;
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const closeModal = useCallback(() => setSelectedProduct(null), []);
 
   const productCardCopy = useMemo(
     () => ({
@@ -178,7 +179,7 @@ export default function DynamicContentSection({
             product={selectedProduct}
             giftBoxProduct={giftBoxForModal}
             handbagItems={handbagItems}
-            onClose={() => setSelectedProduct(null)}
+            onClose={closeModal}
             copy={productModalCopy}
           />
         ) : null}

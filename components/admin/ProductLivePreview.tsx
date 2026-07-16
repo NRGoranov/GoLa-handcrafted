@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import ProductCard from "@/components/ProductCard";
 import ProductModal from "@/components/ProductModal";
@@ -31,8 +31,8 @@ export default function ProductLivePreview({
       {
         ...product,
         images: sanitizedImages,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: "",
+        updatedAt: ""
       },
       locale
     );
@@ -45,8 +45,8 @@ export default function ProductLivePreview({
 
   const copy = getCopy(locale).product;
 
-  const openModal = () => setModalOpen(true);
-  const closeModal = () => setModalOpen(false);
+  const openModal = useCallback(() => setModalOpen(true), []);
+  const closeModal = useCallback(() => setModalOpen(false), []);
 
   return (
     <>

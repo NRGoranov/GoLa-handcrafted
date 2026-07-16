@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { type Product } from "@/lib/products";
 import { getCopy, getLocalizedProductPreview, type Locale } from "@/lib/i18n";
 import CollectionSection from "./CollectionSection";
@@ -39,6 +39,8 @@ export default function HomeCatalog({
     }
   };
 
+  const closeModal = useCallback(() => setSelectedProduct(null), []);
+
   return (
     <>
       <CollectionSection
@@ -52,7 +54,7 @@ export default function HomeCatalog({
       <ProductModal
         product={selectedProduct}
         giftBoxProduct={giftBoxForModal}
-        onClose={() => setSelectedProduct(null)}
+        onClose={closeModal}
         copy={copy.product}
       />
     </>

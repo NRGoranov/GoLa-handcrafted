@@ -29,7 +29,10 @@ export default function ProductOptionsPanel({
   }
 
   const patch = (patchConfig: ProductOptionConfig) => {
-    onUpdate({ ...config, ...patchConfig });
+    const next = { ...config, ...patchConfig };
+    const changed = Object.keys(patchConfig).some((key) => config[key] !== next[key]);
+    if (!changed) return;
+    onUpdate(next);
   };
 
   return (

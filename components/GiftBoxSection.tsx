@@ -1,7 +1,7 @@
 "use client";
 
 import CmsImage from "@/components/CmsImage";
-import { useMemo, useState, type ComponentProps } from "react";
+import { useCallback, useMemo, useState, type ComponentProps } from "react";
 import { GIFT_BOX_HERO_IMAGE } from "@/lib/giftBoxAssets";
 import { intrinsicContainMaxStyle, intrinsicSizesHalfWidthGrid } from "@/lib/intrinsicImages";
 import { type Product } from "@/lib/products";
@@ -39,12 +39,15 @@ export default function GiftBoxSection({
 }) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const preview = getLocalizedProductPreview(locale, product);
-  const productForModal: Product = {
-    ...product,
-    name: preview.name,
-    description: preview.detailDescription,
-    cardSummary: product.cardSummary?.trim() || preview.cardSummary
-  };
+  const productForModal = useMemo<Product>(
+    () => ({
+      ...product,
+      name: preview.name,
+      description: preview.detailDescription,
+      cardSummary: product.cardSummary?.trim() || preview.cardSummary
+    }),
+    [product, preview.name, preview.detailDescription, preview.cardSummary]
+  );
   const localizedHandbags = useMemo(
     () =>
       handbagItems.map((item) => {
@@ -75,6 +78,7 @@ export default function GiftBoxSection({
   const heroImage = product.images[0] ?? GIFT_BOX_HERO_IMAGE;
 
   const openDetails = () => setSelectedProduct(productForModal);
+  const closeDetails = useCallback(() => setSelectedProduct(null), []);
 
   const viewDetailsAria = viewDetailsAriaTemplate.replace("{name}", preview.name);
 
@@ -136,7 +140,7 @@ export default function GiftBoxSection({
         giftBoxProduct={productForModal}
         handbagItems={localizedHandbags}
         earringItems={localizedEarrings}
-        onClose={() => setSelectedProduct(null)}
+        onClose={closeDetails}
         copy={productCopy}
       />
     </>

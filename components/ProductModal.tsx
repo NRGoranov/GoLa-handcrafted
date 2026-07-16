@@ -126,6 +126,8 @@ type ProductModalProps = {
   copy: ProductModalCopy;
 };
 
+const EMPTY_PRODUCTS: Product[] = [];
+
 function hydrateOptionConfig(
   stored: ProductOptionConfig,
   options: Product["customizationOptions"]
@@ -136,14 +138,18 @@ function hydrateOptionConfig(
 export default function ProductModal({
   product,
   giftBoxProduct,
-  handbagItems = [],
-  earringItems = [],
+  handbagItems = EMPTY_PRODUCTS,
+  earringItems = EMPTY_PRODUCTS,
   onClose,
   copy
 }: ProductModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const optionsGroupId = useId();
   const hydratedRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  const handbagItemsRef = useRef(handbagItems);
+  const earringItemsRef = useRef(earringItems);
+  const giftBoxProductRef = useRef(giftBoxProduct);
   const defaultHandbagIdRef = useRef(handbagItems[0]?.id);
   const defaultEarringIdRef = useRef(earringItems[0]?.id);
 
@@ -155,6 +161,11 @@ export default function ProductModal({
   );
   const [meta, setMeta] = useState<InquiryMetaState>(defaultInquiryMeta);
   const [cart, setCart] = useState<InquiryCart>(() => loadInquiryCart());
+
+  onCloseRef.current = onClose;
+  handbagItemsRef.current = handbagItems;
+  earringItemsRef.current = earringItems;
+  giftBoxProductRef.current = giftBoxProduct;
 
   const effectiveGiftBoxProduct =
     giftBoxProduct ?? (product && isGiftBox(product) ? product : null);
@@ -224,6 +235,10 @@ export default function ProductModal({
       return;
     }
 
+    const currentHandbags = handbagItemsRef.current;
+    const currentEarrings = earringItemsRef.current;
+    const currentGiftBox = giftBoxProductRef.current;
+
     const loaded = loadModalConfiguration(
       product.id,
       product.productKind,
@@ -233,13 +248,17 @@ export default function ProductModal({
     const initialHandbag =
       product.productKind === "handbag"
         ? product
-        : handbagItems.find((item) => item.id === loaded.meta.selectedHandbagId) ?? handbagItems[0] ?? null;
+        : currentHandbags.find((item) => item.id === loaded.meta.selectedHandbagId) ??
+          currentHandbags[0] ??
+          null;
     const initialEarring =
-      earringItems.find((item) => item.id === loaded.meta.selectedEarringId) ?? earringItems[0] ?? null;
+      currentEarrings.find((item) => item.id === loaded.meta.selectedEarringId) ??
+      currentEarrings[0] ??
+      null;
     const giftBoxOptions =
       product.productKind === "giftBox"
         ? product.customizationOptions
-        : giftBoxProduct?.customizationOptions ?? [];
+        : currentGiftBox?.customizationOptions ?? [];
 
     setHandbagConfig(
       hydrateOptionConfig(loaded.handbag, initialHandbag?.customizationOptions ?? [])
@@ -252,7 +271,10 @@ export default function ProductModal({
     );
     setGiftBoxConfig(hydrateOptionConfig(loaded.giftBox, giftBoxOptions));
     setModelGiftBoxConfig(
-      hydrateOptionConfig(loadModelGiftBoxConfiguration(), giftBoxProduct?.customizationOptions ?? giftBoxOptions)
+      hydrateOptionConfig(
+        loadModelGiftBoxConfiguration(),
+        currentGiftBox?.customizationOptions ?? giftBoxOptions
+      )
     );
     setMeta(loaded.meta);
     hydratedRef.current = true;
@@ -261,7 +283,7 @@ export default function ProductModal({
     document.body.style.overflow = "hidden";
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") onCloseRef.current();
       if (event.key !== "Tab" || !modalRef.current) return;
 
       const selectors =
@@ -287,29 +309,29 @@ export default function ProductModal({
       window.removeEventListener("keydown", onKeyDown);
       hydratedRef.current = false;
     };
-  }, [product?.id, product?.productKind, onClose, handbagItems, earringItems, giftBoxProduct]);
+  }, [product?.id, product?.productKind]);
 
   useEffect(() => {
     if (!product || !isGiftBox(product) || !meta.includeHandbag) return;
     if (!hydratedRef.current) return;
-    const handbag =
-      handbagItems.find((item) => item.id === meta.selectedHandbagId) ?? handbagItems[0] ?? null;
+    const items = handbagItemsRef.current;
+    const handbag = items.find((item) => item.id === meta.selectedHandbagId) ?? items[0] ?? null;
     if (!handbag) return;
     setHandbagConfig(
       hydrateOptionConfig(loadHandbagConfiguration(meta.selectedHandbagId), handbag.customizationOptions)
     );
-  }, [product, meta.selectedHandbagId, meta.includeHandbag, handbagItems]);
+  }, [product?.id, product?.productKind, meta.selectedHandbagId, meta.includeHandbag]);
 
   useEffect(() => {
     if (!product || !isGiftBox(product) || !meta.includeEarrings) return;
     if (!hydratedRef.current) return;
-    const earring =
-      earringItems.find((item) => item.id === meta.selectedEarringId) ?? earringItems[0] ?? null;
+    const items = earringItemsRef.current;
+    const earring = items.find((item) => item.id === meta.selectedEarringId) ?? items[0] ?? null;
     if (!earring) return;
     setEarringConfig(
       hydrateOptionConfig(loadAddonConfiguration(meta.selectedEarringId), earring.customizationOptions)
     );
-  }, [product, meta.selectedEarringId, meta.includeEarrings, earringItems]);
+  }, [product?.id, product?.productKind, meta.selectedEarringId, meta.includeEarrings]);
 
   useEffect(() => {
     if (!hydratedRef.current || !activeHandbagId) return;
