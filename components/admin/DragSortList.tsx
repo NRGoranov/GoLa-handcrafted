@@ -63,6 +63,7 @@ export default function DragSortList<T extends DragSortListItem>({
   const handleDragOver = (itemId: string) => (event: React.DragEvent<HTMLDivElement>) => {
     if (disabled || !draggingId || draggingId === itemId) return;
     event.preventDefault();
+    event.stopPropagation();
     event.dataTransfer.dropEffect = "move";
     setDropTargetId(itemId);
   };
@@ -70,6 +71,7 @@ export default function DragSortList<T extends DragSortListItem>({
   const handleDrop = (itemId: string) => (event: React.DragEvent<HTMLDivElement>) => {
     if (disabled) return;
     event.preventDefault();
+    event.stopPropagation();
     const sourceId = event.dataTransfer.getData("text/plain") || draggingId;
     if (!sourceId || sourceId === itemId) {
       handleDragEnd();

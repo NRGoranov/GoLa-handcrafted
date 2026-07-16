@@ -164,14 +164,38 @@ export function mergeCustomizationOptions(
   const presets = getPresetCustomizationOptions(productKind, engravingAddOnEur);
   const storedList = stored ?? [];
   const storedById = new Map(storedList.map((option) => [option.id, option]));
-  const presetIds = new Set(presets.map((option) => option.id));
+  const presetById = new Map(presets.map((option) => [option.id, option]));
 
-  const mergedPresets = presets.map((preset) => mergePresetOption(preset, storedById.get(preset.id)));
-  const custom = storedList.filter(
-    (option) => !presetIds.has(option.id) && option.type === "checkbox"
-  );
+  if (storedList.length === 0) {
+    return presets;
+  }
 
-  return [...mergedPresets, ...custom.map((option) => ({ ...option, preset: false }))];
+  const seen = new Set<string>();
+  const ordered: ProductCustomizationOption[] = [];
+
+  for (const storedOption of storedList) {
+    if (!storedOption?.id || seen.has(storedOption.id)) continue;
+
+    const preset = presetById.get(storedOption.id);
+    if (preset) {
+      ordered.push(mergePresetOption(preset, storedOption));
+      seen.add(storedOption.id);
+      continue;
+    }
+
+    if (storedOption.type === "checkbox") {
+      ordered.push({ ...storedOption, preset: false });
+      seen.add(storedOption.id);
+    }
+  }
+
+  for (const preset of presets) {
+    if (seen.has(preset.id)) continue;
+    ordered.push(mergePresetOption(preset, storedById.get(preset.id)));
+    seen.add(preset.id);
+  }
+
+  return ordered;
 }
 
 export function resolveCustomizationOptions(
