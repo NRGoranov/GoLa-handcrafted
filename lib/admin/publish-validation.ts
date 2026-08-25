@@ -121,6 +121,16 @@ export function validateProductForPublish(values: ProductRecordInput): PublishIs
     message: "Set a price before going live."
   });
 
+  pushIf(
+    issues,
+    values.productKind === "handbag" && !(values.model && values.model > 0),
+    {
+      fieldId: "field-product-model",
+      label: "Model number",
+      message: "Set a model number (1 or higher) shown in the product details popup."
+    }
+  );
+
   pushIf(issues, values.images.length === 0, {
     fieldId: "field-product-images",
     label: "Product photos",

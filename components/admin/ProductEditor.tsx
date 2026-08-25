@@ -195,7 +195,16 @@ export default forwardRef<AdminEditorSaveHandle, ProductEditorProps>(function Pr
   const performSave = useCallback(
     async (published: boolean): Promise<boolean> => {
       setMessage("");
-      const payload: ProductRecordInput = { ...values, published };
+      const payload: ProductRecordInput = {
+        ...values,
+        published,
+        model:
+          values.productKind === "handbag"
+            ? values.model && values.model > 0
+              ? values.model
+              : null
+            : null
+      };
 
       if (published) {
         const issues = validateProductForPublish(payload);
@@ -288,6 +297,32 @@ export default forwardRef<AdminEditorSaveHandle, ProductEditorProps>(function Pr
               onChange={(e) => patch((prev) => ({ ...prev, sortOrder: Number(e.target.value) || 0 }))}
             />
           </label>
+          {values.productKind === "handbag" ? (
+            <PublishField
+              fieldId="field-product-model"
+              label="Model number"
+              invalid={invalidFields.has("field-product-model")}
+              hint={publishIssues.find((issue) => issue.fieldId === "field-product-model")?.message}
+            >
+              <input
+                className="admin-input"
+                type="number"
+                min={1}
+                step={1}
+                value={values.model && values.model > 0 ? values.model : ""}
+                onChange={(e) => {
+                  const raw = e.target.value.trim();
+                  if (raw === "") {
+                    patch((prev) => ({ ...prev, model: null }));
+                    return;
+                  }
+                  const next = Math.max(1, Math.floor(Number(raw)) || 1);
+                  patch((prev) => ({ ...prev, model: next }));
+                }}
+              />
+              <p className="mt-2 text-xs text-mist">Shown as “Model” in the product details popup.</p>
+            </PublishField>
+          ) : null}
           <label className="block space-y-2 md:col-span-2">
             <span className="text-xs uppercase tracking-[0.16em] text-mist">Type / section</span>
             <select

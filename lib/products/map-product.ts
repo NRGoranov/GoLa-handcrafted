@@ -43,7 +43,7 @@ export function productRecordToProduct(record: ProductRecord, locale: Locale): P
   return {
     ...base,
     productKind: "handbag",
-    model: record.model ?? 0,
+    model: record.model && record.model > 0 ? record.model : 1,
     pocketsAddOnEur: record.pocketsAddOnEur ?? 20,
     engravingAddOnEur: record.engravingAddOnEur ?? 20,
     offerGiftBoxUpsell: record.offerGiftBoxUpsell !== false
