@@ -1,6 +1,7 @@
 import { giftBoxGalleryImages } from "./giftBoxAssets";
 import { mergeCustomizationOptions, resolveCustomizationOptions } from "./products/customization-options";
 import type { ResolvedProductOption } from "@/types/product-customization";
+import type { DisplayProductDetail } from "@/types/product-record";
 
 export type ProductKind = "handbag" | "giftBox";
 
@@ -18,6 +19,8 @@ type ProductBase = {
   images: string[];
   customizable: true;
   customizationOptions: ResolvedProductOption[];
+  /** Locale-specific popup facts. Missing means the automatic lines for this product. */
+  details?: DisplayProductDetail[];
 };
 
 export type HandbagProduct = ProductBase & {

@@ -6,6 +6,7 @@ import ImageUploadField from "@/components/admin/ImageUploadField";
 import PublishField from "@/components/admin/PublishField";
 import PublishActionsFooter from "@/components/admin/PublishActionsFooter";
 import ProductCustomizationEditor from "@/components/admin/ProductCustomizationEditor";
+import ProductDetailsEditor from "@/components/admin/ProductDetailsEditor";
 import {
   publishIssueFieldIds,
   scrollToPublishField,
@@ -404,6 +405,16 @@ export default forwardRef<AdminEditorSaveHandle, ProductEditorProps>(function Pr
           </div>
         </section>
       ))}
+
+      <ProductDetailsEditor
+        productId={values.id}
+        productKind={values.productKind}
+        model={values.model}
+        dimensions={values.dimensions}
+        priceEur={values.priceEur}
+        details={values.details}
+        onChange={(details) => patch((prev) => ({ ...prev, details }))}
+      />
 
       <ProductCustomizationEditor
         productId={values.id}

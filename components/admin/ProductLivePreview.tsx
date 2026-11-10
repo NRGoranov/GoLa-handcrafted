@@ -70,6 +70,7 @@ export default function ProductLivePreview({
               handbagItems={handbagItems}
               onClose={closeModal}
               copy={copy}
+              locale={locale}
             />,
             document.body
           )

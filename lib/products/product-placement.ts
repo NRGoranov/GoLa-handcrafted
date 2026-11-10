@@ -1,6 +1,7 @@
 import type { ContentSection } from "@/types/content-section";
 import type { ProductRecordInput } from "@/types/product-record";
 import { normalizeCustomizationOptions } from "@/lib/products/customization-options";
+import { normalizeStoredDetails } from "@/lib/products/product-details";
 
 export const PLACEMENT_HAND_BAG = "__handbag_collection__";
 export const PLACEMENT_GIFT_BOX = "__gift_box__";
@@ -137,7 +138,8 @@ export function normalizeProductRecordInput(product: ProductRecordInput): Produc
     categorySlug: product.categorySlug ?? null,
     offerGiftBoxUpsell:
       product.productKind === "handbag" ? product.offerGiftBoxUpsell !== false : false,
-    customizationOptions: normalizeCustomizationOptions(product.customizationOptions)
+    customizationOptions: normalizeCustomizationOptions(product.customizationOptions),
+    details: normalizeStoredDetails(product.details)
   };
 }
 

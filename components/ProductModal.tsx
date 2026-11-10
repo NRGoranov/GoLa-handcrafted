@@ -45,6 +45,8 @@ import {
   type HandbagConfigurationState
 } from "@/lib/product-inquiry-prefill";
 import { type Product, isGiftBox, isHandbag } from "@/lib/products";
+import type { Locale } from "@/lib/i18n";
+import { localizeProductDetails, resolvePublicDetailRows } from "@/lib/products/product-details";
 import ProductOptionsPanel from "@/components/ProductOptionsPanel";
 import ProductViewer from "./ProductViewer";
 import type { ProductOptionConfig } from "@/types/product-customization";
@@ -124,6 +126,7 @@ type ProductModalProps = {
   earringItems?: Product[];
   onClose: () => void;
   copy: ProductModalCopy;
+  locale?: Locale;
 };
 
 const EMPTY_PRODUCTS: Product[] = [];
@@ -141,7 +144,8 @@ export default function ProductModal({
   handbagItems = EMPTY_PRODUCTS,
   earringItems = EMPTY_PRODUCTS,
   onClose,
-  copy
+  copy,
+  locale = "en"
 }: ProductModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const optionsGroupId = useId();
@@ -464,6 +468,23 @@ export default function ProductModal({
       ? resolveGiftBoxDimensions(product, giftBoxConfig)
       : product?.dimensions ?? "";
 
+  const detailRows = useMemo(() => {
+    if (!product) return [];
+    const details =
+      product.details ??
+      localizeProductDetails(null, { id: product.id, productKind: product.productKind }, locale);
+    return resolvePublicDetailRows({
+      details,
+      productKind: product.productKind,
+      model: isHandbag(product) ? product.model : null,
+      customizable: product.customizable,
+      displayPrice,
+      displayDimensions,
+      labels: copy.labels,
+      values: copy.values
+    });
+  }, [product, locale, displayPrice, displayDimensions, copy]);
+
   const showGiftBoxUpsell = Boolean(
     product && isHandbag(product) && product.offerGiftBoxUpsell && effectiveGiftBoxProduct
   );
@@ -525,41 +546,7 @@ export default function ProductModal({
                   />
                   <div className="space-y-5">
                     <p className="whitespace-pre-line text-mist">{product.description}</p>
-                    <dl className="space-y-2 text-sm text-ivory/90">
-                      <div>
-                        <dt className="font-medium text-caramel">{copy.labels.model}</dt>
-                        <dd>{product.model}</dd>
-                      </div>
-                      <div>
-                        <dt className="font-medium text-caramel">{copy.labels.dimensions}</dt>
-                        <dd>
-                          <span className="block text-xs uppercase tracking-[0.14em] text-mist">
-                            {copy.labels.dimensionsHint}
-                          </span>
-                          {displayDimensions}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="font-medium text-caramel">{copy.labels.price}</dt>
-                        <dd>EUR {displayPrice}</dd>
-                      </div>
-                      <div>
-                        <dt className="font-medium text-caramel">{copy.labels.availability}</dt>
-                        <dd>{copy.values.availabilityByInquiry}</dd>
-                      </div>
-                      <div>
-                        <dt className="font-medium text-caramel">{copy.labels.customization}</dt>
-                        <dd>
-                          {product.customizable
-                            ? copy.values.customizationYes
-                            : copy.values.customizationNo}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="font-medium text-caramel">{copy.labels.inside}</dt>
-                        <dd>{copy.values.insideLeather}</dd>
-                      </div>
-                    </dl>
+                    <ProductFactList rows={detailRows} />
 
                     <section
                       aria-label={copy.handbagAddonHeading}
@@ -636,33 +623,7 @@ export default function ProductModal({
                     />
                     <div className="space-y-5">
                       <p className="whitespace-pre-line text-mist">{product.description}</p>
-                      <dl className="space-y-2 text-sm text-ivory/90">
-                        <div>
-                          <dt className="font-medium text-caramel">{copy.labels.dimensions}</dt>
-                          <dd>
-                            <span className="block text-xs uppercase tracking-[0.14em] text-mist">
-                              {copy.labels.dimensionsHint}
-                            </span>
-                            {displayDimensions}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="font-medium text-caramel">{copy.labels.price}</dt>
-                          <dd>EUR {displayPrice}</dd>
-                        </div>
-                        <div>
-                          <dt className="font-medium text-caramel">{copy.labels.availability}</dt>
-                          <dd>{copy.values.availabilityByInquiry}</dd>
-                        </div>
-                        <div>
-                          <dt className="font-medium text-caramel">{copy.labels.customization}</dt>
-                          <dd>
-                            {product.customizable
-                              ? copy.values.customizationYes
-                              : copy.values.customizationNo}
-                          </dd>
-                        </div>
-                      </dl>
+                      <ProductFactList rows={detailRows} />
 
                       <section
                         aria-label={copy.giftBoxAddonHeading}
@@ -960,5 +921,28 @@ function InquiryCartSummary({
         ) : null}
       </ul>
     </div>
+  );
+}
+
+function ProductFactList({
+  rows
+}: {
+  rows: Array<{ id: string; label: string; value: string; hint?: string }>;
+}) {
+  if (rows.length === 0) return null;
+  return (
+    <dl className="space-y-2 text-sm text-ivory/90">
+      {rows.map((row) => (
+        <div key={row.id}>
+          <dt className="font-medium text-caramel">{row.label}</dt>
+          <dd>
+            {row.hint ? (
+              <span className="block text-xs uppercase tracking-[0.14em] text-mist">{row.hint}</span>
+            ) : null}
+            {row.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }

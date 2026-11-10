@@ -37,6 +37,7 @@ export function getDefaultProductRecords(): ProductRecord[] {
       engravingAddOnEur: product.engravingAddOnEur,
       offerGiftBoxUpsell: true,
       customizationOptions: mergeCustomizationOptions(null, "handbag", product.engravingAddOnEur),
+      details: null,
       images: [...product.images],
       createdAt: now,
       updatedAt: now
@@ -72,6 +73,7 @@ export function getDefaultProductRecords(): ProductRecord[] {
     engravingAddOnEur: null,
     offerGiftBoxUpsell: false,
     customizationOptions: mergeCustomizationOptions(null, "giftBox"),
+    details: null,
     images: [...gift.images],
     createdAt: now,
     updatedAt: now

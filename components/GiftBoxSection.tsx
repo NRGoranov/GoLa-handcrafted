@@ -142,6 +142,7 @@ export default function GiftBoxSection({
         earringItems={localizedEarrings}
         onClose={closeDetails}
         copy={productCopy}
+        locale={locale}
       />
     </>
   );

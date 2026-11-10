@@ -56,6 +56,7 @@ create table if not exists public.products (
   engraving_add_on_eur numeric null,
   offer_gift_box_upsell boolean null,
   customization_options jsonb null,
+  details jsonb null,
   images text[] not null default '{}',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -133,3 +134,5 @@ grant usage on schema public to service_role;
 grant select, insert, update, delete on table public.site_visit_stats to service_role;
 grant select, insert, update, delete on table public.site_visit_daily to service_role;
 grant execute on function public.increment_site_visit() to service_role;
+
+alter table public.products add column if not exists details jsonb null;

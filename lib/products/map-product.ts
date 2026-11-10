@@ -4,6 +4,7 @@ import {
   resolveCustomizationOptions
 } from "@/lib/products/customization-options";
 import type { GiftBoxProduct, HandbagProduct, Product } from "@/lib/products";
+import { localizeProductDetails } from "@/lib/products/product-details";
 import type { ProductRecord } from "@/types/product-record";
 
 function pickLocalized(text: { en: string; bg: string }, locale: Locale): string {
@@ -33,7 +34,8 @@ export function productRecordToProduct(record: ProductRecord, locale: Locale): P
     priceEur: record.priceEur,
     images: (record.images ?? []).filter((url): url is string => typeof url === "string" && url.trim().length > 0),
     customizable: true as const,
-    customizationOptions
+    customizationOptions,
+    details: localizeProductDetails(record.details, record, locale).filter((detail) => detail.visible)
   };
 
   if (record.productKind === "giftBox") {

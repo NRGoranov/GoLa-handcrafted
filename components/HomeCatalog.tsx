@@ -56,6 +56,7 @@ export default function HomeCatalog({
         giftBoxProduct={giftBoxForModal}
         onClose={closeModal}
         copy={copy.product}
+        locale={locale}
       />
     </>
   );

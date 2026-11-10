@@ -181,6 +181,7 @@ export default function DynamicContentSection({
             handbagItems={handbagItems}
             onClose={closeModal}
             copy={productModalCopy}
+            locale={locale}
           />
         ) : null}
       </>

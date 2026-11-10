@@ -4,6 +4,11 @@ import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/server";
 import type { ProductRecord, ProductRecordInput } from "@/types/product-record";
 import type { ProductCustomizationOption } from "@/types/product-customization";
 import { normalizeCustomizationOptions } from "@/lib/products/customization-options";
+import {
+  detailsMatchAutomatic,
+  normalizeStoredDetails,
+  PRODUCT_DETAILS_COLUMN_SQL
+} from "@/lib/products/product-details";
 import { getDefaultProductRecords } from "@/lib/products/seed-defaults";
 
 const JSON_PATH = path.join(process.cwd(), "data", "products.json");
@@ -30,6 +35,7 @@ type DbRow = {
   engraving_add_on_eur: number | null;
   offer_gift_box_upsell?: boolean | null;
   customization_options?: ProductCustomizationOption[] | null;
+  details?: unknown;
   images: string[];
   created_at: string;
   updated_at: string;
@@ -63,6 +69,7 @@ function rowToRecord(row: DbRow): ProductRecord {
     customizationOptions: normalizeCustomizationOptions(
       row.customization_options as ProductCustomizationOption[] | null | undefined
     ),
+    details: normalizeStoredDetails(row.details),
     images: row.images ?? [],
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -92,6 +99,7 @@ function recordToRow(record: ProductRecord): DbRow {
     engraving_add_on_eur: record.engravingAddOnEur,
     offer_gift_box_upsell: record.productKind === "handbag" ? record.offerGiftBoxUpsell : false,
     customization_options: record.customizationOptions,
+    ...(Array.isArray(record.details) ? { details: record.details } : {}),
     images: record.images,
     created_at: record.createdAt,
     updated_at: record.updatedAt
@@ -113,7 +121,8 @@ async function readJsonProducts(): Promise<ProductRecord[]> {
       categorySlug: product.categorySlug ?? null,
       offerGiftBoxUpsell:
         product.productKind === "handbag" ? product.offerGiftBoxUpsell !== false : false,
-      customizationOptions: product.customizationOptions ?? null
+      customizationOptions: product.customizationOptions ?? null,
+      details: normalizeStoredDetails(product.details)
     }));
   } catch {
     return [];
@@ -123,6 +132,27 @@ async function readJsonProducts(): Promise<ProductRecord[]> {
 async function writeJsonProducts(products: ProductRecord[]): Promise<void> {
   await fs.mkdir(path.dirname(JSON_PATH), { recursive: true });
   await fs.writeFile(JSON_PATH, `${JSON.stringify(products, null, 2)}\n`, "utf8");
+}
+
+function isMissingDetailsColumn(message: string): boolean {
+  const lowered = message.toLowerCase();
+  return (
+    lowered.includes("details") &&
+    (lowered.includes("schema cache") ||
+      lowered.includes("column") ||
+      lowered.includes("could not find"))
+  );
+}
+
+function detailsColumnError(): Error {
+  return new Error(
+    `Could not save product details. In the Supabase SQL editor run: ${PRODUCT_DETAILS_COLUMN_SQL}`
+  );
+}
+
+function rowWithoutDetails(row: DbRow): Omit<DbRow, "details"> {
+  const { details: _details, ...rest } = row;
+  return rest;
 }
 
 function isMissingProductsTable(message: string): boolean {
@@ -181,15 +211,23 @@ export async function seedDefaultProducts(options?: { force?: boolean }): Promis
       if ((count ?? 0) > 0) return 0;
     }
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from("products")
       .upsert(defaults.map(recordToRow), { onConflict: "id" });
+
+    if (error && isMissingDetailsColumn(error.message)) {
+      ({ error } = await supabase
+        .from("products")
+        .upsert(defaults.map((record) => rowWithoutDetails(recordToRow(record))), { onConflict: "id" }));
+    }
 
     if (error) throw new Error(error.message);
     return defaults.length;
   }
 
   if (shouldUseJsonStorage()) {
+    const existing = await readJsonProducts();
+    if (existing.length > 0 && !options?.force) return 0;
     await writeJsonProducts(defaults);
     return defaults.length;
   }
@@ -241,7 +279,15 @@ export async function createProduct(input: ProductRecordInput): Promise<ProductR
   const supabase = getSupabaseAdmin();
 
   if (supabase) {
-    const { data, error } = await supabase.from("products").insert(recordToRow(record)).select("*").single();
+    let { data, error } = await supabase.from("products").insert(recordToRow(record)).select("*").single();
+    if (error && isMissingDetailsColumn(error.message)) {
+      if (!detailsMatchAutomatic(record.details, record)) throw detailsColumnError();
+      ({ data, error } = await supabase
+        .from("products")
+        .insert(rowWithoutDetails(recordToRow(record)))
+        .select("*")
+        .single());
+    }
     if (error) {
       if (isMissingProductsTable(error.message) && shouldUseJsonStorage()) {
         const products = await listJsonProducts();
@@ -277,12 +323,21 @@ export async function updateProduct(id: string, input: ProductRecordInput): Prom
 
   const supabase = getSupabaseAdmin();
   if (supabase) {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("products")
       .update(recordToRow(record))
       .eq("id", id)
       .select("*")
       .single();
+    if (error && isMissingDetailsColumn(error.message)) {
+      if (!detailsMatchAutomatic(record.details, record)) throw detailsColumnError();
+      ({ data, error } = await supabase
+        .from("products")
+        .update(rowWithoutDetails(recordToRow(record)))
+        .eq("id", id)
+        .select("*")
+        .single());
+    }
     if (error) {
       if (isMissingProductsTable(error.message) && shouldUseJsonStorage()) {
         const products = await listJsonProducts();
@@ -331,7 +386,14 @@ export async function reorderProducts(orderedIds: string[]): Promise<ProductReco
   const supabase = getSupabaseAdmin();
   if (supabase) {
     for (const record of reordered) {
-      const { error } = await supabase.from("products").update(recordToRow(record)).eq("id", record.id);
+      let { error } = await supabase.from("products").update(recordToRow(record)).eq("id", record.id);
+      if (error && isMissingDetailsColumn(error.message)) {
+        if (!detailsMatchAutomatic(record.details, record)) throw detailsColumnError();
+        ({ error } = await supabase
+          .from("products")
+          .update(rowWithoutDetails(recordToRow(record)))
+          .eq("id", record.id));
+      }
       if (error) {
         if (isMissingProductsTable(error.message) && shouldUseJsonStorage()) {
           await writeJsonProducts(reordered);
@@ -398,6 +460,7 @@ export function createEmptyProductInput(
     engravingAddOnEur: kind === "handbag" ? 20 : null,
     offerGiftBoxUpsell: kind === "handbag",
     customizationOptions: null,
+    details: null,
     images: []
   };
 }
