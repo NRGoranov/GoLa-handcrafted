@@ -50,8 +50,13 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  // Persist locale selection.
-  const response = NextResponse.next();
+  // Persist locale selection and pass it to this request so the 404 page
+  // can match the URL before the browser stores the cookie.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-gola-locale", pathLocale);
+  const response = NextResponse.next({
+    request: { headers: requestHeaders }
+  });
   response.cookies.set(LOCALE_COOKIE, pathLocale, { path: "/" });
   return response;
 }
