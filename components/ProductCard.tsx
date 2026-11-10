@@ -33,7 +33,7 @@ export default function ProductCard({ product, summary, onView, copy }: ProductC
               : `${product.name} handcrafted bag`
           }
           fill
-          className="object-cover transition duration-300 hover:scale-[1.02]"
+          className="object-cover"
           sizes={heroSrc ? intrinsicSizesProductCard(heroSrc) : undefined}
         />
       </button>

@@ -97,7 +97,7 @@ export default function GiftBoxSection({
               src={heroImage}
               alt={sectionCopy.imageAlt}
               fill
-              className="object-cover transition duration-300 hover:scale-[1.02]"
+              className="object-cover"
               sizes={intrinsicSizesHalfWidthGrid(heroImage)}
             />
           </button>

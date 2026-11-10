@@ -67,7 +67,7 @@ export default function CmsImage({
       fill={fill}
       className={className}
       sizes={sizes}
-      loading={loading}
+      loading={priority ? undefined : loading}
       priority={priority}
       onError={onError}
     />

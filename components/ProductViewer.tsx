@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import CmsImage from "@/components/CmsImage";
 import {
   intrinsicContainMaxStyle,
@@ -22,22 +22,17 @@ type ProductViewerProps = {
 };
 
 export default function ProductViewer({ name, images, copy, syncActiveSrc }: ProductViewerProps) {
-  const [activeImage, setActiveImage] = useState(
-    () => (syncActiveSrc && images.includes(syncActiveSrc) ? syncActiveSrc : images[0]) ?? ""
-  );
+  const [chosenImage, setChosenImage] = useState<string | null>(null);
+  const [followedSync, setFollowedSync] = useState(syncActiveSrc ?? "");
 
-  useEffect(() => {
-    if (!syncActiveSrc || !images.includes(syncActiveSrc)) return;
-    setActiveImage((current) => (current === syncActiveSrc ? current : syncActiveSrc));
-  }, [syncActiveSrc, images]);
+  if ((syncActiveSrc ?? "") !== followedSync) {
+    setFollowedSync(syncActiveSrc ?? "");
+    setChosenImage(null);
+  }
 
-  useEffect(() => {
-    if (!images.length) {
-      setActiveImage((current) => (current === "" ? current : ""));
-      return;
-    }
-    setActiveImage((current) => (images.includes(current) ? current : images[0]));
-  }, [images]);
+  const synced = syncActiveSrc && images.includes(syncActiveSrc) ? syncActiveSrc : null;
+  const activeImage =
+    (chosenImage && images.includes(chosenImage) ? chosenImage : synced ?? images[0]) ?? "";
 
   if (!images.length || !activeImage) {
     return (
@@ -60,6 +55,7 @@ export default function ProductViewer({ name, images, copy, syncActiveSrc }: Pro
           src={activeImage}
           alt={copy.aria.viewNamedImage.replace("{name}", name)}
           fill
+          priority
           className="object-cover"
           sizes={intrinsicSizesProductViewerMain(activeImage)}
         />
@@ -72,7 +68,7 @@ export default function ProductViewer({ name, images, copy, syncActiveSrc }: Pro
             className={`focus-ring relative aspect-square overflow-hidden rounded-lg border ${
               activeImage === image ? "border-caramel" : "border-ivory/20"
             }`}
-            onClick={() => setActiveImage(image)}
+            onClick={() => setChosenImage(image)}
             aria-label={copy.aria.viewImage.replace("{name}", name)}
           >
             <CmsImage
