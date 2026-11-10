@@ -151,7 +151,8 @@ function detailsColumnError(): Error {
 }
 
 function rowWithoutDetails(row: DbRow): Omit<DbRow, "details"> {
-  const { details: _details, ...rest } = row;
+  const rest = { ...row };
+  delete rest.details;
   return rest;
 }
 
