@@ -150,7 +150,7 @@ export default async function HomePage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productsItemListJsonLd) }}
       />
       <a href="#main-content" className="focus-ring sr-only focus:not-sr-only">
-        Skip to content
+        {locale === "bg" ? "Към съдържанието" : "Skip to content"}
       </a>
       <Navbar copy={copy.nav} locale={locale} links={navLinks} />
       <main id="main-content">
@@ -168,7 +168,7 @@ export default async function HomePage({
         />
       </main>
       <ScrollToTopButton label={copy.nav.goToTop} />
-      <Footer copy={copy.footer} />
+      <Footer copy={copy.footer} locale={locale} />
     </>
   );
 }

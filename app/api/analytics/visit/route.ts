@@ -6,6 +6,17 @@ const VISIT_COOKIE_MAX_AGE = 60 * 60 * 12; // 12 hours — one count per browsin
 
 export async function POST(req: Request) {
   try {
+    if (req.headers.get("x-analytics-consent") !== "accepted") {
+      const refused = NextResponse.json({ ok: true, counted: false });
+      refused.cookies.set(VISIT_COOKIE, "", {
+        path: "/",
+        maxAge: 0,
+        sameSite: "lax",
+        httpOnly: true
+      });
+      return refused;
+    }
+
     const cookieHeader = req.headers.get("cookie") ?? "";
     if (cookieHeader.includes(`${VISIT_COOKIE}=1`)) {
       return NextResponse.json({ ok: true, counted: false });
@@ -16,8 +27,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, counted: false });
     }
 
-    const stats = await recordSiteVisit();
-    const response = NextResponse.json({ ok: true, counted: true, stats });
+    await recordSiteVisit();
+    const response = NextResponse.json({ ok: true, counted: true });
     response.cookies.set(VISIT_COOKIE, "1", {
       path: "/",
       maxAge: VISIT_COOKIE_MAX_AGE,

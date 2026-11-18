@@ -7,6 +7,7 @@ import { intrinsicContainMaxStyle, intrinsicSizesHalfWidthGrid } from "@/lib/int
 import { type Product } from "@/lib/products";
 import { getGiftBoxStartingPrice } from "@/lib/products/customization-options";
 import { getLocalizedProductPreview, type Locale } from "@/lib/i18n";
+import { priceCaption } from "@/lib/legal/prices";
 import SectionHeading from "./SectionHeading";
 import ProductModal from "./ProductModal";
 
@@ -113,8 +114,13 @@ export default function GiftBoxSection({
               <li>{sectionCopy.bullets[1]}</li>
               <li>{sectionCopy.bullets[2]}</li>
             </ul>
-            <p className="mt-6 text-xs uppercase tracking-[0.18em] text-caramel/90">
-              {productCopy.priceFrom.replace("{amount}", String(startingPrice))}
+            <p className="mt-6 text-xs text-caramel/90">
+              <span className="uppercase tracking-[0.18em]">
+                {productCopy.priceFrom.replace("{amount}", String(startingPrice))}
+              </span>
+              <span className="mt-1 block text-[11px] normal-case tracking-normal text-mist">
+                {priceCaption(locale)}
+              </span>
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <button

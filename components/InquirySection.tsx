@@ -10,6 +10,7 @@ import {
 } from "@/lib/inquiry-prefill";
 import { clearInquiryCart } from "@/lib/inquiry-cart";
 import type { Locale } from "@/lib/i18n";
+import { legalCopy } from "@/lib/legal/copy";
 
 type InquiryState = "idle" | "loading" | "success" | "error";
 
@@ -279,6 +280,17 @@ export default function InquirySection({
               onChange={(event) => setForm((prev) => ({ ...prev, message: event.target.value }))}
             />
           </Field>
+
+          <p className="text-xs leading-relaxed text-mist">
+            {legalCopy[locale].inquiryNotice}{" "}
+            <a
+              href={`/${locale}/privacy`}
+              className="focus-ring underline decoration-caramel/70 underline-offset-4 hover:text-caramel"
+            >
+              {legalCopy[locale].privacyLink}
+            </a>
+            .
+          </p>
 
           <button
             type="submit"

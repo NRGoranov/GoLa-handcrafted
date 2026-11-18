@@ -55,6 +55,7 @@ export default function CollectionSection({
             summary={cardSummary}
             onView={onViewProduct}
             copy={productCardCopy}
+            locale={locale}
           />
         ))}
       </div>

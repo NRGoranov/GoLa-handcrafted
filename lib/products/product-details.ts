@@ -179,6 +179,7 @@ export type PublicDetailRow = {
   label: string;
   value: string;
   hint?: string;
+  note?: string;
 };
 
 export function resolvePublicDetailRows(args: {
@@ -188,6 +189,7 @@ export function resolvePublicDetailRows(args: {
   customizable: boolean;
   displayPrice: number;
   displayDimensions: string;
+  priceNote?: string;
   labels: {
     model: string;
     dimensions: string;
@@ -209,6 +211,7 @@ export function resolvePublicDetailRows(args: {
 
     let value = detail.value.trim();
     let hint: string | undefined;
+    let note: string | undefined;
     const fallbackLabel = detail.binding ? boundLabel(detail.binding, args.labels) : "";
     const label = detail.label.trim() || fallbackLabel;
 
@@ -220,6 +223,7 @@ export function resolvePublicDetailRows(args: {
       hint = args.labels.dimensionsHint;
     } else if (detail.binding === "price") {
       value = `EUR ${args.displayPrice}`;
+      note = args.priceNote;
     } else if (detail.binding === "availability") {
       value = args.values.availabilityByInquiry;
     } else if (detail.binding === "customization") {
@@ -227,7 +231,7 @@ export function resolvePublicDetailRows(args: {
     }
 
     if (!label && !value) continue;
-    rows.push({ id: detail.id, label, value, hint });
+    rows.push({ id: detail.id, label, value, hint, note });
   }
 
   return rows;
