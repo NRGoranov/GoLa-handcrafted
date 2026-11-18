@@ -42,13 +42,37 @@ export default function AdminInquiriesPage() {
     await load();
   };
 
+  const remove = async (id: string) => {
+    if (
+      !window.confirm(
+        "Delete this inquiry record? The copy in the email inbox stays until you delete it there."
+      )
+    ) {
+      return;
+    }
+
+    const response = await fetch("/api/admin/inquiries", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id })
+    });
+    const result = (await response.json()) as { ok: boolean; message?: string };
+    if (!response.ok || !result.ok) {
+      setMessage(result.message || "Unable to delete inquiry.");
+      return;
+    }
+    await load();
+  };
+
   return (
     <AdminShell storageMode="admin">
       <div className="space-y-6">
         <div>
           <h1 className="font-serif text-4xl text-ivory">Inquiries</h1>
-          <p className="mt-2 text-sm text-mist">
-            Submissions from the live inquiry form. Email delivery still requires SMTP env vars on Vercel.
+          <p className="mt-2 max-w-2xl text-sm text-mist">
+            Submissions from the live inquiry form. These records are personal data. Delete one when the
+            inquiry is finished and no accounting duty keeps it. Deleting here does not delete the copy in the
+            email inbox.
           </p>
         </div>
 
@@ -71,6 +95,7 @@ export default function AdminInquiriesPage() {
                     · {inquiry.contactMethod}
                   </p>
                 </div>
+                <div className="flex flex-wrap items-center gap-2">
                 <select
                   className="admin-input w-auto"
                   value={inquiry.status}
@@ -84,6 +109,14 @@ export default function AdminInquiriesPage() {
                     </option>
                   ))}
                 </select>
+                <button
+                  type="button"
+                  className="focus-ring min-h-11 rounded-full border border-ivory/20 px-3 py-2 text-xs text-mist hover:text-ivory"
+                  onClick={() => void remove(inquiry.id)}
+                >
+                  Delete record
+                </button>
+                </div>
               </div>
               <p className="mt-4 whitespace-pre-wrap text-sm text-ivory/90">{inquiry.message}</p>
               {(inquiry.location || inquiry.preferredSize) && (

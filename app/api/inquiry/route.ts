@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isSmtpConfigured, sendInquiryMail } from "@/lib/mail";
 import { saveInquiry } from "@/lib/inquiries/store";
+import { allowRequest, clientRateKey } from "@/lib/http/rate-limit";
 import {
   INQUIRY_TYPE_LABELS,
   isInquiryTypeKey,
@@ -8,6 +9,13 @@ import {
 } from "@/lib/inquiries/types";
 
 export async function POST(req: Request) {
+  if (!allowRequest(clientRateKey(req, "inquiry"), 5, 10 * 60 * 1000)) {
+    return NextResponse.json(
+      { ok: false, message: "Too many inquiries from this network. Try again later." },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = (await req.json()) as Partial<
       InquiryPayload & { inquiryType: string; locale?: string; website?: string }

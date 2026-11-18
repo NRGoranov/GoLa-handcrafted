@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { customerReceiptNote } from "@/lib/legal/copy";
 
 export type InquiryPayload = {
   name: string;
@@ -132,7 +133,8 @@ async function sendInquiryCopyToSender(
           preferredSize: "Предпочитан размер",
           message: "Съобщение",
           notProvided: "Не е посочено",
-          footer: "Ще се свържем с теб възможно най-скоро."
+          footer: "Ще се свържем с теб възможно най-скоро.",
+          legal: customerReceiptNote("bg")
         }
       : {
           subject: "Copy of your inquiry — GoLa Handcrafted",
@@ -146,7 +148,8 @@ async function sendInquiryCopyToSender(
           preferredSize: "Preferred size",
           message: "Message",
           notProvided: "Not provided",
-          footer: "We will get back to you as soon as possible."
+          footer: "We will get back to you as soon as possible.",
+          legal: customerReceiptNote("en")
         };
 
   const text = [
@@ -164,7 +167,9 @@ async function sendInquiryCopyToSender(
     `${labels.message}:`,
     data.message,
     "",
-    labels.footer
+    labels.footer,
+    "",
+    labels.legal
   ].join("\n");
 
   const html = `
@@ -179,6 +184,7 @@ async function sendInquiryCopyToSender(
     <p><strong>${escapeHtml(labels.message)}:</strong></p>
     <p>${escapeHtml(data.message).replace(/\n/g, "<br/>")}</p>
     <p>${escapeHtml(labels.footer)}</p>
+    <p>${escapeHtml(labels.legal)}</p>
   `;
 
   await transporter.sendMail({

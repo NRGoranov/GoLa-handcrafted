@@ -59,6 +59,7 @@ export default function ProductLivePreview({
             viewDetails: copy.viewDetails,
             aria: { viewDetailsFor: copy.aria.viewDetailsFor }
           }}
+          locale={locale}
         />
       </div>
 

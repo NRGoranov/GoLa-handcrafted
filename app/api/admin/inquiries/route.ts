@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin/require-admin-api";
-import { listInquiries, updateInquiryStatus } from "@/lib/inquiries/store";
+import { deleteInquiry, listInquiries, updateInquiryStatus } from "@/lib/inquiries/store";
 
 export async function GET() {
   const unauthorized = await requireAdminApi();
@@ -29,6 +29,24 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to update inquiry.";
+    return NextResponse.json({ ok: false, message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  const unauthorized = await requireAdminApi();
+  if (unauthorized) return unauthorized;
+
+  try {
+    const body = (await req.json()) as { id?: string };
+    if (!body.id) {
+      return NextResponse.json({ ok: false, message: "Missing id." }, { status: 400 });
+    }
+
+    await deleteInquiry(body.id);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to delete inquiry.";
     return NextResponse.json({ ok: false, message }, { status: 500 });
   }
 }

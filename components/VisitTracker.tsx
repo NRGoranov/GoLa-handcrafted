@@ -1,44 +1,37 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { ANALYTICS_CONSENT_EVENT, readAnalyticsConsent } from "@/lib/analytics-consent";
-
-function sendVisit(pathname: string) {
-  if (readAnalyticsConsent() !== "accepted") return;
-  if (!pathname || pathname.startsWith("/admin")) return;
-
-  void fetch("/api/analytics/visit", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-analytics-consent": "accepted"
-    },
-    body: JSON.stringify({ path: pathname }),
-    keepalive: true
-  }).catch(() => {});
-}
+import { CONSENT_CHANGED_EVENT, readConsentChoice, type ConsentChoice } from "@/lib/legal/consent";
 
 export default function VisitTracker() {
   const pathname = usePathname();
+  const skippedEssential = useRef(false);
 
   useEffect(() => {
-    sendVisit(pathname);
-    const onConsent = (event: Event) => {
-      const detail = (event as CustomEvent<string>).detail;
-      if (detail === "accepted") {
-        sendVisit(pathname);
-        return;
+    if (!pathname || pathname.startsWith("/admin")) return;
+
+    const report = (choice: ConsentChoice | null) => {
+      if (choice === "essential") {
+        if (skippedEssential.current) return;
+        skippedEssential.current = true;
+      } else {
+        skippedEssential.current = false;
       }
+      if (choice !== "all" && choice !== "essential") return;
       void fetch("/api/analytics/visit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: pathname }),
+        body: JSON.stringify({ path: pathname, consent: choice }),
         keepalive: true
       }).catch(() => {});
     };
-    window.addEventListener(ANALYTICS_CONSENT_EVENT, onConsent);
-    return () => window.removeEventListener(ANALYTICS_CONSENT_EVENT, onConsent);
+
+    report(readConsentChoice());
+
+    const onChange = () => report(readConsentChoice());
+    window.addEventListener(CONSENT_CHANGED_EVENT, onChange);
+    return () => window.removeEventListener(CONSENT_CHANGED_EVENT, onChange);
   }, [pathname]);
 
   return null;

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { giftBoxImageForPaperColor } from "@/lib/giftBoxAssets";
-import { priceCaption } from "@/lib/legal/prices";
 import {
   calculateOptionAddOnTotal,
   migrateLegacyConfig,
@@ -487,7 +486,7 @@ export default function ProductModal({
       customizable: product.customizable,
       displayPrice,
       displayDimensions,
-      priceNote: priceCaption(locale),
+      locale,
       labels: copy.labels,
       values: copy.values
     });
@@ -936,7 +935,7 @@ function InquiryCartSummary({
 function ProductFactList({
   rows
 }: {
-  rows: Array<{ id: string; label: string; value: string; hint?: string; note?: string }>;
+  rows: Array<{ id: string; label: string; value: string; hint?: string }>;
 }) {
   if (rows.length === 0) return null;
   return (
@@ -949,9 +948,6 @@ function ProductFactList({
               <span className="block text-xs uppercase tracking-[0.14em] text-mist">{row.hint}</span>
             ) : null}
             {row.value}
-            {row.note ? (
-              <span className="mt-1 block text-[11px] normal-case tracking-normal text-mist">{row.note}</span>
-            ) : null}
           </dd>
         </div>
       ))}

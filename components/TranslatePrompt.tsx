@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { readConsentChoice } from "@/lib/legal/consent";
 
 const DEFAULT_LANGUAGE = "en";
 const DECISION_KEY = "gola_translate_prompt_decision_v1";
@@ -67,6 +68,7 @@ export default function TranslatePrompt() {
   };
 
   const applyTranslation = () => {
+    if (readConsentChoice() !== "all") return;
     const initAndTranslate = () => {
       window.googleTranslateElementInit = () => {
         new window.google!.translate!.TranslateElement(

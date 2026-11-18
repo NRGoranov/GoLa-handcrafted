@@ -2,19 +2,23 @@ import type { MetadataRoute } from "next";
 
 const siteUrl = "https://www.gola-handcrafted.eu";
 
+const legalDocs = ["legal-notice", "privacy", "cookies", "terms"] as const;
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  return [
+  const pages = ["en", "bg"].flatMap((locale) => [
     {
-      url: `${siteUrl}/en`,
+      url: `${siteUrl}/${locale}`,
       lastModified: new Date(),
-      changeFrequency: "weekly",
+      changeFrequency: "weekly" as const,
       priority: 1
     },
-    {
-      url: `${siteUrl}/bg`,
+    ...legalDocs.map((doc) => ({
+      url: `${siteUrl}/${locale}/${doc}`,
       lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1
-    }
-  ];
+      changeFrequency: "yearly" as const,
+      priority: 0.3
+    }))
+  ]);
+
+  return pages;
 }

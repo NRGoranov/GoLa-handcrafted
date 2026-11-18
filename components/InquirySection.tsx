@@ -10,7 +10,7 @@ import {
 } from "@/lib/inquiry-prefill";
 import { clearInquiryCart } from "@/lib/inquiry-cart";
 import type { Locale } from "@/lib/i18n";
-import { legalCopy } from "@/lib/legal/copy";
+import { inquiryPrivacyNotice } from "@/lib/legal/copy";
 
 type InquiryState = "idle" | "loading" | "success" | "error";
 
@@ -143,6 +143,8 @@ export default function InquirySection({
       setFeedback(error instanceof Error ? error.message : copy.errors.generic);
     }
   };
+
+  const notice = inquiryPrivacyNotice(locale);
 
   return (
     <section id="inquiry" className="border-y border-ivory/10 bg-[#0f0f0f] py-20 sm:py-24">
@@ -282,12 +284,19 @@ export default function InquirySection({
           </Field>
 
           <p className="text-xs leading-relaxed text-mist">
-            {legalCopy[locale].inquiryNotice}{" "}
+            {notice.before}{" "}
             <a
               href={`/${locale}/privacy`}
               className="focus-ring underline decoration-caramel/70 underline-offset-4 hover:text-caramel"
             >
-              {legalCopy[locale].privacyLink}
+              {notice.privacy}
+            </a>{" "}
+            {notice.and}{" "}
+            <a
+              href={`/${locale}/terms`}
+              className="focus-ring underline decoration-caramel/70 underline-offset-4 hover:text-caramel"
+            >
+              {notice.terms}
             </a>
             .
           </p>

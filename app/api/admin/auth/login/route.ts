@@ -5,8 +5,13 @@ import {
   isAdminConfigured,
   verifyAdminPassword
 } from "@/lib/admin/session";
+import { allowRequest, clientRateKey } from "@/lib/http/rate-limit";
 
 export async function POST(req: Request) {
+  if (!allowRequest(clientRateKey(req, "admin-login"), 8, 15 * 60 * 1000)) {
+    return NextResponse.json({ ok: false, message: "Too many attempts. Try again later." }, { status: 429 });
+  }
+
   if (!isAdminConfigured()) {
     return NextResponse.json(
       { ok: false, message: "Admin is not configured. Set ADMIN_PASSWORD and ADMIN_SESSION_SECRET." },

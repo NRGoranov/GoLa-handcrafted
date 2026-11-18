@@ -9,6 +9,7 @@ import { getResolvedHomepageLayout } from "@/lib/content/homepage-layout-store";
 import { listSections } from "@/lib/content/sections-store";
 import { getBuiltinSectionImageUrl, getSiteCopy } from "@/lib/content/resolve-site-copy";
 import { getCopy, isLocale, type Locale } from "@/lib/i18n";
+import { pricesIncludeVat } from "@/lib/legal/operator";
 import { isGiftBox } from "@/lib/products";
 import { productRecordToProduct } from "@/lib/products/map-product";
 import { listProducts } from "@/lib/products/products-store";
@@ -117,6 +118,8 @@ export default async function HomePage({
     ]
   };
 
+  const vatIncluded = pricesIncludeVat();
+
   const productsItemListJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -132,6 +135,7 @@ export default async function HomePage({
           "@type": "Offer",
           price: product.priceEur.toString(),
           priceCurrency: "EUR",
+          ...(vatIncluded === null ? {} : { valueAddedTaxIncluded: vatIncluded }),
           url: `${siteUrl}/${locale}/${isGiftBox(product) ? "#gift-box" : "#collection"}`
         }
       }

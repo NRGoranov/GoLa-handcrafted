@@ -1,4 +1,5 @@
 import { getCopy, type Locale } from "@/lib/i18n";
+import { formatEur } from "@/lib/legal/pricing";
 import type {
   DisplayProductDetail,
   LocalizedText,
@@ -179,7 +180,6 @@ export type PublicDetailRow = {
   label: string;
   value: string;
   hint?: string;
-  note?: string;
 };
 
 export function resolvePublicDetailRows(args: {
@@ -189,7 +189,7 @@ export function resolvePublicDetailRows(args: {
   customizable: boolean;
   displayPrice: number;
   displayDimensions: string;
-  priceNote?: string;
+  locale: Locale;
   labels: {
     model: string;
     dimensions: string;
@@ -211,7 +211,6 @@ export function resolvePublicDetailRows(args: {
 
     let value = detail.value.trim();
     let hint: string | undefined;
-    let note: string | undefined;
     const fallbackLabel = detail.binding ? boundLabel(detail.binding, args.labels) : "";
     const label = detail.label.trim() || fallbackLabel;
 
@@ -222,8 +221,7 @@ export function resolvePublicDetailRows(args: {
       value = args.displayDimensions.trim();
       hint = args.labels.dimensionsHint;
     } else if (detail.binding === "price") {
-      value = `EUR ${args.displayPrice}`;
-      note = args.priceNote;
+      value = formatEur(args.displayPrice, args.locale);
     } else if (detail.binding === "availability") {
       value = args.values.availabilityByInquiry;
     } else if (detail.binding === "customization") {
@@ -231,7 +229,7 @@ export function resolvePublicDetailRows(args: {
     }
 
     if (!label && !value) continue;
-    rows.push({ id: detail.id, label, value, hint, note });
+    rows.push({ id: detail.id, label, value, hint });
   }
 
   return rows;
@@ -262,7 +260,7 @@ export function boundValuePreview(
   const copy = getCopy(locale).product;
   if (binding === "model") return snapshot.model && snapshot.model > 0 ? String(snapshot.model) : "";
   if (binding === "dimensions") return snapshot.dimensions;
-  if (binding === "price") return `EUR ${snapshot.priceEur}`;
+  if (binding === "price") return formatEur(snapshot.priceEur, locale);
   if (binding === "availability") return copy.values.availabilityByInquiry;
   return copy.values.customizationYes;
 }

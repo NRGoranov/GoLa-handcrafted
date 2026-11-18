@@ -1,7 +1,10 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import type { ProductOptionConfig, ResolvedProductOption } from "@/types/product-customization";
 import { optionConfigTextKey } from "@/lib/products/customization-options";
+import { formatEur, vatPriceSuffix } from "@/lib/legal/pricing";
+import type { Locale } from "@/lib/i18n";
 
 type ProductOptionsPanelProps = {
   groupId: string;
@@ -12,6 +15,7 @@ type ProductOptionsPanelProps = {
   engravingTextPlaceholder: string;
   onUpdate: (next: ProductOptionConfig) => void;
   className?: string;
+  locale?: Locale;
 };
 
 export default function ProductOptionsPanel({
@@ -22,8 +26,12 @@ export default function ProductOptionsPanel({
   engravingNoSurchargeLabel,
   engravingTextPlaceholder,
   onUpdate,
-  className = ""
+  className = "",
+  locale: localeProp
 }: ProductOptionsPanelProps) {
+  const params = useParams<{ locale?: string }>();
+  const locale: Locale = localeProp ?? (params?.locale === "bg" ? "bg" : "en");
+  const priceSuffix = vatPriceSuffix(locale);
   if (!options.length) {
     return <p className="text-sm text-mist">No customization options for this product.</p>;
   }
@@ -42,7 +50,7 @@ export default function ProductOptionsPanel({
           const swatches = option.choices.map((choice) => choice.swatch ?? "#888888");
           const labels = option.choices.map((choice) => {
             if (choice.priceEur != null && choice.priceEur >= 0) {
-              return `${choice.label} — EUR ${choice.priceEur}`;
+              return `${choice.label} — ${formatEur(choice.priceEur, locale)}`;
             }
             return choice.label;
           });
@@ -68,7 +76,7 @@ export default function ProductOptionsPanel({
           const textKey = optionConfigTextKey(option.id);
           const surchargeLabel =
             option.addOnEur && option.addOnEur > 0
-              ? engravingAddsLabel.replace("{amount}", String(option.addOnEur))
+              ? `${engravingAddsLabel.replace("{amount}", String(option.addOnEur))}${priceSuffix ? ` ${priceSuffix}` : ""}`
               : engravingNoSurchargeLabel;
 
           return (

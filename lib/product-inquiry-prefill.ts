@@ -7,6 +7,7 @@ import {
 } from "@/lib/products/customization-options";
 import { type Product, isGiftBox, isHandbag } from "@/lib/products";
 import type { Locale } from "@/lib/i18n";
+import { formatEur } from "@/lib/legal/pricing";
 import type { ProductOptionConfig, ResolvedProductOption } from "@/types/product-customization";
 
 type ProductInquiryCopy = {
@@ -123,7 +124,8 @@ export function buildDynamicConfigLines(
   productName: string,
   options: ResolvedProductOption[],
   config: ProductOptionConfig,
-  copy: ProductInquiryCopy
+  copy: ProductInquiryCopy,
+  locale: Locale = "en"
 ): string[] {
   const lines = [productName];
 
@@ -133,7 +135,7 @@ export function buildDynamicConfigLines(
       const choice = typeof index === "number" ? option.choices?.[index] : undefined;
       const label = choice?.label ?? "";
       const priceSuffix =
-        choice?.priceEur != null && choice.priceEur >= 0 ? ` (EUR ${choice.priceEur})` : "";
+        choice?.priceEur != null && choice.priceEur >= 0 ? ` (${formatEur(choice.priceEur, locale)})` : "";
       lines.push(`${option.label} - ${label}${priceSuffix}`);
       continue;
     }
@@ -178,7 +180,7 @@ export function buildInquiryCartMessage(
         .replace("{index}", String(index + 1))
         .replace("{name}", entry.handbagName),
       `${copy.handbagAddonHeading}:\n${formatNumberedLines(
-        buildDynamicConfigLines(entry.handbagName, options, entry.config, copy)
+        buildDynamicConfigLines(entry.handbagName, options, entry.config, copy, locale)
       )}`
     ];
 
@@ -189,7 +191,8 @@ export function buildInquiryCartMessage(
             entry.giftBox.name,
             defaultGiftBoxOptions,
             entry.giftBox.config,
-            copy
+            copy,
+            locale
           )
         )}`
       );
@@ -200,7 +203,7 @@ export function buildInquiryCartMessage(
       const earringOptions = earringProduct?.customizationOptions ?? [];
       itemParts.push(
         `${copy.earringAddonHeading}:\n${formatNumberedLines(
-          buildDynamicConfigLines(entry.earring.name, earringOptions, entry.earring.config, copy)
+          buildDynamicConfigLines(entry.earring.name, earringOptions, entry.earring.config, copy, locale)
         )}`
       );
     }
@@ -215,7 +218,8 @@ export function buildInquiryCartMessage(
           cart.standaloneGiftBox.name,
           defaultGiftBoxOptions,
           cart.standaloneGiftBox.config,
-          copy
+          copy,
+          locale
         )
       )}`
     ];
@@ -229,7 +233,8 @@ export function buildInquiryCartMessage(
             cart.standaloneGiftBox.earring.name,
             earringOptions,
             cart.standaloneGiftBox.earring.config,
-            copy
+            copy,
+            locale
           )
         )}`
       );
@@ -262,7 +267,8 @@ export function buildInquiryBundleMessage(
         bundle.handbag.name,
         handbagOptions,
         bundle.handbag.config,
-        copy
+        copy,
+        locale
       )
     );
     sections.push(
@@ -272,7 +278,7 @@ export function buildInquiryBundleMessage(
 
   if (bundle.giftBox) {
     const giftBoxSection = formatNumberedLines(
-      buildDynamicConfigLines(bundle.giftBox.name, giftBoxOptions, bundle.giftBox.config, copy)
+      buildDynamicConfigLines(bundle.giftBox.name, giftBoxOptions, bundle.giftBox.config, copy, locale)
     );
     sections.push(
       bundle.handbag ? `${copy.giftBoxAddonHeading}:\n${giftBoxSection}` : giftBoxSection

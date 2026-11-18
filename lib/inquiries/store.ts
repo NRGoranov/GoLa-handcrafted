@@ -129,6 +129,24 @@ export async function updateInquiryStatus(
   await writeJsonInquiries(inquiries);
 }
 
+export async function deleteInquiry(id: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { error } = await supabase.from("inquiries").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+    return;
+  }
+
+  if (process.env.NODE_ENV !== "development") {
+    throw new Error("Supabase is required for inquiry management in production.");
+  }
+
+  const inquiries = await readJsonInquiries();
+  const next = inquiries.filter((item) => item.id !== id);
+  if (next.length === inquiries.length) throw new Error("Inquiry not found.");
+  await writeJsonInquiries(next);
+}
+
 export function getInquiryStorageMode(): "supabase" | "local-json" | "none" {
   if (isSupabaseConfigured()) return "supabase";
   if (process.env.NODE_ENV === "development") return "local-json";

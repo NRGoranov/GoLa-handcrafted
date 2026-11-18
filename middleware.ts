@@ -3,6 +3,16 @@ import { getPreferredLocaleFromAcceptLanguage, isLocale, type Locale } from "@/l
 
 const LOCALE_COOKIE = "site_locale";
 
+function setLocaleCookie(response: NextResponse, request: NextRequest, locale: string) {
+  response.cookies.set(LOCALE_COOKIE, locale, {
+    path: "/",
+    sameSite: "lax",
+    secure: request.nextUrl.protocol === "https:",
+    maxAge: 60 * 60 * 24 * 365
+  });
+  return response;
+}
+
 function getPathLocale(pathname: string): Locale | null {
   const first = pathname.split("/").filter(Boolean)[0];
   if (first && isLocale(first)) return first;
@@ -23,7 +33,9 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/sitemap.xml") ||
     pathname === "/llms.txt"
   ) {
-    return NextResponse.next();
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-gola-locale", "en");
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   const pathLocale = getPathLocale(pathname);
@@ -37,8 +49,7 @@ export function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = `/${preferred}`;
     const response = NextResponse.redirect(url);
-    response.cookies.set(LOCALE_COOKIE, preferred, { path: "/" });
-    return response;
+    return setLocaleCookie(response, request, preferred);
   }
 
   // If missing locale prefix, redirect to preferred.
@@ -46,8 +57,7 @@ export function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = `/${preferred}${pathname}`;
     const response = NextResponse.redirect(url);
-    response.cookies.set(LOCALE_COOKIE, preferred, { path: "/" });
-    return response;
+    return setLocaleCookie(response, request, preferred);
   }
 
   // Persist locale selection and pass it to this request so the 404 page
@@ -57,8 +67,7 @@ export function middleware(request: NextRequest) {
   const response = NextResponse.next({
     request: { headers: requestHeaders }
   });
-  response.cookies.set(LOCALE_COOKIE, pathLocale, { path: "/" });
-  return response;
+  return setLocaleCookie(response, request, pathLocale);
 }
 
 export const config = {

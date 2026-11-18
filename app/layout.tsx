@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import { cookies } from "next/headers";
-import AnalyticsConsent from "@/components/AnalyticsConsent";
+import { cookies, headers } from "next/headers";
 import VisitTracker from "@/components/VisitTracker";
+import CookieConsent from "@/components/CookieConsent";
+import { getOperator } from "@/lib/legal/operator";
 
 const playfair = Playfair_Display({
   subsets: ["latin", "latin-ext", "cyrillic"],
@@ -134,12 +135,22 @@ const websiteJsonLd = {
   inLanguage: "en"
 };
 
+function documentLocale(): "en" | "bg" {
+  const headerLocale = headers().get("x-gola-locale");
+  if (headerLocale === "bg" || headerLocale === "en") return headerLocale;
+  return cookies().get("site_locale")?.value === "bg" ? "bg" : "en";
+}
+
 export default function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const locale = cookies().get("site_locale")?.value === "bg" ? "bg" : "en";
+  const locale = documentLocale();
+  const operator = getOperator();
+  const organizationLd = operator.email
+    ? { ...organizationJsonLd, email: operator.email }
+    : organizationJsonLd;
 
   return (
     <html
@@ -151,7 +162,7 @@ export default function RootLayout({
         <div id="google_translate_element" className="hidden" />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }}
         />
         <script
           type="application/ld+json"
@@ -159,8 +170,8 @@ export default function RootLayout({
         />
         {/* <TranslatePrompt /> */}
         <VisitTracker />
-        <AnalyticsConsent />
         {children}
+        <CookieConsent />
       </body>
     </html>
   );
