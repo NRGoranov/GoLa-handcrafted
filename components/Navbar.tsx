@@ -30,6 +30,10 @@ export default function Navbar({
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
 
+  const showChrome = scrolled || menuOpen;
+  const chromeVisibility = showChrome
+    ? "pointer-events-auto opacity-100"
+    : "pointer-events-none opacity-0";
   const otherLocale = locale === "en" ? "bg" : "en";
   const switchHref = (() => {
     if (!pathname) return `/${otherLocale}`;
@@ -56,22 +60,23 @@ export default function Navbar({
   }, []);
 
   return (
-    <nav
-      className={`fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow] duration-500 ease-out ${
-        scrolled ? "wood-navbar shadow-luxury" : "bg-transparent shadow-none"
-      }`}
-      aria-label="Primary"
-    >
-      <div className="mx-auto flex h-20 w-[96%] items-center justify-between sm:w-[95%] lg:w-[94%] xl:w-[92%]">
+    <nav className="fixed inset-x-0 top-0 z-50" aria-label="Primary">
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 wood-navbar shadow-luxury transition-opacity duration-500 ease-out ${
+          showChrome ? "opacity-100" : "opacity-0"
+        }`}
+      />
+      <div className="relative mx-auto flex h-20 w-[96%] items-center justify-between sm:w-[95%] lg:w-[94%] xl:w-[92%]">
         <a href="#top" className="focus-ring sr-only text-ivory">
           {copy.goToTop}
         </a>
 
         <a
           href="#top"
-          className={`focus-ring inline-flex items-center transition-opacity duration-500 ease-out ${
-            scrolled ? "opacity-100" : "opacity-0"
-          }`}
+          className={`focus-ring inline-flex items-center transition-opacity duration-500 ease-out ${chromeVisibility}`}
+          aria-hidden={!showChrome}
+          tabIndex={showChrome ? undefined : -1}
           aria-label={copy.homeAria}
         >
           <Image
@@ -84,7 +89,11 @@ export default function Navbar({
           />
         </a>
 
-        <ul className="hidden items-center gap-[clamp(1rem,2.2vw,2.5rem)] md:flex">
+        <ul
+          className={`hidden items-center gap-[clamp(1rem,2.2vw,2.5rem)] transition-opacity duration-500 ease-out md:flex ${chromeVisibility}`}
+          aria-hidden={!showChrome}
+          inert={!showChrome}
+        >
           {links.map((link) => (
             <li key={link.href}>
               <a
@@ -97,7 +106,11 @@ export default function Navbar({
           ))}
         </ul>
 
-        <div className="hidden items-center gap-3 md:flex">
+        <div
+          className={`hidden items-center gap-3 transition-opacity duration-500 ease-out md:flex ${chromeVisibility}`}
+          aria-hidden={!showChrome}
+          inert={!showChrome}
+        >
           <span className="text-xs uppercase tracking-[0.16em] text-ivory/60">{copy.languageLabel}</span>
           <a
             href={switchHref}
@@ -110,7 +123,7 @@ export default function Navbar({
 
         <button
           type="button"
-          className="focus-ring inline-flex items-center rounded-full border border-ivory/30 px-4 py-2 text-xs md:hidden"
+          className={`focus-ring inline-flex items-center rounded-full border border-ivory/30 px-4 py-2 text-xs transition-opacity duration-500 ease-out md:hidden ${chromeVisibility}`}
           aria-expanded={menuOpen}
           aria-controls="mobile-menu"
           aria-label={menuOpen ? copy.closeMenuAria : copy.openMenuAria}
