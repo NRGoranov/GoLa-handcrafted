@@ -1,15 +1,17 @@
 "use client";
 
-import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 
-const heroRotationImages = [
-  "/images/heroRotation/hero-1.jpg",
-  "/images/heroRotation/hero-2.jpeg",
-  "/images/heroRotation/hero-3.jpeg",
-  "/images/heroRotation/hero-4.jpeg"
-];
+/** Every frame is a keyframe so scroll can show the next picture immediately. */
+const VIDEO_SRC = "/video/gola-assembly-scrub.mp4";
+const FRAME_RATE = 24;
+
+/** ~30vh of scroll per second of picture, plus one sticky viewport. */
+function trackForDuration(seconds: number) {
+  const vh = Math.round(Math.min(420, Math.max(220, 100 + seconds * 30)));
+  return `${vh}vh`;
+}
 
 type HeroCopy = {
   imageAlt: string;
@@ -19,70 +21,156 @@ type HeroCopy = {
   ctaSecondary: string;
 };
 
+function sectionProgress(section: HTMLElement) {
+  const scrollable = section.offsetHeight - window.innerHeight;
+  if (scrollable <= 0) return 0;
+  const passed = Math.min(Math.max(-section.getBoundingClientRect().top, 0), scrollable);
+  return passed / scrollable;
+}
+
+function frameTime(progress: number, duration: number) {
+  const frame = 1 / FRAME_RATE;
+  const last = Math.max(0, duration - frame);
+  const raw = Math.min(last, Math.max(0, progress * duration));
+  return Math.round(raw / frame) * frame;
+}
+
 export default function Hero({ copy }: { copy: HeroCopy }) {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const sectionRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [compact, setCompact] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [track, setTrack] = useState("341vh");
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % heroRotationImages.length);
-    }, 5200);
-
-    return () => window.clearInterval(interval);
+    const section = sectionRef.current;
+    const embedded = Boolean(
+      section?.closest(".studio-preview-screen-inner, .studio-preview-card")
+    );
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const applyCompact = () => setCompact(embedded || motionQuery.matches);
+    applyCompact();
+    motionQuery.addEventListener("change", applyCompact);
+    return () => motionQuery.removeEventListener("change", applyCompact);
   }, []);
 
-  return (
-    <section id="top" className="relative min-h-[88vh] overflow-hidden bg-ink">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={heroRotationImages[activeIndex]}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1.2, ease: "easeInOut" }}
-          className="absolute inset-0"
-        >
-          <Image
-            src={heroRotationImages[activeIndex]}
-            alt={copy.imageAlt}
-            fill
-            priority={activeIndex === 0}
-            className="object-cover"
-            sizes="100vw"
-          />
-        </motion.div>
-      </AnimatePresence>
-      <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/55 to-ink" />
-      <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-ink" />
-      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-ink" />
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
 
-      <div className="container-luxury relative z-10 flex min-h-[88vh] flex-col justify-center pt-16">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="max-w-2xl space-y-6"
-        >
-          <h1 className="font-serif text-4xl leading-tight text-ivory sm:text-5xl md:text-6xl">
-            {copy.title}
-          </h1>
-          <p className="max-w-xl text-sm text-ivory/85 sm:text-base">
-            {copy.subtitle}
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <a
-              href="#inquiry"
-              className="focus-ring inline-flex min-h-11 items-center rounded-full bg-caramel px-6 py-3 text-sm font-medium text-ink transition hover:bg-[#c99d6b]"
-            >
-              {copy.ctaPrimary}
-            </a>
-            <a
-              href="#collection"
-              className="focus-ring inline-flex min-h-11 items-center rounded-full border border-ivory/50 px-6 py-3 text-sm text-ivory transition hover:border-caramel hover:text-caramel"
-            >
-              {copy.ctaSecondary}
-            </a>
-          </div>
-        </motion.div>
+    const onReady = () => {
+      if (Number.isFinite(video.duration) && video.duration > 0) {
+        setTrack(trackForDuration(video.duration));
+        if (compact) {
+          video.currentTime = Math.max(0, video.duration - 1 / FRAME_RATE);
+        }
+      }
+      setReady(true);
+    };
+
+    if (video.readyState >= 2) onReady();
+    video.addEventListener("loadeddata", onReady);
+    return () => video.removeEventListener("loadeddata", onReady);
+  }, [compact]);
+
+  useEffect(() => {
+    if (compact || !ready) return;
+    const section = sectionRef.current;
+    const video = videoRef.current;
+    if (!section || !video) return;
+
+    let frame = 0;
+    const targetRef = { current: 0 };
+
+    const seek = () => {
+      if (video.seeking || !Number.isFinite(video.duration)) return;
+      const target = targetRef.current;
+      if (Math.abs(video.currentTime - target) >= 1 / FRAME_RATE) {
+        video.currentTime = target;
+      }
+    };
+
+    const apply = () => {
+      frame = 0;
+      targetRef.current = frameTime(sectionProgress(section), video.duration);
+      seek();
+    };
+
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(apply);
+    };
+
+    apply();
+    video.addEventListener("seeked", seek);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      video.removeEventListener("seeked", seek);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [compact, ready]);
+
+  const scrubbing = !compact;
+
+  return (
+    <section
+      ref={sectionRef}
+      id="top"
+      className="relative bg-ink"
+      style={{ height: scrubbing ? track : undefined }}
+    >
+      <div
+        className={
+          scrubbing
+            ? "sticky top-0 h-screen overflow-hidden"
+            : "relative min-h-[88vh] overflow-hidden"
+        }
+      >
+        <video
+          ref={videoRef}
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{ opacity: ready ? 1 : 0 }}
+          src={VIDEO_SRC}
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+        />
+
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-[min(100%,48rem)] bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-ink" />
+        <div className="absolute inset-x-0 bottom-0 h-[2px] bg-ink" />
+
+        <div className="container-luxury relative z-10 flex h-full min-h-[88vh] flex-col justify-center pt-16">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="max-w-2xl space-y-6"
+          >
+            <h1 className="font-serif text-4xl leading-tight text-ivory sm:text-5xl md:text-6xl">
+              {copy.title}
+            </h1>
+            <p className="max-w-xl text-sm text-ivory/85 sm:text-base">{copy.subtitle}</p>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="#inquiry"
+                className="focus-ring inline-flex min-h-11 items-center rounded-full bg-caramel px-6 py-3 text-sm font-medium text-ink transition hover:bg-[#c99d6b]"
+              >
+                {copy.ctaPrimary}
+              </a>
+              <a
+                href="#collection"
+                className="focus-ring inline-flex min-h-11 items-center rounded-full border border-ivory/50 px-6 py-3 text-sm text-ivory transition hover:border-caramel hover:text-caramel"
+              >
+                {copy.ctaSecondary}
+              </a>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

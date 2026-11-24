@@ -1,26 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-const SHOW_AFTER_SCROLL_Y = 24;
+import { assemblyFinished, replayAssembly } from "@/lib/hero-sequence";
 
 export default function ScrollToTopButton({ label }: { label: string }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => {
-      setVisible(window.scrollY > SHOW_AFTER_SCROLL_Y);
-    };
+    const onScroll = () => setVisible(assemblyFinished());
 
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, []);
 
-  const onClick = () => {
-    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
-    window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
-  };
+  const onClick = () => replayAssembly();
 
   return (
     <button

@@ -21,6 +21,8 @@ type SiteCopy = {
     goToTop: string;
     homeAria: string;
     languageLabel: string;
+    replay: string;
+    replayAria: string;
   };
   hero: {
     imageAlt: string;
@@ -235,7 +237,9 @@ const dictionary: Record<Locale, SiteCopy> = {
       closeMenuAria: "Close menu",
       goToTop: "Go to top",
       homeAria: "Gola Handcrafted home",
-      languageLabel: "Language"
+      languageLabel: "Language",
+      replay: "Replay",
+      replayAria: "Replay the introduction"
     },
     hero: {
       imageAlt: "Handcrafted wooden and leather handbag by GoLa Handcrafted",
@@ -505,7 +509,9 @@ const dictionary: Record<Locale, SiteCopy> = {
       closeMenuAria: "Затвори менюто",
       goToTop: "Към началото",
       homeAria: "Начало на GoLa Handcrafted",
-      languageLabel: "Език"
+      languageLabel: "Език",
+      replay: "Отново",
+      replayAria: "Пусни въведението отново"
     },
     hero: {
       imageAlt: "Ръчно изработена чанта от дърво и кожа от GoLa Handcrafted",
