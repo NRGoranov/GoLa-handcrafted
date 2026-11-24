@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GALLERY_PREVIEW_COUNT } from "@/lib/galleryConstants";
 import { flattenGalleryImages, type GalleryImageGroup } from "@/lib/galleryTypes";
+import RevealItem from "./RevealItem";
 import SectionHeading from "./SectionHeading";
 import {
   intrinsicSizesProductCard,
@@ -51,7 +52,7 @@ function CloseGalleryButton({
         event.stopPropagation();
         onClose();
       }}
-      className={`focus-ring inline-flex min-h-10 items-center justify-center rounded-full border border-caramel bg-caramel/95 px-5 py-2 text-sm font-medium text-ink shadow-luxury backdrop-blur-sm transition hover:bg-caramel [@media(max-height:480px)]:min-h-9 [@media(max-height:480px)]:px-4 [@media(max-height:480px)]:py-1.5 [@media(max-height:480px)]:text-xs sm:min-h-11 sm:px-6 sm:py-2.5 ${className}`}
+      className={`focus-ring inline-flex min-h-11 items-center justify-center rounded-full border border-caramel bg-caramel/95 px-5 text-sm font-medium text-ink shadow-luxury backdrop-blur-sm transition-colors duration-150 ease-out hover:bg-caramel sm:px-6 ${className}`}
     >
       {label}
     </button>
@@ -114,20 +115,23 @@ function GalleryGrid({
     <>
       {images.map((src, index) => {
         const globalIndex = indexOffset + index;
+        const tile = (
+          <GalleryTile
+            src={src}
+            alt={galleryAlt(copy, globalIndex)}
+            ariaLabel={
+              previewMode
+                ? copy.openGallery
+                : copy.viewImage.replace("{n}", String(globalIndex + 1))
+            }
+            onClick={() => onSelectImage(globalIndex)}
+            index={globalIndex}
+            eager={globalIndex < 4}
+          />
+        );
         return (
           <li key={`${src}-${globalIndex}`}>
-            <GalleryTile
-              src={src}
-              alt={galleryAlt(copy, globalIndex)}
-              ariaLabel={
-                previewMode
-                  ? copy.openGallery
-                  : copy.viewImage.replace("{n}", String(globalIndex + 1))
-              }
-              onClick={() => onSelectImage(globalIndex)}
-              index={globalIndex}
-              eager={globalIndex < 4}
-            />
+            {previewMode ? <RevealItem index={index}>{tile}</RevealItem> : tile}
           </li>
         );
       })}
@@ -386,7 +390,7 @@ function GalleryFocusedView({
 
   const canPan = zoom > 1;
   const navButtonClass =
-    "focus-ring absolute top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-ivory/20 bg-[#111]/80 text-xl text-ivory shadow-luxury backdrop-blur-sm transition hover:border-caramel hover:text-caramel [@media(max-height:480px)]:h-8 [@media(max-height:480px)]:w-8 [@media(max-height:480px)]:text-lg sm:h-12 sm:w-12 sm:text-2xl";
+    "focus-ring absolute top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-ivory/20 bg-[#111]/80 text-xl text-ivory shadow-luxury backdrop-blur-sm transition-colors duration-150 ease-out hover:border-caramel hover:text-caramel sm:h-12 sm:w-12 sm:text-2xl";
 
   return (
     <motion.div
@@ -404,7 +408,7 @@ function GalleryFocusedView({
             event.stopPropagation();
             onBack();
           }}
-            className="focus-ring inline-flex min-h-9 max-w-[54vw] items-center gap-1.5 rounded-full border border-ivory/20 px-2.5 py-1.5 text-xs text-ivory transition hover:border-caramel hover:text-caramel [@media(max-height:480px)]:max-w-10 [@media(max-height:480px)]:px-2 sm:min-h-10 sm:max-w-none sm:gap-2 sm:px-3 sm:py-2 sm:text-sm"
+          className="focus-ring inline-flex min-h-11 min-w-11 max-w-[54vw] items-center gap-1.5 rounded-full border border-ivory/20 px-3 text-xs text-ivory transition-colors duration-150 ease-out hover:border-caramel hover:text-caramel sm:max-w-none sm:gap-2 sm:px-3 sm:text-sm"
         >
           <span aria-hidden className="text-lg leading-none">
             ←
@@ -422,7 +426,7 @@ function GalleryFocusedView({
               onPrevious();
             }}
             aria-label={copy.previousImage}
-            className="focus-ring hidden h-9 w-9 items-center justify-center rounded-full border border-ivory/20 text-lg text-ivory transition hover:border-caramel hover:text-caramel sm:inline-flex"
+            className="focus-ring hidden h-11 w-11 items-center justify-center rounded-full border border-ivory/20 text-lg text-ivory transition-colors duration-150 ease-out hover:border-caramel hover:text-caramel sm:inline-flex"
           >
             ‹
           </button>
@@ -433,7 +437,7 @@ function GalleryFocusedView({
               onNext();
             }}
             aria-label={copy.nextImage}
-            className="focus-ring hidden h-9 w-9 items-center justify-center rounded-full border border-ivory/20 text-lg text-ivory transition hover:border-caramel hover:text-caramel sm:inline-flex"
+            className="focus-ring hidden h-11 w-11 items-center justify-center rounded-full border border-ivory/20 text-lg text-ivory transition-colors duration-150 ease-out hover:border-caramel hover:text-caramel sm:inline-flex"
           >
             ›
           </button>
@@ -445,7 +449,7 @@ function GalleryFocusedView({
             }}
             disabled={zoom <= ZOOM_MIN}
             aria-label={copy.zoomOut}
-            className="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full border border-ivory/20 text-base text-ivory transition hover:border-caramel hover:text-caramel disabled:cursor-not-allowed disabled:opacity-40 [@media(max-height:480px)]:h-8 [@media(max-height:480px)]:w-8 sm:h-10 sm:w-10 sm:text-lg"
+            className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-full border border-ivory/20 text-base text-ivory transition-colors duration-150 ease-out hover:border-caramel hover:text-caramel disabled:cursor-not-allowed disabled:opacity-40"
           >
             −
           </button>
@@ -457,7 +461,7 @@ function GalleryFocusedView({
             }}
             disabled={zoom >= ZOOM_MAX}
             aria-label={copy.zoomIn}
-            className="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full border border-ivory/20 text-base text-ivory transition hover:border-caramel hover:text-caramel disabled:cursor-not-allowed disabled:opacity-40 [@media(max-height:480px)]:h-8 [@media(max-height:480px)]:w-8 sm:h-10 sm:w-10 sm:text-lg"
+            className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-full border border-ivory/20 text-base text-ivory transition-colors duration-150 ease-out hover:border-caramel hover:text-caramel disabled:cursor-not-allowed disabled:opacity-40"
           >
             +
           </button>
@@ -538,6 +542,7 @@ export default function GallerySection({
   containedModal?: boolean;
 }) {
   const images = flattenGalleryImages(groups);
+  const reduceMotion = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -708,10 +713,11 @@ export default function GallerySection({
           >
             <motion.div
               ref={modalRef}
-              initial={{ opacity: 0, scale: 0.96, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 20 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 20 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 20 }}
+              transition={{ duration: reduceMotion ? 0 : 0.25, ease: [0.16, 1, 0.3, 1] }}
+              style={{ transformOrigin: "center bottom" }}
               className="flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-ivory/15 bg-[#111] sm:h-[90dvh] sm:max-w-6xl sm:rounded-2xl"
               onClick={(event) => event.stopPropagation()}
             >

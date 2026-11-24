@@ -29,7 +29,7 @@ export default function ScrollToTopButton({ label }: { label: string }) {
         "focus-ring fixed bottom-6 right-6 z-[60] inline-flex h-11 w-11 items-center justify-center rounded-full",
         "border border-ivory/15 bg-ink/60 text-ivory shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl",
         "hover:-translate-y-0.5 hover:border-caramel/50 hover:bg-caramel/15 hover:text-caramel",
-        "transition-all duration-300",
+        "transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none motion-reduce:hover:translate-y-0",
         visible
           ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
           : "pointer-events-none translate-y-3 scale-95 opacity-0"

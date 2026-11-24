@@ -1,4 +1,5 @@
 import CmsImage from "@/components/CmsImage";
+import RevealItem from "./RevealItem";
 import SectionHeading from "./SectionHeading";
 
 const DEFAULT_IMAGE = "/images/heroRotation/hero-2.jpeg";
@@ -39,9 +40,11 @@ export default function CraftsmanshipSection({
             description={copy.description}
           />
           <ul className="space-y-4 text-sm text-mist sm:text-base">
-            <li>{copy.bullets[0]}</li>
-            <li>{copy.bullets[1]}</li>
-            <li>{copy.bullets[2]}</li>
+            {copy.bullets.map((bullet, index) => (
+              <RevealItem key={bullet} index={index} asListItem>
+                {bullet}
+              </RevealItem>
+            ))}
           </ul>
         </div>
       </div>

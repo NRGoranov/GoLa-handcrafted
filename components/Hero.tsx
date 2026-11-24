@@ -1,10 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
 /** Every frame is a keyframe so scroll can show the next picture immediately. */
 const VIDEO_SRC = "/video/gola-assembly-scrub.mp4";
+const POSTER_SRC = "/images/assembly/assembled.jpg";
 const FRAME_RATE = 24;
 
 /** ~30vh of scroll per second of picture, plus one sticky viewport. */
@@ -38,7 +39,9 @@ function frameTime(progress: number, duration: number) {
 export default function Hero({ copy }: { copy: HeroCopy }) {
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const playheadRef = useRef<HTMLDivElement>(null);
   const [compact, setCompact] = useState(false);
+  const reduceMotion = useReducedMotion();
   const [ready, setReady] = useState(false);
   const [track, setTrack] = useState("341vh");
 
@@ -92,7 +95,11 @@ export default function Hero({ copy }: { copy: HeroCopy }) {
 
     const apply = () => {
       frame = 0;
-      targetRef.current = frameTime(sectionProgress(section), video.duration);
+      const progress = sectionProgress(section);
+      targetRef.current = frameTime(progress, video.duration);
+      if (playheadRef.current) {
+        playheadRef.current.style.width = `${progress * 100}%`;
+      }
       seek();
     };
 
@@ -129,9 +136,14 @@ export default function Hero({ copy }: { copy: HeroCopy }) {
             : "relative min-h-[88vh] overflow-hidden"
         }
       >
+        <img
+          src={POSTER_SRC}
+          alt={copy.imageAlt}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
         <video
           ref={videoRef}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ease-out motion-reduce:transition-none"
           style={{ opacity: ready ? 1 : 0 }}
           src={VIDEO_SRC}
           muted
@@ -143,12 +155,20 @@ export default function Hero({ copy }: { copy: HeroCopy }) {
         <div className="pointer-events-none absolute inset-y-0 left-0 w-[min(100%,48rem)] bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-ink" />
         <div className="absolute inset-x-0 bottom-0 h-[2px] bg-ink" />
+        {scrubbing ? (
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-0.5 bg-ivory/20"
+            aria-hidden="true"
+          >
+            <div ref={playheadRef} className="h-full w-0 bg-caramel" />
+          </div>
+        ) : null}
 
         <div className="container-luxury relative z-10 flex h-full min-h-[88vh] flex-col justify-center pt-16">
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={compact || reduceMotion ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            transition={{ duration: compact || reduceMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
             className="max-w-2xl space-y-6"
           >
             <h1 className="font-serif text-4xl leading-tight text-ivory sm:text-5xl md:text-6xl">
@@ -157,16 +177,16 @@ export default function Hero({ copy }: { copy: HeroCopy }) {
             <p className="max-w-xl text-sm text-ivory/85 sm:text-base">{copy.subtitle}</p>
             <div className="flex flex-wrap gap-3">
               <a
-                href="#inquiry"
-                className="focus-ring inline-flex min-h-11 items-center rounded-full bg-caramel px-6 py-3 text-sm font-medium text-ink transition hover:bg-[#c99d6b]"
-              >
-                {copy.ctaPrimary}
-              </a>
-              <a
                 href="#collection"
-                className="focus-ring inline-flex min-h-11 items-center rounded-full border border-ivory/50 px-6 py-3 text-sm text-ivory transition hover:border-caramel hover:text-caramel"
+                className="focus-ring inline-flex min-h-11 items-center rounded-full bg-caramel px-6 py-3 text-sm font-medium text-ink transition-[color,background-color,transform] duration-100 ease-out hover:bg-[#c99d6b] active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
               >
                 {copy.ctaSecondary}
+              </a>
+              <a
+                href="#inquiry"
+                className="focus-ring inline-flex min-h-11 items-center rounded-full border border-ivory/50 px-6 py-3 text-sm text-ivory transition-[color,border-color,transform] duration-100 ease-out hover:border-caramel hover:text-caramel active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+              >
+                {copy.ctaPrimary}
               </a>
             </div>
           </motion.div>

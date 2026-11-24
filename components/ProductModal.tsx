@@ -537,7 +537,7 @@ export default function ProductModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="focus-ring rounded-full border border-ivory/20 px-3 py-1.5 text-sm text-ivory"
+                className="focus-ring inline-flex min-h-11 items-center rounded-full border border-ivory/20 px-4 text-sm text-ivory"
               >
                 {copy.close}
               </button>

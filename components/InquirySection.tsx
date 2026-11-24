@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import RevealItem from "./RevealItem";
 import SectionHeading from "./SectionHeading";
 import InquirySuccessDialog from "./InquirySuccessDialog";
 import {
@@ -22,6 +23,7 @@ type InquiryCopy = {
   statusAria: string;
   importantTitle: string;
   formNotActive: string;
+  whatsappLead: string;
   or: string;
   fields: {
     name: string;
@@ -43,7 +45,13 @@ type InquiryCopy = {
   };
   submit: string;
   submitDisabled: string;
-  errors: { submitFailed: string; generic: string };
+  errors: {
+    submitFailed: string;
+    generic: string;
+    required: string;
+    email: string;
+    tooLong: string;
+  };
   success: string;
   successPopup: {
     title: string;
@@ -53,7 +61,49 @@ type InquiryCopy = {
   };
 };
 
-const defaultForm = {
+type FieldKey = "name" | "email" | "contactMethod" | "message" | "location" | "preferredSize";
+
+function cleanLine(value: string) {
+  return value.replace(/[\u0000-\u001F\u007F]/g, "").trim();
+}
+
+type InquiryForm = {
+  name: string;
+  email: string;
+  contactMethod: string;
+  inquiryType: string;
+  message: string;
+  location: string;
+  preferredSize: string;
+  website: string;
+};
+
+function validateForm(form: InquiryForm, copy: InquiryCopy) {
+  const errors: Partial<Record<FieldKey, string>> = {};
+  const check = (key: FieldKey, label: string, value: string, max: number, multiline = false) => {
+    const cleaned = multiline ? value.replace(/\u0000/g, "").trim() : cleanLine(value);
+    if (!cleaned) errors[key] = copy.errors.required.replace("{field}", label);
+    else if (cleaned.length > max) errors[key] = copy.errors.tooLong.replace("{field}", label);
+    return cleaned;
+  };
+
+  check("name", copy.fields.name, form.name, 120);
+  const email = check("email", copy.fields.email, form.email, 254);
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.email = copy.errors.email;
+  }
+  check("contactMethod", copy.fields.contactMethod, form.contactMethod, 160);
+  check("message", copy.fields.message, form.message, 4000, true);
+  if (form.location.trim() && cleanLine(form.location).length > 160) {
+    errors.location = copy.errors.tooLong.replace("{field}", copy.fields.locationOptional);
+  }
+  if (form.preferredSize.trim() && cleanLine(form.preferredSize).length > 80) {
+    errors.preferredSize = copy.errors.tooLong.replace("{field}", copy.fields.preferredSizeOptional);
+  }
+  return errors;
+}
+
+const defaultForm: InquiryForm = {
   name: "",
   email: "",
   contactMethod: "",
@@ -72,6 +122,7 @@ export default function InquirySection({
   locale: Locale;
 }) {
   const [form, setForm] = useState(defaultForm);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [status, setStatus] = useState<InquiryState>("idle");
   const [feedback, setFeedback] = useState("");
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -102,6 +153,16 @@ export default function InquirySection({
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const errors = validateForm(form, copy);
+    setFieldErrors(errors);
+    const firstInvalid = (Object.keys(errors) as FieldKey[])[0];
+    if (firstInvalid) {
+      setStatus("idle");
+      setFeedback("");
+      document.getElementById(firstInvalid)?.focus();
+      return;
+    }
+
     setStatus("loading");
     setFeedback("");
 
@@ -128,7 +189,12 @@ export default function InquirySection({
         emailed?: boolean;
       };
       if (!response.ok || !result.ok) {
-        throw new Error(result.message || copy.errors.submitFailed);
+        const serverMessage = result.message || "";
+        const localized =
+          serverMessage.startsWith("Invalid") || serverMessage === "Unable to send inquiry."
+            ? copy.errors.submitFailed
+            : serverMessage || copy.errors.submitFailed;
+        throw new Error(localized);
       }
 
       setStatus("success");
@@ -137,6 +203,7 @@ export default function InquirySection({
       );
       setShowSuccessDialog(true);
       setForm(defaultForm);
+      setFieldErrors({});
       clearInquiryCart();
     } catch (error) {
       setStatus("error");
@@ -157,7 +224,7 @@ export default function InquirySection({
           />
           <p className="text-sm text-mist">{copy.note}</p>
           <p className="mt-4 text-sm text-mist">
-            Prefer WhatsApp?{" "}
+            {copy.whatsappLead}{" "}
             <a
               href="https://wa.me/359887509906"
               target="_blank"
@@ -179,7 +246,7 @@ export default function InquirySection({
           </p>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-4" noValidate>
+        <form onSubmit={onSubmit} className="space-y-4" noValidate> {/* Locale field messages replace the browser tooltip. */}
           <input
             tabIndex={-1}
             autoComplete="off"
@@ -189,45 +256,87 @@ export default function InquirySection({
             onChange={(event) => setForm((prev) => ({ ...prev, website: event.target.value }))}
           />
 
-          <Field label={copy.fields.name} required requiredMark={copy.fields.requiredMark}>
+          <RevealItem index={0}>
+          <Field
+            id="name"
+            label={copy.fields.name}
+            required
+            requiredMark={copy.fields.requiredMark}
+            error={fieldErrors.name}
+          >
             <input
-              className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
+              id="name"
+              className={inputClass(Boolean(fieldErrors.name))}
               name="name"
               autoComplete="name"
               required
+              aria-invalid={Boolean(fieldErrors.name)}
+              aria-describedby={fieldErrors.name ? "name-error" : undefined}
               value={form.name}
-              onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+              onChange={(event) => {
+                setFieldErrors((prev) => ({ ...prev, name: undefined }));
+                setForm((prev) => ({ ...prev, name: event.target.value }));
+              }}
             />
           </Field>
+          </RevealItem>
 
-          <Field label={copy.fields.email} required requiredMark={copy.fields.requiredMark}>
+          <RevealItem index={1}>
+          <Field
+            id="email"
+            label={copy.fields.email}
+            required
+            requiredMark={copy.fields.requiredMark}
+            error={fieldErrors.email}
+          >
             <input
-              className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
+              id="email"
+              className={inputClass(Boolean(fieldErrors.email))}
               name="email"
               type="email"
               autoComplete="email"
               required
+              aria-invalid={Boolean(fieldErrors.email)}
+              aria-describedby={fieldErrors.email ? "email-error" : undefined}
               value={form.email}
-              onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+              onChange={(event) => {
+                setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                setForm((prev) => ({ ...prev, email: event.target.value }));
+              }}
             />
           </Field>
+          </RevealItem>
 
-          <Field label={copy.fields.contactMethod} required requiredMark={copy.fields.requiredMark}>
+          <RevealItem index={2}>
+          <Field
+            id="contactMethod"
+            label={copy.fields.contactMethod}
+            required
+            requiredMark={copy.fields.requiredMark}
+            error={fieldErrors.contactMethod}
+          >
             <input
-              className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
+              id="contactMethod"
+              className={inputClass(Boolean(fieldErrors.contactMethod))}
               name="contactMethod"
               placeholder={copy.fields.contactPlaceholder}
               required
+              aria-invalid={Boolean(fieldErrors.contactMethod)}
+              aria-describedby={fieldErrors.contactMethod ? "contactMethod-error" : undefined}
               value={form.contactMethod}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, contactMethod: event.target.value }))
-              }
+              onChange={(event) => {
+                setFieldErrors((prev) => ({ ...prev, contactMethod: undefined }));
+                setForm((prev) => ({ ...prev, contactMethod: event.target.value }));
+              }}
             />
           </Field>
+          </RevealItem>
 
-          <Field label={copy.fields.inquiryType} required requiredMark={copy.fields.requiredMark}>
+          <RevealItem index={3}>
+          <Field id="inquiryType" label={copy.fields.inquiryType} required requiredMark={copy.fields.requiredMark}>
             <select
-              className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
+              id="inquiryType"
+              className={inputClass(false)}
               name="inquiryType"
               required
               value={form.inquiryType}
@@ -250,38 +359,75 @@ export default function InquirySection({
               </option>
             </select>
           </Field>
+          </RevealItem>
 
+          <RevealItem index={4}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={copy.fields.locationOptional} requiredMark={copy.fields.requiredMark}>
+            <Field
+              id="location"
+              label={copy.fields.locationOptional}
+              requiredMark={copy.fields.requiredMark}
+              error={fieldErrors.location}
+            >
               <input
-                className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
+                id="location"
+                className={inputClass(Boolean(fieldErrors.location))}
                 name="location"
+                aria-invalid={Boolean(fieldErrors.location)}
+                aria-describedby={fieldErrors.location ? "location-error" : undefined}
                 value={form.location}
-                onChange={(event) => setForm((prev) => ({ ...prev, location: event.target.value }))}
+                onChange={(event) => {
+                  setFieldErrors((prev) => ({ ...prev, location: undefined }));
+                  setForm((prev) => ({ ...prev, location: event.target.value }));
+                }}
               />
             </Field>
-            <Field label={copy.fields.preferredSizeOptional} requiredMark={copy.fields.requiredMark}>
+            <Field
+              id="preferredSize"
+              label={copy.fields.preferredSizeOptional}
+              requiredMark={copy.fields.requiredMark}
+              error={fieldErrors.preferredSize}
+            >
               <input
-                className="focus-ring w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
+                id="preferredSize"
+                className={inputClass(Boolean(fieldErrors.preferredSize))}
                 name="preferredSize"
+                aria-invalid={Boolean(fieldErrors.preferredSize)}
+                aria-describedby={fieldErrors.preferredSize ? "preferredSize-error" : undefined}
                 value={form.preferredSize}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, preferredSize: event.target.value }))
-                }
+                onChange={(event) => {
+                  setFieldErrors((prev) => ({ ...prev, preferredSize: undefined }));
+                  setForm((prev) => ({ ...prev, preferredSize: event.target.value }));
+                }}
               />
             </Field>
           </div>
+          </RevealItem>
 
-          <Field label={copy.fields.message} required requiredMark={copy.fields.requiredMark}>
+          <RevealItem index={5}>
+          <Field
+            id="message"
+            label={copy.fields.message}
+            required
+            requiredMark={copy.fields.requiredMark}
+            error={fieldErrors.message}
+          >
             <textarea
+              id="message"
               ref={messageRef}
-              className="focus-ring min-h-48 w-full rounded-xl border border-ivory/20 bg-transparent px-4 py-3 text-sm"
+              className={`${inputClass(Boolean(fieldErrors.message))} min-h-48`}
               name="message"
               required
+              aria-invalid={Boolean(fieldErrors.message)}
+              aria-describedby={fieldErrors.message ? "message-error" : undefined}
               value={form.message}
-              onChange={(event) => setForm((prev) => ({ ...prev, message: event.target.value }))}
+              onChange={(event) => {
+                setFieldErrors((prev) => ({ ...prev, message: undefined }));
+                setForm((prev) => ({ ...prev, message: event.target.value }));
+              }}
             />
           </Field>
+          </RevealItem>
 
           <p className="text-xs leading-relaxed text-mist">
             {notice.before}{" "}
@@ -304,7 +450,7 @@ export default function InquirySection({
           <button
             type="submit"
             disabled={status === "loading"}
-            className="focus-ring inline-flex min-h-11 items-center rounded-full bg-caramel px-6 py-3 text-sm font-medium text-ink transition hover:bg-caramel/90 disabled:cursor-not-allowed disabled:opacity-70"
+            className="focus-ring inline-flex min-h-11 items-center rounded-full bg-caramel px-6 py-3 text-sm font-medium text-ink transition-[color,background-color,transform] duration-100 ease-out hover:bg-caramel/90 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100"
           >
             {status === "loading" ? `${copy.submit}…` : copy.submit}
           </button>
@@ -332,24 +478,39 @@ export default function InquirySection({
   );
 }
 
+function inputClass(invalid: boolean) {
+  return `focus-ring w-full rounded-xl border bg-transparent px-4 py-3 text-sm ${
+    invalid ? "border-red-300/80" : "border-ivory/20"
+  }`;
+}
+
 function Field({
+  id,
   label,
   required,
   requiredMark,
+  error,
   children
 }: {
+  id: string;
   label: string;
   required?: boolean;
   requiredMark: string;
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
-    <label className="block space-y-1.5">
-      <span className="text-xs uppercase tracking-[0.16em] text-mist">
+    <div className="block space-y-1.5">
+      <label htmlFor={id} className="text-xs uppercase tracking-[0.16em] text-mist">
         {label}
         {required ? ` ${requiredMark}` : ""}
-      </span>
+      </label>
       {children}
-    </label>
+      {error ? (
+        <p id={`${id}-error`} className="text-sm text-red-300">
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 }

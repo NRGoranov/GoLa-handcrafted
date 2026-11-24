@@ -38,10 +38,10 @@ export default function CookieConsent() {
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[70] px-4 pb-4 sm:px-6">
+    <div className="fixed right-4 top-24 z-[70] w-[min(22rem,calc(100%-2rem))] sm:right-6">
       <section
         aria-labelledby="cookie-consent-title"
-        className="mx-auto flex max-w-4xl flex-col gap-4 rounded-2xl border border-ivory/15 bg-[#141414] p-5 shadow-luxury sm:p-6"
+        className="flex max-h-[min(70vh,24rem)] flex-col gap-4 overflow-y-auto rounded-2xl border border-ivory/15 bg-[#141414] p-5 shadow-luxury"
       >
         <div>
           <h2 id="cookie-consent-title" className="font-serif text-2xl text-ivory">
@@ -58,14 +58,14 @@ export default function CookieConsent() {
         <div className="flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
-            className="focus-ring inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-ivory px-5 py-3 text-sm font-medium text-ink"
+            className="focus-ring inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-ivory px-5 py-3 text-sm font-medium text-ink transition-[background-color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
             onClick={() => choose("essential")}
           >
             {copy.reject}
           </button>
           <button
             type="button"
-            className="focus-ring inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-caramel px-5 py-3 text-sm font-medium text-ink"
+            className="focus-ring inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-caramel px-5 py-3 text-sm font-medium text-ink transition-[background-color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
             onClick={() => choose("all")}
           >
             {copy.accept}

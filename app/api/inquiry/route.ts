@@ -27,34 +27,43 @@ export async function POST(req: Request) {
 
     const validated = validatePayload(body);
     const inquiryTypeLabel = INQUIRY_TYPE_LABELS[validated.inquiryTypeKey];
-
-    await saveInquiry({
+    const inquiry = {
       name: validated.name,
       email: validated.email,
       contactMethod: validated.contactMethod,
+      inquiryType: inquiryTypeLabel,
+      message: validated.message,
+      location: validated.location,
+      preferredSize: validated.preferredSize,
+      locale: validated.locale
+    };
+
+    const saved = await saveInquiry({
+      name: inquiry.name,
+      email: inquiry.email,
+      contactMethod: inquiry.contactMethod,
       inquiryType: validated.inquiryTypeKey,
       inquiryTypeLabel,
-      message: validated.message,
-      location: validated.location ?? null,
-      preferredSize: validated.preferredSize ?? null,
-      locale: validated.locale
+      message: inquiry.message,
+      location: inquiry.location ?? null,
+      preferredSize: inquiry.preferredSize ?? null,
+      locale: inquiry.locale
     });
 
     let emailed = false;
     if (isSmtpConfigured()) {
-      await sendInquiryMail({
-        name: validated.name,
-        email: validated.email,
-        contactMethod: validated.contactMethod,
-        inquiryType: inquiryTypeLabel,
-        message: validated.message,
-        location: validated.location,
-        preferredSize: validated.preferredSize,
-        locale: validated.locale
-      });
-      emailed = true;
-    } else if (process.env.NODE_ENV === "production") {
-      throw new Error("Email is not configured on the server.");
+      try {
+        await sendInquiryMail(inquiry);
+        emailed = true;
+      } catch (error) {
+        console.error("Inquiry email failed.", error);
+        if (!saved) throw error;
+      }
+    }
+
+    if (!saved && !emailed) {
+      console.error("Inquiry was not stored and email was not sent.");
+      throw new Error("Unable to send inquiry.");
     }
 
     return NextResponse.json({
@@ -65,15 +74,18 @@ export async function POST(req: Request) {
         : "Inquiry received. Email will be enabled once SMTP is configured."
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unexpected error";
-    const status =
-      message.toLowerCase().includes("missing") ||
-      message.toLowerCase().includes("invalid") ||
-      message.toLowerCase().includes("environment") ||
-      message.toLowerCase().includes("not configured")
-        ? 400
-        : 500;
-    return NextResponse.json({ ok: false, message }, { status });
+    const message = error instanceof Error ? error.message : "";
+    const isClientError =
+      message.startsWith("Invalid or missing field:") ||
+      message === "Invalid email format" ||
+      message === "Invalid inquiry type";
+    return NextResponse.json(
+      {
+        ok: false,
+        message: isClientError ? message : "Unable to send inquiry."
+      },
+      { status: isClientError ? 400 : 500 }
+    );
   }
 }
 
@@ -103,7 +115,15 @@ function validatePayload(payload: Partial<InquiryPayload & { inquiryType: string
     }
   }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email!.trim())) {
+  const name = oneLine(payload.name!, "name", 120);
+  const email = oneLine(payload.email!, "email", 254);
+  const contactMethod = oneLine(payload.contactMethod!, "contactMethod", 160);
+  const message = payload.message!.replace(/\u0000/g, "").trim();
+  if (!message || message.length > 4000) {
+    throw new Error("Invalid or missing field: message");
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new Error("Invalid email format");
   }
 
@@ -115,13 +135,26 @@ function validatePayload(payload: Partial<InquiryPayload & { inquiryType: string
   const locale: "en" | "bg" = payload.locale === "bg" ? "bg" : "en";
 
   return {
-    name: payload.name!.trim(),
-    email: payload.email!.trim(),
-    contactMethod: payload.contactMethod!.trim(),
+    name,
+    email,
+    contactMethod,
     inquiryTypeKey,
-    message: payload.message!.trim(),
-    location: payload.location?.trim() || undefined,
-    preferredSize: payload.preferredSize?.trim() || undefined,
+    message,
+    location: optionalLine(payload.location, "location", 160),
+    preferredSize: optionalLine(payload.preferredSize, "preferredSize", 80),
     locale
   };
+}
+
+function oneLine(value: string, field: string, max: number): string {
+  const cleaned = value.replace(/[\u0000-\u001F\u007F]/g, "").trim();
+  if (!cleaned || cleaned.length > max) {
+    throw new Error(`Invalid or missing field: ${field}`);
+  }
+  return cleaned;
+}
+
+function optionalLine(value: string | undefined, field: string, max: number): string | undefined {
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  return oneLine(value, field, max);
 }

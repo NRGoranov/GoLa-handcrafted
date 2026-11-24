@@ -1,3 +1,4 @@
+import RevealItem from "./RevealItem";
 import SectionHeading from "./SectionHeading";
 
 type CustomCopy = {
@@ -40,24 +41,30 @@ export default function CustomSection({ copy }: { copy: CustomCopy }) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
+        <RevealItem index={0}>
         <article className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
           <h3 className="font-serif text-2xl text-ivory">{copy.cards.sizingTitle}</h3>
           <p className="mt-2 text-sm text-mist">
             {copy.cards.sizingBody}
           </p>
         </article>
+        </RevealItem>
+        <RevealItem index={1}>
         <article className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
           <h3 className="font-serif text-2xl text-ivory">{copy.cards.personalizationTitle}</h3>
           <p className="mt-2 text-sm text-mist">
             {copy.cards.personalizationBody}
           </p>
         </article>
+        </RevealItem>
+        <RevealItem index={2}>
         <article className="rounded-2xl border border-ivory/10 bg-[#111] p-5">
           <h3 className="font-serif text-2xl text-ivory">{copy.cards.bespokeTitle}</h3>
           <p className="mt-2 text-sm text-mist">
             {copy.cards.bespokeBody}
           </p>
         </article>
+        </RevealItem>
       </div>
       </div>
     </section>

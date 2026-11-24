@@ -99,6 +99,7 @@ type SiteCopy = {
     statusAria: string;
     importantTitle: string;
     formNotActive: string;
+    whatsappLead: string;
     or: string;
     fields: {
       name: string;
@@ -120,7 +121,13 @@ type SiteCopy = {
     };
     submit: string;
     submitDisabled: string;
-    errors: { submitFailed: string; generic: string };
+    errors: {
+      submitFailed: string;
+      generic: string;
+      required: string;
+      email: string;
+      tooLong: string;
+    };
     success: string;
     successPopup: {
       title: string;
@@ -336,6 +343,7 @@ const dictionary: Record<Locale, SiteCopy> = {
       importantTitle: "Important",
       formNotActive:
         "The website form isn’t active yet. Please contact us on WhatsApp at",
+      whatsappLead: "Prefer WhatsApp?",
       or: "or",
       fields: {
         name: "Name",
@@ -357,7 +365,13 @@ const dictionary: Record<Locale, SiteCopy> = {
       },
       submit: "Send inquiry",
       submitDisabled: "Form temporarily unavailable",
-      errors: { submitFailed: "Unable to submit inquiry.", generic: "Something went wrong." },
+      errors: {
+        submitFailed: "Unable to submit inquiry.",
+        generic: "Something went wrong.",
+        required: "Enter {field}.",
+        email: "Enter a valid email.",
+        tooLong: "{field} is too long."
+      },
       success: "Thank you—your inquiry has been received.",
       successPopup: {
         title: "Request sent",
@@ -608,6 +622,7 @@ const dictionary: Record<Locale, SiteCopy> = {
       importantTitle: "Важно",
       formNotActive:
         "Формата в сайта все още не е активна. Моля, пиши ни в WhatsApp на",
+      whatsappLead: "Предпочиташ WhatsApp?",
       or: "или",
       fields: {
         name: "Име",
@@ -631,7 +646,10 @@ const dictionary: Record<Locale, SiteCopy> = {
       submitDisabled: "Формата е временно недостъпна",
       errors: {
         submitFailed: "Не успяхме да изпратим запитването.",
-        generic: "Възникна проблем. Опитай отново."
+        generic: "Възникна проблем. Опитай отново.",
+        required: "Попълни: {field}.",
+        email: "Въведи валиден имейл.",
+        tooLong: "{field} е твърде дълго."
       },
       success: "Благодарим — получихме запитването Ви.",
       successPopup: {

@@ -171,7 +171,7 @@ export default async function HomePage({
           giftBoxItem={giftBoxItem}
         />
       </main>
-      <ScrollToTopButton label={copy.nav.replayAria} />
+      <ScrollToTopButton label={copy.nav.goToTop} />
       <Footer copy={copy.footer} locale={locale} />
     </>
   );

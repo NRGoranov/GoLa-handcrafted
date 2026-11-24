@@ -3,6 +3,7 @@
 import { type Product } from "@/lib/products";
 import { getLocalizedProductPreview, type Locale } from "@/lib/i18n";
 import ProductCard from "./ProductCard";
+import RevealItem from "./RevealItem";
 import SectionHeading from "./SectionHeading";
 
 type CollectionCopy = { eyebrow: string; title: string; description: string };
@@ -48,15 +49,16 @@ export default function CollectionSection({
       />
 
       <div className="grid gap-6 md:grid-cols-3 md:[&>*:last-child:nth-child(3n+1)]:col-start-2">
-        {localizedProducts.map(({ cardSummary, ...product }) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            summary={cardSummary}
-            onView={onViewProduct}
-            copy={productCardCopy}
-            locale={locale}
-          />
+        {localizedProducts.map(({ cardSummary, ...product }, index) => (
+          <RevealItem key={product.id} index={index}>
+            <ProductCard
+              product={product}
+              summary={cardSummary}
+              onView={onViewProduct}
+              copy={productCardCopy}
+              locale={locale}
+            />
+          </RevealItem>
         ))}
       </div>
       </div>
