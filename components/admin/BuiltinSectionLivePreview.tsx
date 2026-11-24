@@ -79,7 +79,11 @@ export default function BuiltinSectionLivePreview({
               subtitle: String(content.subtitle ?? ""),
               ctaPrimary: String(content.ctaPrimary ?? ""),
               ctaSecondary: String(content.ctaSecondary ?? ""),
-              imageAlt: String(content.imageAlt ?? "")
+              imageAlt: String(content.imageAlt ?? ""),
+              play: String(content.play ?? "Play"),
+              pause: String(content.pause ?? "Pause"),
+              playAria: String(content.playAria ?? "Play the film at its intended pace"),
+              pauseAria: String(content.pauseAria ?? "Pause the film")
             }}
           />
         );
