@@ -19,28 +19,7 @@ type HeroCopy = {
   subtitle: string;
   ctaPrimary: string;
   ctaSecondary: string;
-  play: string;
-  pause: string;
-  playAria: string;
-  pauseAria: string;
 };
-
-function PlayIcon() {
-  return (
-    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true" fill="currentColor">
-      <path d="M5.2 3.1v9.8L13 8 5.2 3.1Z" />
-    </svg>
-  );
-}
-
-function PauseIcon() {
-  return (
-    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true" fill="currentColor">
-      <rect x="3.4" y="2.8" width="3" height="10.4" rx="0.6" />
-      <rect x="9.6" y="2.8" width="3" height="10.4" rx="0.6" />
-    </svg>
-  );
-}
 
 function sectionProgress(section: HTMLElement) {
   const scrollable = section.offsetHeight - window.innerHeight;
@@ -84,9 +63,7 @@ export default function Hero({ copy }: { copy: HeroCopy }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
-  const playbackRef = useRef(0);
   const [compact, setCompact] = useState(false);
-  const [playing, setPlaying] = useState(false);
   const [phone, setPhone] = useState(false);
   const reduceMotion = useReducedMotion();
   const [ready, setReady] = useState(false);
@@ -208,58 +185,6 @@ export default function Hero({ copy }: { copy: HeroCopy }) {
     };
   }, [compact, ready]);
 
-  const stopPlayback = () => {
-    if (playbackRef.current) cancelAnimationFrame(playbackRef.current);
-    playbackRef.current = 0;
-    setPlaying(false);
-  };
-
-  const startPlayback = () => {
-    const section = sectionRef.current;
-    const video = videoRef.current;
-    if (!section || !video || !Number.isFinite(video.duration) || video.duration <= 0) return;
-    stopPlayback();
-    const top = section.getBoundingClientRect().top + window.scrollY;
-    const end = top + Math.max(0, section.offsetHeight - window.innerHeight);
-    window.scrollTo({ top, behavior: "auto" });
-    const durationMs = video.duration * 1000;
-    let last = 0;
-    let elapsed = 0;
-    setPlaying(true);
-    const step = (now: number) => {
-      if (!last) last = now;
-      elapsed += Math.min(50, now - last);
-      last = now;
-      const progress = Math.min(1, elapsed / durationMs);
-      window.scrollTo({ top: top + (end - top) * progress, behavior: "auto" });
-      if (progress < 1) playbackRef.current = requestAnimationFrame(step);
-      else {
-        playbackRef.current = 0;
-        setPlaying(false);
-      }
-    };
-    playbackRef.current = requestAnimationFrame(step);
-  };
-
-  useEffect(() => {
-    if (!playing) return;
-    const takeOver = () => stopPlayback();
-    const takeOverOnKey = (event: KeyboardEvent) => {
-      if (event.key === " " && event.target instanceof HTMLButtonElement) return;
-      if ([" ", "ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End"].includes(event.key)) takeOver();
-    };
-    window.addEventListener("wheel", takeOver, { passive: true });
-    window.addEventListener("touchmove", takeOver, { passive: true });
-    window.addEventListener("keydown", takeOverOnKey);
-    return () => {
-      window.removeEventListener("wheel", takeOver);
-      window.removeEventListener("touchmove", takeOver);
-      window.removeEventListener("keydown", takeOverOnKey);
-    };
-  }, [playing]);
-
-  useEffect(() => () => stopPlayback(), []);
-
   const scrubbing = !compact;
 
   return (
@@ -317,18 +242,6 @@ export default function Hero({ copy }: { copy: HeroCopy }) {
             </h1>
             <p className="max-w-xl text-sm text-ivory/85 sm:text-base">{copy.subtitle}</p>
             <div className="flex flex-wrap gap-3">
-              {scrubbing ? (
-                <button
-                  type="button"
-                  onClick={playing ? stopPlayback : startPlayback}
-                  aria-pressed={playing}
-                  aria-label={playing ? copy.pauseAria : copy.playAria}
-                  className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full border border-ivory/50 px-5 py-3 text-sm text-ivory transition-[color,border-color,transform] duration-100 ease-out hover:border-caramel hover:text-caramel active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
-                >
-                  {playing ? <PauseIcon /> : <PlayIcon />}
-                  {playing ? copy.pause : copy.play}
-                </button>
-              ) : null}
               <a
                 href="#collection"
                 className="focus-ring inline-flex min-h-11 items-center rounded-full bg-caramel px-6 py-3 text-sm font-medium text-ink transition-[color,background-color,transform] duration-100 ease-out hover:bg-[#c99d6b] active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"

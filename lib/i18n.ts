@@ -30,10 +30,6 @@ type SiteCopy = {
     subtitle: string;
     ctaPrimary: string;
     ctaSecondary: string;
-    play: string;
-    pause: string;
-    playAria: string;
-    pauseAria: string;
   };
   collection: { eyebrow: string; title: string; description: string };
   giftBox: {
@@ -257,11 +253,7 @@ const dictionary: Record<Locale, SiteCopy> = {
       title: "Handcrafted elegance, shaped in wood and leather.",
       subtitle: "Made slowly, finished precisely, and built to feel personal.",
       ctaPrimary: "Request a piece",
-      ctaSecondary: "Explore the collection",
-      play: "Play",
-      pause: "Pause",
-      playAria: "Play the film at its intended pace",
-      pauseAria: "Pause the film"
+      ctaSecondary: "Explore the collection"
     },
     collection: {
       eyebrow: "Collection",
@@ -540,11 +532,7 @@ const dictionary: Record<Locale, SiteCopy> = {
       title: "Елегантност от дърво и кожа.",
       subtitle: "Всяка чанта се изработва бавно и прецизно, с внимание към детайла.",
       ctaPrimary: "Свържи се с нас",
-      ctaSecondary: "Виж колекцията",
-      play: "Пусни",
-      pause: "Пауза",
-      playAria: "Пусни филма с предвидения ритъм",
-      pauseAria: "Спри филма"
+      ctaSecondary: "Виж колекцията"
     },
     collection: {
       eyebrow: "Колекция",
