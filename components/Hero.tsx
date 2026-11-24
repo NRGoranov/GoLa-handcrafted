@@ -7,9 +7,9 @@ import { useEffect, useRef, useState } from "react";
 const VIDEO_SRC = "/video/gola-assembly-scrub.mp4";
 const FRAME_RATE = 24;
 
-/** ~30vh of scroll per second of picture, plus one sticky viewport. */
+/** ~60vh of scroll per second of picture, plus one sticky viewport. */
 function trackForDuration(seconds: number) {
-  const vh = Math.round(Math.min(420, Math.max(220, 100 + seconds * 30)));
+  const vh = Math.round(Math.min(900, Math.max(220, 100 + seconds * 60)));
   return `${vh}svh`;
 }
 
@@ -67,7 +67,7 @@ export default function Hero({ copy }: { copy: HeroCopy }) {
   const [phone, setPhone] = useState(false);
   const reduceMotion = useReducedMotion();
   const [ready, setReady] = useState(false);
-  const [track, setTrack] = useState("341svh");
+  const [track, setTrack] = useState("700svh");
 
   useEffect(() => {
     const section = sectionRef.current;
