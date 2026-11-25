@@ -7,10 +7,18 @@ import { useEffect, useRef, useState } from "react";
 const VIDEO_SRC = "/video/gola-assembly-scrub.mp4";
 const FRAME_RATE = 24;
 
-/** ~60vh of scroll per second of picture, plus one sticky viewport. */
+/** ~60vh of scroll per second of picture, plus one viewport. */
+function trackUnits(seconds: number) {
+  return Math.round(Math.min(900, Math.max(220, 100 + seconds * 60)));
+}
+
 function trackForDuration(seconds: number) {
-  const vh = Math.round(Math.min(900, Math.max(220, 100 + seconds * 60)));
-  return `${vh}svh`;
+  return `${trackUnits(seconds)}svh`;
+}
+
+/** Pixel length, frozen so the phone browser bar cannot resize the sequence. */
+function trackPixels(seconds: number, viewport: number) {
+  return Math.round((trackUnits(seconds) / 100) * viewport);
 }
 
 type HeroCopy = {
@@ -21,10 +29,11 @@ type HeroCopy = {
   ctaSecondary: string;
 };
 
-function sectionProgress(section: HTMLElement) {
-  const scrollable = section.offsetHeight - window.innerHeight;
+function sectionProgress(section: HTMLElement, viewport: number) {
+  const scrollable = section.offsetHeight - viewport;
   if (scrollable <= 0) return 0;
-  const passed = Math.min(Math.max(-section.getBoundingClientRect().top, 0), scrollable);
+  const top = section.getBoundingClientRect().top + window.scrollY;
+  const passed = Math.min(Math.max(window.scrollY - top, 0), scrollable);
   return passed / scrollable;
 }
 
@@ -63,6 +72,10 @@ export default function Hero({ copy }: { copy: HeroCopy }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef(0);
+  const widthRef = useRef(0);
+  const pinnedRef = useRef(true);
   const [compact, setCompact] = useState(false);
   const [phone, setPhone] = useState(false);
   const reduceMotion = useReducedMotion();
@@ -77,6 +90,8 @@ export default function Hero({ copy }: { copy: HeroCopy }) {
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const applyCompact = () => setCompact(embedded || motionQuery.matches);
     applyCompact();
+    viewportRef.current = window.visualViewport?.height || window.innerHeight;
+    widthRef.current = window.innerWidth;
     setPhone(phonePlayback());
     motionQuery.addEventListener("change", applyCompact);
     return () => motionQuery.removeEventListener("change", applyCompact);
@@ -91,7 +106,13 @@ export default function Hero({ copy }: { copy: HeroCopy }) {
     const show = () => {
       if (cancelled) return;
       if (Number.isFinite(video.duration) && video.duration > 0) {
-        setTrack(trackForDuration(video.duration));
+        if (phonePlayback()) {
+          const view = viewportRef.current || window.visualViewport?.height || window.innerHeight;
+          viewportRef.current = view;
+          setTrack(`${trackPixels(video.duration, view)}px`);
+        } else {
+          setTrack(trackForDuration(video.duration));
+        }
         if (compact) video.currentTime = Math.max(0, video.duration - 1 / FRAME_RATE);
       }
       setReady(true);
@@ -158,7 +179,10 @@ export default function Hero({ copy }: { copy: HeroCopy }) {
 
     const apply = () => {
       frame = 0;
-      const progress = sectionProgress(section);
+      const viewport = phonePlayback()
+        ? viewportRef.current || window.innerHeight
+        : window.innerHeight;
+      const progress = sectionProgress(section, viewport);
       targetRef.current = frameTime(progress, video.duration);
       if (playheadRef.current) {
         playheadRef.current.style.width = `${progress * 100}%`;
@@ -185,6 +209,63 @@ export default function Hero({ copy }: { copy: HeroCopy }) {
     };
   }, [compact, ready]);
 
+  useEffect(() => {
+    if (!phone || compact) return;
+    const section = sectionRef.current;
+    const stage = stageRef.current;
+    if (!section || !stage) return;
+
+    const place = () => {
+      const frozen = viewportRef.current || window.innerHeight;
+      const top = section.getBoundingClientRect().top + window.scrollY;
+      const release = top + section.offsetHeight - frozen;
+      const y = window.scrollY;
+      stage.style.left = "0";
+      stage.style.right = "0";
+      stage.style.width = "100%";
+      const pin = y > 1 && (pinnedRef.current ? y < release : y < release - 48);
+      pinnedRef.current = pin;
+      if (pin) {
+        stage.style.position = "fixed";
+        stage.style.top = "0";
+        stage.style.bottom = "0";
+        stage.style.height = "auto";
+        return;
+      }
+      stage.style.position = "absolute";
+      stage.style.height = `${frozen}px`;
+      if (y <= 1) {
+        stage.style.top = "0";
+        stage.style.bottom = "auto";
+      } else {
+        stage.style.top = "auto";
+        stage.style.bottom = "0";
+      }
+    };
+
+    const onResize = () => {
+      const width = window.innerWidth;
+      if (Math.abs(width - widthRef.current) > 40) {
+        widthRef.current = width;
+        const view = window.visualViewport?.height || window.innerHeight;
+        viewportRef.current = view;
+        const video = videoRef.current;
+        const seconds =
+          video && Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 10;
+        setTrack(`${trackPixels(seconds, view)}px`);
+      }
+      place();
+    };
+
+    place();
+    window.addEventListener("scroll", place, { passive: true });
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("scroll", place);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [phone, compact, track]);
+
   const scrubbing = !compact;
 
   return (
@@ -195,10 +276,13 @@ export default function Hero({ copy }: { copy: HeroCopy }) {
       style={{ height: scrubbing ? track : undefined }}
     >
       <div
+        ref={stageRef}
         className={
-          scrubbing
-            ? "sticky top-0 h-[100svh] overflow-hidden"
-            : "relative min-h-[100svh] overflow-hidden"
+          phone && scrubbing
+            ? "absolute left-0 top-0 h-[100svh] w-full touch-pan-y overflow-clip"
+            : scrubbing
+              ? "sticky top-0 h-[100svh] overflow-clip"
+              : "relative min-h-[100svh] overflow-clip"
         }
       >
         <video

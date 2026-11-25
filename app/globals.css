@@ -23,6 +23,13 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* A smooth correction at the end of the film turns a small touch into a slingshot. */
+@media (pointer: coarse) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 body {
   font-family: var(--font-manrope), system-ui, sans-serif;
   line-height: 1.6;
